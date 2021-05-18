@@ -6,6 +6,8 @@ import k2net as dual_net
 from absl import logging, app, flags
 
 
+flags.DEFINE_string('tar_dir', None, 'Where to find TarDataSets.')
+
 FLAGS = flags.FLAGS
 
 
@@ -13,7 +15,7 @@ def play_endgame():
     """ use DNN to score endgame, measure how accurate it is to the RE record
     some MCTS lookahead might help
     """
-    store = GameStore()
+    store = GameStore(data_dir=FLAGS.tar_dir)
     game_iter = store.game_iter([store.ds_pro, store.ds_top], filter_game=True)
 
     model_file = f'{myconf.MODELS_DIR}/model3_epoch_5.h5'
