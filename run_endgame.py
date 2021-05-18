@@ -18,7 +18,8 @@ def play_endgame():
     store = GameStore(data_dir=FLAGS.tar_dir)
     game_iter = store.game_iter([store.ds_pro, store.ds_top], filter_game=True)
 
-    model_file = f'{myconf.MODELS_DIR}/model3_epoch_5.h5'
+    # model_file = f'{myconf.MODELS_DIR}/model3_epoch_5.h5'
+    model_file = FLAGS.load_file
     network = dual_net.DualNetwork(model_file)
     for i, (game_id, reader) in enumerate(game_iter):
         pos = reader.last_pos()
