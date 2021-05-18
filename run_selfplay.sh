@@ -1,5 +1,5 @@
 #EXP_HOME=/content
-DRIVE_HOME=/content/drive/dlgo
+DRIVE_HOME=/content/drive/MyDrive/dlgo
 
 BOARD_SIZE=9
 
