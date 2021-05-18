@@ -17,10 +17,11 @@ BOARD_SIZE_SQUARED = BOARD_SIZE * BOARD_SIZE
 TOTAL_MOVES = BOARD_SIZE_SQUARED + 1
 
 # dirs
-# raw sgfs
 EXP_HOME = '/Users/hyu/PycharmProjects/dlgo/9x9'
-DATA_DIR = '/Users/hyu/PycharmProjects/dlgo/9x9/games'
-FEATURES_DIR = '/Users/hyu/PycharmProjects/dlgo/9x9/features'
+DATA_DIR = f'{EXP_HOME}/games'
+FEATURES_DIR = f'{EXP_HOME}/features'
+MODELS_DIR = f'{EXP_HOME}/checkpoints'
+SELFPLAY_DIR = f'{EXP_HOME}/selfplay'
 
 
 def config_logging():
