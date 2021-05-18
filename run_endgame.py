@@ -3,35 +3,42 @@ import myconf
 from selfplay import run_game
 from tar_dataset import GameStore
 import k2net as dual_net
-from absl import logging, app
+from absl import logging, app, flags
 
 
-def score_endgame():
+FLAGS = flags.FLAGS
+
+
+def play_endgame():
     """ use DNN to score endgame, measure how accurate it is to the RE record
     some MCTS lookahead might help
     """
     store = GameStore()
-    game_iter = store.game_iter([store.ds_pro], filter_game=True)
+    game_iter = store.game_iter([store.ds_pro, store.ds_top], filter_game=True)
 
     model_file = f'{myconf.MODELS_DIR}/model3_epoch_5.h5'
     network = dual_net.DualNetwork(model_file)
-    for game_id, reader in game_iter:
+    for i, (game_id, reader) in enumerate(game_iter):
         pos = reader.last_pos()
 
-        for i in range(3):
-            player = run_game(network, init_position=pos)
+        _, val0 = network.run(pos)
+        if True:
+            player = run_game(network, init_position=pos,
+                              selfplay_dir=FLAGS.selfplay_dir,
+                              holdout_dir=FLAGS.holdout_dir,
+                              holdout_pct=FLAGS.holdout_pct,
+                              sgf_dir=FLAGS.sgf_dir
+                              )
             margin_est = player.black_margin_no_komi
             margin_rec = reader.black_margin_adj(adjust_komi=True)
-            logging.info('%s: komi=%.1f RE=%.1f -> %.1f', game_id, reader.komi(), margin_rec, margin_est)
-        break
-
-
-def play_endgame():
-    """ """
+            final_pos = player.root.position
+            _, val1 = network.run(final_pos)
+            logging.info(f'scoring {game_id}: komi=%.1f RE=%.1f vs %.1f {pos.n} -> {final_pos.n} \t%.1f %.1f',
+                         reader.komi(), margin_rec, margin_est, val0, val1)
 
 
 def main(argv):
-    score_endgame()
+    play_endgame()
 
 
 if __name__ == '__main__':
