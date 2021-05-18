@@ -1,0 +1,553 @@
+2015-09-01T15:25:10.737Z_f33p3pl8lqcw.sgf 	komi=7.0 raw_margin=5.0 predicted=1.5 ok
+2015-09-18T11:39:12.230Z_q0jtn4xfg2bl.sgf 	komi=7.0 raw_margin=3.0 predicted=9.0
+2015-11-18T06:09:48.490Z_7tx295ukc81n.sgf 	komi=7.0 raw_margin=1.0 predicted=-2.9 ok
+2015-12-04T11:24:43.157Z_96tvc29xva0b.sgf 	komi=7.0 raw_margin=5.0 predicted=6.8 ok
+2015-09-30T02:07:02.418Z_ygzg9tg6y7t7.sgf 	komi=7.0 raw_margin=None predicted=3.4      v
+2015-09-25T04:47:04.352Z_ta3mlvtac7uc.sgf 	komi=7.0 raw_margin=None predicted=1.6      tie
+2015-09-04T03:29:35.018Z_vuo5n8os1h4k.sgf 	komi=7.0 raw_margin=None predicted=-10.8    v
+2015-08-24T16:16:34.527Z_mr4mgajtpyl8.sgf 	komi=7.0 raw_margin=None predicted=8.8      x
+2015-10-14T14:58:18.854Z_hxf9ekrp7d0z.sgf 	komi=7.0 raw_margin=None predicted=-9.8     v
+2015-09-09T07:43:50.847Z_7bfxyl3s894t.sgf 	komi=7.0 raw_margin=None predicted=-9.9     v
+2015-12-23T02:33:03.308Z_068qvoh68au6.sgf 	komi=7.0 raw_margin=9.0 predicted=6.2       x  black wins by 1pt
+2015-09-09T23:12:42.128Z_npebm6n34boa.sgf 	komi=7.0 raw_margin=None predicted=-7.3     v
+2015-12-07T02:08:23.104Z_dl332dibizy4.sgf 	komi=7.0 raw_margin=13.0 predicted=25.3 ok
+2015-12-06T09:32:08.081Z_9m9pwumuedse.sgf 	komi=7.0 raw_margin=6.0 predicted=-2.7 ok
+2015-11-07T21:29:14.610Z_2ubmpi6nmgfk.sgf 	komi=7.0 raw_margin=None predicted=19.3
+2015-12-16T01:31:32.339Z_0qb825sfle08.sgf 	komi=7.0 raw_margin=None predicted=1.6      v
+2015-11-24T03:33:51.084Z_f7yyg2t42x75.sgf 	komi=7.0 raw_margin=3.0 predicted=-0.2 ok
+2015-12-09T14:34:35.491Z_r8jo31mlo89e.sgf 	komi=7.0 raw_margin=17.0 predicted=8.3 ok
+2015-09-26T13:46:31.029Z_3sg54s7jsq6s.sgf 	komi=7.0 raw_margin=None predicted=3.9      x
+2015-04-08T08:21:59.813Z_dyu2oc15jld0.sgf 	komi=7.0 raw_margin=None predicted=48.4     v
+2015-09-04T03:05:03.682Z_2j2rpml8omv4.sgf 	komi=7.0 raw_margin=5.0 predicted=-8.6 ok
+2015-01-21T00:33:01.448Z_8zei0xpyxgid.sgf 	komi=7.0 raw_margin=6.5 predicted=8.4
+2015-12-19T06:45:21.352Z_n9tl8j8rv8qp.sgf 	komi=7.0 raw_margin=None predicted=13.5     v
+2015-10-29T01:39:17.555Z_hfsly3p6vm06.sgf 	komi=7.0 raw_margin=None predicted=6.3      v  white won by 1 pts
+2015-09-12T04:44:34.331Z_c2aer20lnwa7.sgf 	komi=7.0 raw_margin=None predicted=11.2     v
+2015-12-15T02:30:34.047Z_lb1ytuis3qyx.sgf 	komi=7.0 raw_margin=None predicted=-2.8
+2015-11-08T06:28:25.625Z_djiczq51su9x.sgf 	komi=7.0 raw_margin=None predicted=6.6
+2015-09-25T00:40:01.501Z_259e18tbsw45.sgf 	komi=7.0 raw_margin=None predicted=5.5
+2015-12-17T14:29:11.733Z_9zykemhyf927.sgf 	komi=7.0 raw_margin=-1.0 predicted=5.0 ok
+2015-10-11T03:25:01.629Z_kkmeb2fwpxo9.sgf 	komi=7.0 raw_margin=15.0 predicted=12.2 ok
+2015-11-21T07:44:08.654Z_lt34eazbcrb7.sgf 	komi=7.0 raw_margin=None predicted=22.6
+2015-11-08T20:58:39.826Z_ioeaeqdq1wmi.sgf 	komi=7.0 raw_margin=None predicted=3.0
+2015-06-03T10:04:32.498Z_tkxhfashplkx.sgf 	komi=7.0 raw_margin=13.0 predicted=8.0 ok
+2015-12-18T09:43:25.439Z_3rzokaby789y.sgf 	komi=7.0 raw_margin=None predicted=-13.2    v
+2015-10-02T14:03:01.503Z_n6ksqmx46gqi.sgf 	komi=7.0 raw_margin=None predicted=7.3
+2015-11-13T06:09:37.755Z_xjprklet8i4w.sgf 	komi=7.0 raw_margin=None predicted=11.6
+2015-09-12T16:38:01.402Z_vmrsqd91a1tb.sgf 	komi=7.0 raw_margin=None predicted=1.6
+2015-06-10T07:50:14.581Z_bgbw0umlt5dv.sgf 	komi=7.0 raw_margin=None predicted=16.9
+2015-04-07T01:50:03.052Z_etxogc86yolr.sgf 	komi=7.0 raw_margin=None predicted=-18.6    v
+2015-09-16T17:13:44.723Z_ifoicgip3w2d.sgf 	komi=7.0 raw_margin=3.0 predicted=-4.1 ok
+2015-06-19T16:42:01.020Z_w50stak3s3jl.sgf 	komi=7.0 raw_margin=None predicted=-0.2
+2015-11-17T19:48:16.399Z_6ns2bjc2z23z.sgf 	komi=7.0 raw_margin=-22.0 predicted=-0.7 ok
+2015-05-19T05:35:26.502Z_va7hvn068a0l.sgf 	komi=7.0 raw_margin=None predicted=8.5
+2015-10-21T12:52:36.589Z_lxrp6f4ifvnq.sgf 	komi=7.0 raw_margin=None predicted=-3.9
+2015-06-16T12:16:04.822Z_2xt33e9tlgd2.sgf 	komi=7.0 raw_margin=9.0 predicted=4.2
+2015-09-09T11:32:24.757Z_ql4rvrhfn3zq.sgf 	komi=7.0 raw_margin=None predicted=-7.5
+2015-08-20T14:00:52.006Z_dt24nx7p4lwo.sgf 	komi=7.0 raw_margin=9.0 predicted=11.5 ok
+2015-11-12T18:39:56.681Z_punfprmpjwwv.sgf 	komi=7.0 raw_margin=None predicted=-1.6
+2015-12-25T13:43:53.928Z_wt187i2ruwfi.sgf 	komi=7.0 raw_margin=None predicted=-3.7
+2015-09-24T04:59:09.219Z_8fr4myb4bdpd.sgf 	komi=7.0 raw_margin=None predicted=-0.1
+2015-12-23T04:45:33.971Z_gzdgd0ajf6ep.sgf 	komi=7.0 raw_margin=None predicted=-9.7
+2015-02-24T00:56:48.262Z_njyol66ixnsm.sgf 	komi=7.0 raw_margin=None predicted=1.4
+2015-09-14T08:23:21.622Z_bpr1vfhrtfmo.sgf 	komi=7.0 raw_margin=None predicted=12.2
+2015-12-21T11:21:00.582Z_x6e28e846umm.sgf 	komi=7.0 raw_margin=None predicted=-9.9
+2015-09-14T10:28:32.420Z_82nmukm1y3g0.sgf 	komi=7.0 raw_margin=13.0 predicted=9.3 ok
+2015-12-10T15:16:11.043Z_x0imj3yhkh01.sgf 	komi=7.0 raw_margin=1.0 predicted=-1.4 ok
+2015-10-25T12:52:50.403Z_ca212txc63nn.sgf 	komi=7.0 raw_margin=None predicted=-6.5
+2015-12-18T01:38:01.055Z_4qst67g0zrmp.sgf 	komi=7.0 raw_margin=9.0 predicted=12.0 ok
+2015-04-24T20:44:54.463Z_0y5f70t5jctj.sgf 	komi=7.0 raw_margin=None predicted=-0.3
+2015-12-22T03:46:20.965Z_ktlrzqgndjac.sgf 	komi=7.0 raw_margin=5.0 predicted=3.3 ok
+2015-10-12T09:59:45.533Z_b6bkj1lk43x3.sgf 	komi=7.0 raw_margin=9.0 predicted=17.0 ok
+2015-09-06T15:01:05.189Z_prct325l84z4.sgf 	komi=7.0 raw_margin=None predicted=-3.0
+2015-11-16T10:49:27.946Z_wty7a9utppw6.sgf 	komi=7.0 raw_margin=1.0 predicted=2.9 ok
+2015-11-23T08:17:26.097Z_xotwqxjks2j6.sgf 	komi=7.0 raw_margin=None predicted=8.5
+2015-09-14T15:57:44.978Z_khyvj9hzucyo.sgf 	komi=7.0 raw_margin=5.0 predicted=12.3
+2015-09-10T07:25:54.887Z_4rgezsmakp7f.sgf 	komi=7.0 raw_margin=None predicted=13.6
+2015-10-27T22:41:47.382Z_vd3f64tk4m0g.sgf 	komi=7.0 raw_margin=3.0 predicted=0.5 ok
+2015-11-09T07:40:14.670Z_9yq9x47hy0sd.sgf 	komi=7.0 raw_margin=None predicted=2.6
+2015-12-25T03:25:45.735Z_hl0i27bsolji.sgf 	komi=7.0 raw_margin=None predicted=3.7
+2015-10-21T12:50:06.761Z_n7m15xsn6nr6.sgf 	komi=7.0 raw_margin=None predicted=8.1
+2015-10-28T10:56:32.051Z_ftfpagnabozv.sgf 	komi=7.0 raw_margin=None predicted=5.5
+2015-12-19T00:06:14.424Z_ubm35bvl5mzl.sgf 	komi=7.0 raw_margin=None predicted=-27.5
+2015-11-07T16:38:49.581Z_kxhnwa41s3cn.sgf 	komi=7.0 raw_margin=None predicted=14.7
+2015-06-03T05:59:19.881Z_mzzyg5opnf8v.sgf 	komi=7.0 raw_margin=13.0 predicted=14.4 ok
+2015-10-11T05:16:17.334Z_cuc3rcx8owvd.sgf 	komi=7.0 raw_margin=-11.0 predicted=-5.4 ok
+2015-07-22T14:42:58.055Z_zxfsq5u811ng.sgf 	komi=7.0 raw_margin=None predicted=-11.0
+2015-11-15T10:55:35.034Z_wb1m3l4mqjpa.sgf 	komi=7.0 raw_margin=None predicted=15.4
+2015-10-29T02:44:05.801Z_61ljuukfa2qf.sgf 	komi=7.0 raw_margin=None predicted=1.1
+2015-11-27T09:26:10.170Z_pxqncne3p85f.sgf 	komi=7.0 raw_margin=None predicted=6.0
+2015-11-13T20:30:58.227Z_tzfdm4ijla2s.sgf 	komi=7.0 raw_margin=None predicted=-4.6
+2015-11-18T13:38:02.102Z_pyvwk3begfzs.sgf 	komi=7.0 raw_margin=11.0 predicted=15.1 ok
+2015-12-19T09:07:56.228Z_rhycu216nx19.sgf 	komi=7.0 raw_margin=None predicted=10.7
+2015-06-24T07:11:40.928Z_91wvbqt60kpv.sgf 	komi=7.0 raw_margin=None predicted=-7.1
+2015-11-13T19:49:58.886Z_ga9fb4g58o4t.sgf 	komi=7.0 raw_margin=None predicted=-12.6
+2015-12-01T01:48:11.097Z_cevguw7z0thz.sgf 	komi=7.0 raw_margin=None predicted=25.7
+2015-10-11T01:26:56.283Z_eqpi4q55rjlz.sgf 	komi=7.0 raw_margin=None predicted=2.3
+2015-11-21T04:33:33.241Z_ritun5629m1v.sgf 	komi=7.0 raw_margin=None predicted=11.1
+2015-10-19T17:29:02.795Z_aal6fabxijfh.sgf 	komi=7.0 raw_margin=None predicted=11.8
+2015-11-24T03:25:28.098Z_2i5qip7pjvin.sgf 	komi=7.0 raw_margin=9.0 predicted=9.8 ok
+2015-10-28T14:53:37.827Z_54uxcootsodq.sgf 	komi=7.0 raw_margin=None predicted=4.5
+2015-09-30T03:30:52.955Z_jv5b2f9kjfcq.sgf 	komi=7.0 raw_margin=None predicted=-3.7
+2015-11-16T13:22:49.215Z_nvrffyo5yqkw.sgf 	komi=7.0 raw_margin=None predicted=-4.0
+2015-11-23T08:30:55.603Z_xsi3jnz1ifer.sgf 	komi=7.0 raw_margin=9.0 predicted=2.6
+2015-12-17T09:47:18.878Z_ttiulp6eo2l5.sgf 	komi=7.0 raw_margin=11.0 predicted=13.3 ok
+2015-11-29T13:39:51.064Z_ijdlymw3d96z.sgf 	komi=7.0 raw_margin=None predicted=17.7
+2015-08-17T14:58:53.403Z_3gjc3y8lhx8v.sgf 	komi=7.0 raw_margin=None predicted=-1.9
+2015-09-30T04:30:57.408Z_7z180vpgaviw.sgf 	komi=7.0 raw_margin=11.0 predicted=2.9
+2015-12-21T11:57:33.029Z_6l7k74j6z8u8.sgf 	komi=7.0 raw_margin=None predicted=-9.3
+2015-12-17T14:33:08.069Z_14o62khs7caf.sgf 	komi=7.0 raw_margin=11.0 predicted=3.4
+2015-11-09T07:05:41.105Z_4khty1b1k191.sgf 	komi=7.0 raw_margin=None predicted=-9.0
+2015-11-07T06:23:06.298Z_wiijx2y0zv62.sgf 	komi=7.0 raw_margin=None predicted=-1.0
+2015-09-09T23:28:13.055Z_wmccpgyv2yqv.sgf 	komi=7.0 raw_margin=None predicted=-11.8
+2015-08-07T23:43:03.680Z_zcttjh98k26o_.sgf 	komi=7.0 raw_margin=None predicted=3.1
+2015-12-12T12:43:14.563Z_6j1hsz4lstyx.sgf 	komi=7.0 raw_margin=None predicted=1.6
+2015-11-09T06:43:59.745Z_ynjdj383ah1q.sgf 	komi=7.0 raw_margin=None predicted=28.7
+2015-05-31T05:27:07.146Z_a53sk9vu2tug.sgf 	komi=7.0 raw_margin=None predicted=-8.4
+2015-12-14T15:24:44.478Z_wnlkuniaph2z.sgf 	komi=7.0 raw_margin=-1.0 predicted=-8.1 ok
+2015-09-12T02:11:08.846Z_g0x28m4xgjfe.sgf 	komi=7.0 raw_margin=None predicted=6.6
+2015-11-07T13:47:34.834Z_h91cvjtw3ewg_.sgf 	komi=7.0 raw_margin=None predicted=3.8
+2015-09-16T11:28:46.959Z_6niyx81vykm4.sgf 	komi=7.0 raw_margin=None predicted=1.1
+2015-12-07T13:04:45.091Z_y2xrrvapgnvx.sgf 	komi=7.0 raw_margin=None predicted=4.6
+2015-10-28T18:51:59.466Z_abswx2jtpqc5.sgf 	komi=7.0 raw_margin=5.0 predicted=-5.5 ok
+2015-11-13T22:07:17.666Z_okioo4ggqz13.sgf 	komi=7.0 raw_margin=None predicted=5.4
+2015-12-17T12:49:55.509Z_y6fxfam75zg1.sgf 	komi=7.0 raw_margin=None predicted=-2.8
+2015-11-27T03:29:39.742Z_hjbvzxqaqcde.sgf 	komi=7.0 raw_margin=None predicted=11.5
+2015-03-14T04:31:40.683Z_q13n7401l7z3.sgf 	komi=7.0 raw_margin=None predicted=9.5
+2015-11-21T01:37:35.277Z_4a08xrnfnqf6.sgf 	komi=7.0 raw_margin=1.0 predicted=13.9
+2015-11-06T02:44:26.399Z_xpjorbp7sh7n.sgf 	komi=7.0 raw_margin=None predicted=0.6
+2015-09-12T16:56:54.019Z_4c7sxc6dhtpq.sgf 	komi=7.0 raw_margin=None predicted=19.9
+2015-11-10T23:32:58.591Z_i0ykgtbrdhby.sgf 	komi=7.0 raw_margin=None predicted=1.5
+2015-12-18T08:14:38.417Z_sn05q86p72yl.sgf 	komi=7.0 raw_margin=None predicted=-1.9
+2015-06-24T06:39:40.476Z_mklvye8q4fh9.sgf 	komi=7.0 raw_margin=None predicted=-13.4
+2015-09-12T13:22:28.202Z_wny0m4tucrmb.sgf 	komi=7.0 raw_margin=9.0 predicted=-0.5
+2015-12-24T13:57:41.120Z_hwbq6gxpw3zz.sgf 	komi=7.0 raw_margin=-9.0 predicted=-8.7 ok
+2015-09-16T09:21:54.531Z_ud1dj86rwsa9.sgf 	komi=7.0 raw_margin=13.0 predicted=10.4 ok
+2015-10-18T00:06:29.157Z_vz1aos35pqoh.sgf 	komi=7.0 raw_margin=11.0 predicted=9.7 ok
+2015-10-18T23:08:54.327Z_wint2z8dyvts.sgf 	komi=7.0 raw_margin=None predicted=5.7
+2015-08-30T21:23:30.569Z_4mvi7stek9te.sgf 	komi=7.0 raw_margin=None predicted=1.7
+2015-11-15T04:04:24.338Z_5geuwr2xcsei.sgf 	komi=7.0 raw_margin=None predicted=18.8
+2015-11-14T17:20:18.267Z_ctcc6ok5zb45.sgf 	komi=7.0 raw_margin=13.0 predicted=7.7 ok
+2015-09-25T07:19:09.429Z_inba8zrk5sot.sgf 	komi=7.0 raw_margin=3.0 predicted=2.9 ok
+2015-09-30T04:23:58.006Z_w6xljd29f64h.sgf 	komi=7.0 raw_margin=None predicted=8.0
+2015-10-24T12:49:37.438Z_bjjec2vom9dr.sgf 	komi=7.0 raw_margin=None predicted=-13.1
+2015-11-09T04:58:56.592Z_u4wk8nj83wz6.sgf 	komi=7.0 raw_margin=None predicted=9.6
+2015-11-27T00:13:00.605Z_ixdakgo3ir2n.sgf 	komi=7.0 raw_margin=None predicted=14.9
+2015-10-15T11:28:42.376Z_jg6e1h4q4372.sgf 	komi=7.0 raw_margin=None predicted=13.9
+2015-03-15T01:03:25.837Z_l98kyp1o106y.sgf 	komi=7.0 raw_margin=2.5 predicted=14.9
+2015-08-28T05:33:39.994Z_hcmf36pm1mtp.sgf 	komi=7.0 raw_margin=None predicted=-23.0
+2015-12-08T22:45:02.730Z_nc07lctjbt2j.sgf 	komi=7.0 raw_margin=5.0 predicted=6.6 ok
+2015-04-08T08:10:26.750Z_jl4d29jk1xan.sgf 	komi=7.0 raw_margin=None predicted=28.5
+2015-12-17T13:28:09.265Z_wp02odw0lfb6.sgf 	komi=7.0 raw_margin=None predicted=10.5
+2015-10-29T04:37:07.829Z_qnyqgvt5jzud.sgf 	komi=7.0 raw_margin=None predicted=-17.3
+2015-10-26T15:06:06.740Z_900t9qrnz03g.sgf 	komi=7.0 raw_margin=15.0 predicted=11.2 ok
+2015-11-10T12:06:44.140Z_53g2tejibvzk.sgf 	komi=7.0 raw_margin=11.0 predicted=7.0 ok
+2015-10-13T03:40:14.396Z_1n4a8dqs5itm.sgf 	komi=7.0 raw_margin=9.0 predicted=12.1 ok
+2015-10-15T23:32:50.000Z_lre2et4r7a0b.sgf 	komi=7.0 raw_margin=None predicted=11.2
+2015-10-11T22:51:49.099Z_xj4zr8g8ho6p.sgf 	komi=7.0 raw_margin=None predicted=-3.6
+2015-11-02T04:52:12.952Z_6ws5kptrm5rh.sgf 	komi=7.0 raw_margin=None predicted=-12.0
+2015-11-23T00:36:28.815Z_ajokmr4pk03u.sgf 	komi=7.0 raw_margin=None predicted=5.0
+2015-09-30T03:23:10.902Z_ja7mtxxndk3l.sgf 	komi=7.0 raw_margin=None predicted=5.7
+2015-10-28T06:20:33.488Z_vyarde4c4z68.sgf 	komi=7.0 raw_margin=1.0 predicted=5.2 ok
+2015-10-11T04:39:31.607Z_cpa46zowbrlt.sgf 	komi=7.0 raw_margin=None predicted=-4.0
+2015-11-27T00:37:51.112Z_iyrveynfk6e7.sgf 	komi=7.0 raw_margin=None predicted=0.4
+2015-11-16T15:48:53.073Z_jdi6abl49tw0.sgf 	komi=7.0 raw_margin=None predicted=25.0
+2015-12-26T00:26:53.926Z_4muwjr9xco5h.sgf 	komi=7.0 raw_margin=None predicted=10.1
+2015-12-03T20:39:43.752Z_et71ktu6blec.sgf 	komi=7.0 raw_margin=None predicted=5.4
+2015-11-26T04:22:25.577Z_b21orx655ruq.sgf 	komi=7.0 raw_margin=None predicted=35.4
+2015-12-24T13:19:05.664Z_2d65unc9n0nc.sgf 	komi=7.0 raw_margin=None predicted=-2.7
+2015-11-19T14:39:07.705Z_l18y2ff94g2o.sgf 	komi=7.0 raw_margin=None predicted=53.2
+2015-09-14T00:39:58.927Z_3hpc9bnb0q03.sgf 	komi=7.0 raw_margin=11.0 predicted=7.9 ok
+2015-06-17T06:57:43.085Z_uss1211hifmo.sgf 	komi=7.0 raw_margin=None predicted=2.4
+2015-11-12T03:39:02.785Z_z81lk1ba9im1.sgf 	komi=7.0 raw_margin=None predicted=29.9
+2015-06-10T05:59:15.789Z_actp7qypb7xj.sgf 	komi=7.0 raw_margin=None predicted=0.3
+2015-12-06T07:40:02.334Z_5d79cfkk0p5d.sgf 	komi=7.0 raw_margin=None predicted=-16.6
+2015-10-31T10:46:56.680Z_pxnvdrufk23j.sgf 	komi=7.0 raw_margin=None predicted=7.2
+2015-10-23T13:54:47.384Z_gchcr64i52y6.sgf 	komi=7.0 raw_margin=None predicted=2.1
+2015-09-05T21:30:12.215Z_thz34wlrezog.sgf 	komi=7.0 raw_margin=None predicted=6.7
+2015-10-26T01:49:36.874Z_lxv176fybyes.sgf 	komi=7.0 raw_margin=11.0 predicted=15.0 ok
+2015-10-09T16:56:46.233Z_j6wordafz7by.sgf 	komi=7.0 raw_margin=None predicted=8.1
+2015-11-27T08:10:37.300Z_hflj9p3h8tni.sgf 	komi=7.0 raw_margin=9.0 predicted=14.1 ok
+2015-05-14T04:45:45.650Z_izkafv08ss9c.sgf 	komi=7.0 raw_margin=None predicted=5.6
+2015-12-23T12:30:32.302Z_7lng8tv4q4w5.sgf 	komi=7.0 raw_margin=None predicted=-2.8
+2015-08-02T23:58:17.917Z_funxb44j5nms_.sgf 	komi=7.0 raw_margin=-5.0 predicted=-1.1 ok
+2015-11-13T23:11:21.194Z_dowox0w6bhxu.sgf 	komi=7.0 raw_margin=None predicted=22.1
+2015-09-13T00:18:32.040Z_4f3q492zfgut.sgf 	komi=7.0 raw_margin=None predicted=12.0
+2015-09-22T09:20:43.023Z_btzyuoeg6j0g.sgf 	komi=7.0 raw_margin=None predicted=15.5
+2015-08-19T22:00:38.263Z_d3z28t3ceh21.sgf 	komi=7.0 raw_margin=15.0 predicted=8.9 ok
+2015-11-07T13:43:05.198Z_jics0wp8inl2.sgf 	komi=7.0 raw_margin=None predicted=15.1
+2015-10-28T09:54:45.265Z_44rklingbngh.sgf 	komi=7.0 raw_margin=None predicted=12.8
+2015-05-28T14:23:19.269Z_q8wzdcshqruz_.sgf 	komi=7.0 raw_margin=None predicted=-0.5
+2015-10-07T18:56:29.385Z_qnbtcoitdm66.sgf 	komi=7.0 raw_margin=None predicted=1.4
+2015-02-01T02:43:27.912Z_ma5lih5j6286.sgf 	komi=7.0 raw_margin=10.5 predicted=12.2 ok
+2015-10-30T00:36:43.932Z_wwsyq060c0sn.sgf 	komi=7.0 raw_margin=None predicted=9.9
+2015-08-14T03:24:49.873Z_xn75tfmv8rkw.sgf 	komi=7.0 raw_margin=5.0 predicted=13.6
+2015-11-04T07:22:21.760Z_4zi8g318qyie.sgf 	komi=7.0 raw_margin=None predicted=10.6
+2015-11-13T14:45:22.467Z_zx7pred8xle9.sgf 	komi=7.0 raw_margin=None predicted=-11.5
+2015-10-28T12:09:14.598Z_3s9hhsyp8u9q.sgf 	komi=7.0 raw_margin=None predicted=7.3
+2015-08-09T05:29:36.677Z_uimz2xq5liic.sgf 	komi=7.0 raw_margin=None predicted=5.6
+2015-11-06T13:10:05.063Z_rt5m6iajob0f_.sgf 	komi=7.0 raw_margin=None predicted=4.8
+2015-12-23T14:29:14.708Z_6ywqjio8bqel.sgf 	komi=7.0 raw_margin=None predicted=10.7
+2015-12-09T16:18:16.451Z_u49nsmuef04a.sgf 	komi=7.0 raw_margin=None predicted=4.9
+2015-12-25T10:23:55.373Z_rqy0v12nfd5k.sgf 	komi=7.0 raw_margin=None predicted=0.7
+2015-09-12T20:07:33.439Z_ic97movo1hpn.sgf 	komi=7.0 raw_margin=-11.0 predicted=-5.1 ok
+2015-12-16T14:51:40.382Z_g6suzaimfx7e.sgf 	komi=7.0 raw_margin=None predicted=4.1
+2015-10-19T16:04:02.357Z_s7jn4ebtmjck.sgf 	komi=7.0 raw_margin=None predicted=-12.6
+2015-10-28T04:09:10.256Z_1qikp3p1sbg6.sgf 	komi=7.0 raw_margin=None predicted=13.1
+2015-09-29T16:03:14.836Z_9gymuhshhql3.sgf 	komi=7.0 raw_margin=None predicted=8.6
+2015-10-29T11:25:42.056Z_a9vlts4b3vwl.sgf 	komi=7.0 raw_margin=None predicted=-1.8
+2015-02-02T03:03:35.738Z_hsvey1iacb9z.sgf 	komi=7.0 raw_margin=None predicted=30.9
+2015-12-15T00:17:29.698Z_lhhl2pdy8zs2.sgf 	komi=7.0 raw_margin=None predicted=17.7
+2015-08-25T02:53:18.978Z_r7xqtzwkm0d6.sgf 	komi=7.0 raw_margin=None predicted=6.3
+2015-12-09T16:10:06.796Z_71fc6kmdmf2f.sgf 	komi=7.0 raw_margin=None predicted=3.8
+2015-12-20T11:07:03.179Z_fnn4a4p8vxui.sgf 	komi=7.0 raw_margin=None predicted=-6.0
+2015-06-30T13:28:05.990Z_j15601s5g8gk.sgf 	komi=7.0 raw_margin=9.0 predicted=15.2 ok
+2015-08-19T22:26:27.921Z_s38xs1bywgsf.sgf 	komi=7.0 raw_margin=None predicted=-3.1
+2015-09-16T21:12:36.948Z_lge6ujoi7xgx.sgf 	komi=7.0 raw_margin=None predicted=18.0
+2015-12-25T04:24:16.689Z_u2fqaugim3ev.sgf 	komi=7.0 raw_margin=None predicted=-1.6
+2015-11-11T17:26:20.661Z_p0pe0h1fmumu.sgf 	komi=7.0 raw_margin=None predicted=-6.4
+2015-08-21T12:16:24.700Z_iwhqchjkgfan.sgf 	komi=7.0 raw_margin=None predicted=-11.2
+2015-10-03T05:13:55.838Z_riup4qoq5fhu.sgf 	komi=7.0 raw_margin=None predicted=12.6
+2015-11-23T08:36:40.862Z_xorgur4ueig1.sgf 	komi=7.0 raw_margin=None predicted=1.2
+2015-12-01T13:29:55.020Z_624cuf606f3b.sgf 	komi=7.0 raw_margin=None predicted=-6.1
+2015-12-08T14:20:41.149Z_qbz0pk0ia3f2.sgf 	komi=7.0 raw_margin=3.0 predicted=-3.2 ok
+2015-10-01T17:55:13.102Z_38egli1vlqif.sgf 	komi=7.0 raw_margin=None predicted=-13.9
+2015-10-12T05:14:07.175Z_46c1ctc1sf5s.sgf 	komi=7.0 raw_margin=None predicted=11.2
+2015-11-08T14:29:07.982Z_lnz6wyrhm5q4.sgf 	komi=7.0 raw_margin=None predicted=-11.0
+2015-10-11T05:06:19.236Z_yp13jrexogj2.sgf 	komi=7.0 raw_margin=None predicted=-8.3
+2015-10-27T17:34:27.330Z_6vcffu4tq6qb.sgf 	komi=7.0 raw_margin=None predicted=-3.7
+2015-10-27T15:24:59.530Z_01qrctgu4go9.sgf 	komi=7.0 raw_margin=None predicted=8.7
+2015-11-13T13:09:47.154Z_bulfxs3lgb8a.sgf 	komi=7.0 raw_margin=None predicted=-1.5
+2015-06-16T04:21:29.644Z_9t69zyf4du27.sgf 	komi=7.0 raw_margin=13.0 predicted=9.9 ok
+2015-05-20T01:21:37.762Z_f8bhqm7hkcsb.sgf 	komi=7.0 raw_margin=1.0 predicted=-3.3 ok
+2015-10-06T03:23:16.509Z_64r9oxfwlh6g.sgf 	komi=7.0 raw_margin=21.0 predicted=7.1 ok
+2015-09-15T18:53:13.805Z_o7bp4e9lcam9.sgf 	komi=7.0 raw_margin=9.0 predicted=7.3 ok
+2015-10-18T22:45:49.317Z_p63926tde6we.sgf 	komi=7.0 raw_margin=3.0 predicted=2.3 ok
+2015-06-15T00:49:01.662Z_7s0u7gx2b5aa.sgf 	komi=7.0 raw_margin=None predicted=15.9
+2015-05-14T02:44:52.625Z_8v76drppehe9.sgf 	komi=7.0 raw_margin=1.0 predicted=-0.5 ok
+2015-10-12T22:26:26.211Z_p3hahw9h9lbo.sgf 	komi=7.0 raw_margin=None predicted=20.3
+2015-11-04T10:51:24.801Z_th6rlj7hx2si.sgf 	komi=7.0 raw_margin=19.0 predicted=16.1 ok
+2015-10-18T01:47:35.934Z_awhcdz56h4q8.sgf 	komi=7.0 raw_margin=None predicted=11.6
+2015-12-21T15:03:01.825Z_b0y1s3eln3ds.sgf 	komi=7.0 raw_margin=-3.0 predicted=-8.4 ok
+2015-10-25T23:00:29.957Z_hsvakvm9y3qs.sgf 	komi=7.0 raw_margin=9.0 predicted=5.3
+2015-08-04T08:30:04.621Z_l02qipxvswh4.sgf 	komi=7.0 raw_margin=None predicted=24.2
+2015-12-23T01:23:46.702Z_b8b5dvnfideq.sgf 	komi=7.0 raw_margin=None predicted=21.9
+2015-10-22T11:21:46.524Z_yqcdf2irgfi3.sgf 	komi=7.0 raw_margin=9.0 predicted=3.3
+2015-01-07T02:28:36.427Z_k7lkeamx5ac7.sgf 	komi=7.0 raw_margin=-25.5 predicted=-25.1 ok
+2015-12-13T00:42:15.408Z_84o74u92lak5.sgf 	komi=7.0 raw_margin=3.0 predicted=6.1 ok
+2015-06-19T16:28:34.908Z_k4wtgtmo7v0h.sgf 	komi=7.0 raw_margin=None predicted=13.4
+2015-09-29T16:23:12.925Z_ksrnmn20nfvp.sgf 	komi=7.0 raw_margin=21.0 predicted=19.5 ok
+2015-09-19T08:24:02.704Z_vhm0sbix7pfm.sgf 	komi=7.0 raw_margin=None predicted=-8.8
+2015-01-08T07:56:19.513Z_xrtvlwtay226.sgf 	komi=7.0 raw_margin=10.5 predicted=17.8 ok
+2015-01-08T07:19:15.208Z_oiifh4uxcxzl.sgf 	komi=7.0 raw_margin=None predicted=-6.1
+2015-11-20T22:51:37.124Z_3a5nebnxiyyr.sgf 	komi=7.0 raw_margin=None predicted=17.5
+2015-06-23T06:07:33.359Z_p3ddwy1y0oa3.sgf 	komi=7.0 raw_margin=None predicted=4.8
+2015-11-08T21:02:02.694Z_8ksqf4nwnrbj.sgf 	komi=7.0 raw_margin=None predicted=4.7
+2015-08-14T03:16:26.522Z_2jo3uypjtqga.sgf 	komi=7.0 raw_margin=None predicted=11.7
+2015-01-21T00:38:44.421Z_2n7yry0hqwc3.sgf 	komi=7.0 raw_margin=None predicted=23.8
+2015-11-15T14:39:20.900Z_42rujsqtp1ut.sgf 	komi=7.0 raw_margin=-1.0 predicted=4.9 ok
+2015-12-12T14:13:47.827Z_fvp8onbosgji.sgf 	komi=7.0 raw_margin=None predicted=13.0
+2015-10-31T19:35:36.022Z_f79l8l1900xb.sgf 	komi=7.0 raw_margin=None predicted=15.5
+2015-11-01T14:10:14.240Z_9l897fmdlnxh.sgf 	komi=7.0 raw_margin=None predicted=-5.6
+2015-11-08T12:48:46.269Z_rvwpfsl3ppih.sgf 	komi=7.0 raw_margin=None predicted=-8.4
+2015-10-22T01:02:20.842Z_hfnahzv3bov2.sgf 	komi=7.0 raw_margin=5.0 predicted=2.2 ok
+2015-06-08T00:24:53.836Z_d5ji9d6i44ns.sgf 	komi=7.0 raw_margin=None predicted=8.0
+2015-11-14T09:43:06.029Z_1yw3ke24wlqr.sgf 	komi=7.0 raw_margin=None predicted=-5.4
+2015-09-16T15:22:54.211Z_iva04g93hbg8.sgf 	komi=7.0 raw_margin=1.0 predicted=-1.8 ok
+2015-11-20T14:59:10.609Z_e3rsakfrmpep.sgf 	komi=7.0 raw_margin=None predicted=2.7
+2015-12-02T16:48:11.122Z_8yz2ys56n1ix.sgf 	komi=7.0 raw_margin=None predicted=2.3
+2015-10-10T23:48:32.054Z_4g7vstk3mdhf.sgf 	komi=7.0 raw_margin=None predicted=19.6
+2015-11-26T13:45:27.360Z_tqxhphh4kzo2.sgf 	komi=7.0 raw_margin=5.0 predicted=-0.3 ok
+2015-01-08T04:49:40.665Z_npxxwnchfqh6.sgf 	komi=7.0 raw_margin=None predicted=0.1
+2015-12-17T12:02:41.905Z_mjaviqdf7na3.sgf 	komi=7.0 raw_margin=None predicted=26.8
+2015-12-26T00:29:52.881Z_77lq6ohst28p.sgf 	komi=7.0 raw_margin=None predicted=8.8
+2015-12-12T01:58:43.803Z_vfmkepy38mde.sgf 	komi=7.0 raw_margin=None predicted=2.2
+2015-10-26T06:30:33.114Z_z8i3i9t8i7xx.sgf 	komi=7.0 raw_margin=None predicted=-0.8
+2015-11-13T22:03:54.248Z_27zlddpvmeie.sgf 	komi=7.0 raw_margin=None predicted=10.0
+2015-06-03T05:09:24.834Z_ne3oeyu15859.sgf 	komi=7.0 raw_margin=None predicted=17.3
+2015-12-10T03:44:27.535Z_oaj20sqdkvv1.sgf 	komi=7.0 raw_margin=None predicted=-4.9
+2015-11-21T06:50:05.130Z_7dloa46s9va9.sgf 	komi=7.0 raw_margin=None predicted=0.1
+2015-10-23T02:18:08.418Z_awckw6btfkmi.sgf 	komi=7.0 raw_margin=None predicted=9.0
+2015-10-14T17:25:26.471Z_qzlcrb4vb48a.sgf 	komi=7.0 raw_margin=15.0 predicted=28.6 ok
+2015-04-08T07:29:41.965Z_k1hzd6ki7l6y.sgf 	komi=7.0 raw_margin=11.0 predicted=12.9 ok
+2015-11-13T23:09:50.279Z_90y62hbmf5bf.sgf 	komi=7.0 raw_margin=None predicted=2.3
+2015-04-03T02:39:01.353Z_7yjq4b6y5nu7.sgf 	komi=7.0 raw_margin=None predicted=0.5
+2015-10-30T23:59:00.265Z_bz2z5y9sh8rk.sgf 	komi=7.0 raw_margin=None predicted=29.4
+2015-04-07T15:10:32.249Z_1d1nfhtz3l5f.sgf 	komi=7.0 raw_margin=1.0 predicted=-14.4 ok
+2015-08-17T14:24:21.196Z_j906l9sd1zua.sgf 	komi=7.0 raw_margin=None predicted=-28.7
+2015-11-22T12:48:16.303Z_n5asxisja2ku.sgf 	komi=7.0 raw_margin=None predicted=3.8
+2015-12-24T13:51:04.136Z_vhhcmgnqg6s3.sgf 	komi=7.0 raw_margin=9.0 predicted=16.8 ok
+2015-11-16T09:06:33.233Z_wooage22vaa4.sgf 	komi=7.0 raw_margin=None predicted=-8.4
+2015-10-29T01:55:25.022Z_7sz4humexykh.sgf 	komi=7.0 raw_margin=None predicted=9.3
+2015-09-09T14:36:27.677Z_7xje0c8797ac.sgf 	komi=7.0 raw_margin=None predicted=-9.3
+2015-10-19T15:48:02.648Z_iw8uj2mzkgac.sgf 	komi=7.0 raw_margin=None predicted=1.1
+2015-10-29T02:46:14.572Z_wc8wa9ioswdo.sgf 	komi=7.0 raw_margin=None predicted=-16.9
+2015-12-21T14:55:21.632Z_03gvx7cz5dgd.sgf 	komi=7.0 raw_margin=None predicted=2.8
+2015-12-25T12:34:16.599Z_q1luc0le8wzh.sgf 	komi=7.0 raw_margin=None predicted=-10.0
+2015-11-05T10:24:09.649Z_k5fbdsb44c3o.sgf 	komi=7.0 raw_margin=None predicted=19.6
+2015-11-27T03:23:04.938Z_t5q3lh855ihv.sgf 	komi=7.0 raw_margin=None predicted=-13.3
+2015-09-25T08:14:59.112Z_2evl804ld3zj.sgf 	komi=7.0 raw_margin=None predicted=10.2
+2015-11-19T16:08:28.973Z_hgtaiz8bw8x6.sgf 	komi=7.0 raw_margin=-1.0 predicted=6.3 ok
+2015-06-21T12:29:05.963Z_178pws2jze17.sgf 	komi=7.0 raw_margin=None predicted=4.0
+2015-12-07T14:36:12.427Z_pugzi3h5la0f.sgf 	komi=7.0 raw_margin=None predicted=-12.8
+2015-09-14T15:36:05.344Z_p5mpptfya4s1.sgf 	komi=7.0 raw_margin=None predicted=9.1
+2015-10-22T06:27:03.614Z_pgitroep432t.sgf 	komi=7.0 raw_margin=None predicted=14.6
+2015-11-29T09:07:49.856Z_uezzc4pxe6fm.sgf 	komi=7.0 raw_margin=9.0 predicted=7.1 ok
+2015-11-30T09:24:36.905Z_8i43zehhcwaq.sgf 	komi=7.0 raw_margin=None predicted=-0.3
+2015-11-17T20:35:32.661Z_awm957tmapx0.sgf 	komi=7.0 raw_margin=None predicted=25.9
+2015-04-04T01:26:11.756Z_vaqhvnpvtbrz.sgf 	komi=7.0 raw_margin=None predicted=12.9
+2015-11-21T04:20:31.668Z_fjnjbn2qzgyx.sgf 	komi=7.0 raw_margin=17.0 predicted=9.6 ok
+2015-01-07T02:32:35.225Z_wwjyi9hzp3eg.sgf 	komi=7.0 raw_margin=None predicted=-3.9
+2015-11-14T15:31:09.203Z_whvx9v4f9q5k.sgf 	komi=7.0 raw_margin=None predicted=-7.0
+2015-09-11T07:11:09.155Z_fqj8p64yx5go.sgf 	komi=7.0 raw_margin=-1.0 predicted=-12.3 ok
+2015-03-12T09:56:57.888Z_2sf0cypez6jd.sgf 	komi=7.0 raw_margin=14.5 predicted=14.0 ok
+2015-11-23T07:51:32.750Z_f02vcrgx1412.sgf 	komi=7.0 raw_margin=None predicted=-5.1
+2015-12-16T02:06:53.042Z_59bxcs1099bu.sgf 	komi=7.0 raw_margin=None predicted=-1.6
+2015-08-13T15:34:02.755Z_xqip0vtwfllh.sgf 	komi=7.0 raw_margin=None predicted=4.8
+2015-10-26T10:45:16.417Z_sooh94jal7ji.sgf 	komi=7.0 raw_margin=None predicted=-0.1
+2015-12-13T14:18:01.654Z_q9kv8tdps7d1.sgf 	komi=7.0 raw_margin=None predicted=-11.4
+2015-09-10T13:45:01.145Z_rgwiztuoylgq.sgf 	komi=7.0 raw_margin=None predicted=3.0
+2015-09-20T06:21:06.611Z_jepqch3umokg.sgf 	komi=7.0 raw_margin=None predicted=-7.8
+2015-10-22T02:14:10.545Z_gktrc9b8b1yv.sgf 	komi=7.0 raw_margin=5.0 predicted=-5.9 ok
+2015-10-28T15:34:42.509Z_4tbtuy4fz8r4.sgf 	komi=7.0 raw_margin=-1.0 predicted=3.4 ok
+2015-12-15T16:53:00.867Z_9wmrjws5pbqc.sgf 	komi=7.0 raw_margin=None predicted=-1.0
+2015-10-14T23:51:42.769Z_9b9qomg87hwk.sgf 	komi=7.0 raw_margin=None predicted=-8.2
+2015-11-06T02:53:54.934Z_sf8hyikw7k16.sgf 	komi=7.0 raw_margin=None predicted=-34.3
+2015-12-20T00:57:35.972Z_gvmdr2vozvsn.sgf 	komi=7.0 raw_margin=None predicted=1.0
+2015-10-28T08:07:22.169Z_aiae07ivjxci.sgf 	komi=7.0 raw_margin=None predicted=-1.0
+2015-10-21T14:28:33.797Z_i46tbleapv5s.sgf 	komi=7.0 raw_margin=None predicted=-3.9
+2015-05-05T13:16:38.966Z_wacfyo31w54r.sgf 	komi=7.0 raw_margin=None predicted=6.5
+2015-10-11T09:09:53.320Z_yv6jk5vsiv8x.sgf 	komi=7.0 raw_margin=None predicted=-5.5
+2015-10-28T21:33:03.764Z_6i7yz4hek79n.sgf 	komi=7.0 raw_margin=None predicted=4.8
+2015-09-07T21:57:51.439Z_7qgka3lcg5j5.sgf 	komi=7.0 raw_margin=None predicted=-8.0
+2015-12-25T03:49:59.762Z_o51wjwyhcrte.sgf 	komi=7.0 raw_margin=5.0 predicted=7.3
+2015-04-20T10:23:46.465Z_do5vapcsdihi.sgf 	komi=7.0 raw_margin=5.0 predicted=3.5 ok
+2015-08-14T03:10:02.857Z_00usmbxu2t2y.sgf 	komi=7.0 raw_margin=None predicted=-6.8
+2015-12-12T15:20:33.837Z_rbiw7bluwlnw.sgf 	komi=7.0 raw_margin=None predicted=-2.9
+2015-10-23T10:02:53.037Z_b9q9ou92c36n.sgf 	komi=7.0 raw_margin=None predicted=-13.0
+2015-12-05T06:15:21.551Z_3zjpbl404g4t.sgf 	komi=7.0 raw_margin=None predicted=-7.4
+2015-10-15T21:07:50.979Z_3q5nn84etjwm.sgf 	komi=7.0 raw_margin=None predicted=6.0
+2015-12-20T12:18:00.804Z_t3at9zyi27w8.sgf 	komi=7.0 raw_margin=3.0 predicted=0.8 ok
+2015-10-18T07:33:18.221Z_g09vhrpjadbu.sgf 	komi=7.0 raw_margin=None predicted=-17.2
+2015-12-17T09:52:44.898Z_2i0haewkwcmv_.sgf 	komi=7.0 raw_margin=5.0 predicted=4.9 ok
+2015-09-07T01:28:15.835Z_qmr1yf9pmhe7.sgf 	komi=7.0 raw_margin=None predicted=-12.0
+2015-01-08T07:03:35.902Z_pf8jdu44fu4w.sgf 	komi=7.0 raw_margin=None predicted=1.3
+2015-11-12T08:35:25.192Z_u5n1r8jlpa2z.sgf 	komi=7.0 raw_margin=None predicted=29.2
+2015-12-23T17:55:49.887Z_4jcnxzehr3z3.sgf 	komi=7.0 raw_margin=None predicted=-6.5
+2015-10-31T11:02:51.043Z_1ce32vl1siw9.sgf 	komi=7.0 raw_margin=None predicted=22.0
+2015-09-20T04:21:08.658Z_fq3qbbb2puip.sgf 	komi=7.0 raw_margin=None predicted=-8.7
+2015-10-22T01:33:08.579Z_p9pw5u3j46vv.sgf 	komi=7.0 raw_margin=None predicted=9.0
+2015-09-09T02:40:47.724Z_mpwridfdf3kq.sgf 	komi=7.0 raw_margin=None predicted=-3.7
+2015-11-18T07:28:58.075Z_v6k4vbibd14s.sgf 	komi=7.0 raw_margin=None predicted=0.7
+2015-09-11T16:16:51.898Z_9yjo6v50nbkx.sgf 	komi=7.0 raw_margin=None predicted=-7.4
+2015-08-14T03:20:53.630Z_bepxgp5sqo6o.sgf 	komi=7.0 raw_margin=None predicted=-11.3
+2015-07-19T12:40:05.361Z_ds8v8n0s4al0.sgf 	komi=7.0 raw_margin=-1.0 predicted=0.0 ok
+2015-11-09T06:50:24.104Z_vwh78n9hbrxm.sgf 	komi=7.0 raw_margin=9.0 predicted=5.1
+2015-10-15T23:56:10.706Z_jfakio4tylaw.sgf 	komi=7.0 raw_margin=None predicted=20.8
+2015-10-31T10:51:38.097Z_r3dq3zqtc3ws.sgf 	komi=7.0 raw_margin=None predicted=13.6
+2015-12-15T08:42:46.230Z_rwqmyxbqfni2.sgf 	komi=7.0 raw_margin=None predicted=2.7
+2015-12-12T11:27:01.290Z_e8lm9116bih6.sgf 	komi=7.0 raw_margin=5.0 predicted=0.3 ok
+2015-11-07T11:51:08.801Z_favc77to7gng.sgf 	komi=7.0 raw_margin=None predicted=0.6
+2015-04-13T16:43:02.489Z_ldin0uja8eqm.sgf 	komi=7.0 raw_margin=11.0 predicted=12.8 ok
+2015-12-13T15:36:52.856Z_6xwfgsr0w9iy.sgf 	komi=7.0 raw_margin=3.0 predicted=2.9 ok
+2015-09-05T10:04:47.618Z_3mk4g28cxgat.sgf 	komi=7.0 raw_margin=None predicted=33.9
+2015-10-26T03:47:02.942Z_5fifsnzs50go.sgf 	komi=7.0 raw_margin=None predicted=2.7
+2015-10-26T04:37:41.938Z_3soldae42tfr.sgf 	komi=7.0 raw_margin=None predicted=22.3
+2015-12-23T17:06:13.019Z_6w8ewjaaggis.sgf 	komi=7.0 raw_margin=-3.0 predicted=4.2 ok
+2015-11-19T15:04:59.398Z_b8drrxudpkuo.sgf 	komi=7.0 raw_margin=3.0 predicted=9.1
+2015-10-16T22:21:23.561Z_py4gon8i0ijf.sgf 	komi=7.0 raw_margin=9.0 predicted=12.6 ok
+2015-10-13T22:11:27.194Z_8z7kb3chb84j.sgf 	komi=7.0 raw_margin=None predicted=3.9
+2015-11-17T08:10:29.366Z_q4bvpf0mo7ru.sgf 	komi=7.0 raw_margin=None predicted=-1.4
+2015-12-17T09:29:06.421Z_dtpfpy8a9dow.sgf 	komi=7.0 raw_margin=17.0 predicted=14.0 ok
+2015-04-28T06:41:24.816Z_cr4b97ea4kqn.sgf 	komi=7.0 raw_margin=None predicted=4.0
+2015-06-17T08:22:24.907Z_sv6jtsimo8pl.sgf 	komi=7.0 raw_margin=None predicted=-18.3
+2015-12-23T18:09:21.405Z_eiv7x99gvd4g.sgf 	komi=7.0 raw_margin=None predicted=3.4
+2015-11-11T08:00:08.174Z_sobz1btxl0dg.sgf 	komi=7.0 raw_margin=None predicted=6.4
+2015-12-13T04:18:39.622Z_1ylr4ripxo8t.sgf 	komi=7.0 raw_margin=None predicted=-10.7
+2015-04-03T01:39:27.232Z_qzyaaudxkm6t.sgf 	komi=7.0 raw_margin=-1.0 predicted=-7.5 ok
+2015-10-16T10:12:53.678Z_z9hkgoken2v9.sgf 	komi=7.0 raw_margin=None predicted=-3.8
+2015-08-08T06:07:30.877Z_um7kckl1hcj5.sgf 	komi=7.0 raw_margin=13.0 predicted=1.2
+2015-12-08T12:06:51.680Z_7n5ysq1tplug.sgf 	komi=7.0 raw_margin=None predicted=22.7
+2015-11-02T03:18:24.319Z_ti7ln50lxifx.sgf 	komi=7.0 raw_margin=None predicted=10.4
+2015-09-10T03:24:12.126Z_tlmzjf99atgb.sgf 	komi=7.0 raw_margin=-16.0 predicted=5.4 ok
+2015-12-09T14:26:48.070Z_4pd3sj9d5agp.sgf 	komi=7.0 raw_margin=3.0 predicted=8.9
+2015-10-30T08:41:00.496Z_27zs0108cbfx.sgf 	komi=7.0 raw_margin=9.0 predicted=17.7 ok
+2015-12-20T11:27:34.582Z_hg6i2cvf2hu6.sgf 	komi=7.0 raw_margin=9.0 predicted=4.3
+2015-07-25T05:56:09.740Z_r1w9cxy0q4ud.sgf 	komi=7.0 raw_margin=None predicted=-0.9
+2015-07-26T00:14:49.139Z_yr0gytjsotxd.sgf 	komi=7.0 raw_margin=-17.0 predicted=-10.2 ok
+2015-12-08T10:35:15.005Z_azflt8etjxof.sgf 	komi=7.0 raw_margin=None predicted=38.8
+2015-07-09T13:59:34.296Z_k514tdqqqezw.sgf 	komi=7.0 raw_margin=None predicted=-19.0
+2015-09-05T10:12:49.802Z_kr82dexmrf64.sgf 	komi=7.0 raw_margin=None predicted=8.3
+2015-10-27T10:45:25.134Z_fqd2pclmlgrv.sgf 	komi=7.0 raw_margin=None predicted=-1.9
+2015-10-29T14:51:53.115Z_7gp2ghyrf22k.sgf 	komi=7.0 raw_margin=None predicted=10.9
+2015-10-15T23:46:51.688Z_nr7k2oerbq1b.sgf 	komi=7.0 raw_margin=-1.0 predicted=-1.3 ok
+2015-09-19T05:31:22.935Z_v5veniltb7rx.sgf 	komi=7.0 raw_margin=None predicted=8.4
+2015-11-23T19:27:50.064Z_w0q4n5td5mo1.sgf 	komi=7.0 raw_margin=None predicted=-22.9
+2015-12-06T17:50:47.750Z_g1z2pb0vxjus.sgf 	komi=7.0 raw_margin=None predicted=-15.4
+2015-11-23T19:06:08.172Z_sinta0d6c7f5.sgf 	komi=7.0 raw_margin=None predicted=-18.0
+2015-06-10T00:52:52.767Z_5yopteffvs6n.sgf 	komi=7.0 raw_margin=None predicted=8.6
+2015-10-14T01:04:03.565Z_6xjjdvwxgzww.sgf 	komi=7.0 raw_margin=None predicted=-34.5
+2015-10-22T04:27:11.034Z_imfpzgd4e8ek.sgf 	komi=7.0 raw_margin=None predicted=1.2
+2015-05-31T02:04:53.639Z_didckfhbadxd.sgf 	komi=7.0 raw_margin=None predicted=-1.2
+2015-08-13T01:57:42.952Z_s34cwicbcotc.sgf 	komi=7.0 raw_margin=-23.0 predicted=-0.2 ok
+2015-12-07T05:30:02.015Z_0vz0omav2q38.sgf 	komi=7.0 raw_margin=None predicted=12.3
+2015-12-01T08:25:39.585Z_ywe2zwmjdhmb.sgf 	komi=7.0 raw_margin=None predicted=3.3
+2015-11-20T10:21:51.499Z_90kqkmkf9fvw.sgf 	komi=7.0 raw_margin=None predicted=28.0
+2015-11-20T15:12:00.046Z_69vw9csvnrmj.sgf 	komi=7.0 raw_margin=None predicted=7.3
+2015-12-10T04:11:42.293Z_lkay7tx4upka.sgf 	komi=7.0 raw_margin=None predicted=2.8
+2015-10-14T08:35:42.037Z_u5ay6ik3w7fu.sgf 	komi=7.0 raw_margin=None predicted=2.7
+2015-09-19T10:57:43.909Z_daukwz7hokk3.sgf 	komi=7.0 raw_margin=None predicted=15.4
+2015-11-09T07:00:40.196Z_bitm49ok8as1.sgf 	komi=7.0 raw_margin=None predicted=-11.7
+2015-11-17T19:02:00.227Z_2u3c1fo42101.sgf 	komi=7.0 raw_margin=5.0 predicted=12.1
+2015-10-25T14:17:19.033Z_etr1t81oc4m4.sgf 	komi=7.0 raw_margin=None predicted=-24.5
+2015-02-11T01:11:17.912Z_gvzmih6e7pwm_.sgf 	komi=7.0 raw_margin=10.5 predicted=8.7 ok
+2015-10-28T13:32:25.586Z_2yu4dx8yemvs.sgf 	komi=7.0 raw_margin=None predicted=-0.1
+2015-11-09T23:48:56.740Z_qvjlh0juuxi5.sgf 	komi=7.0 raw_margin=-1.0 predicted=5.2 ok
+2015-09-14T12:39:56.371Z_at5lqdjah6wd.sgf 	komi=7.0 raw_margin=None predicted=-0.0
+2015-12-02T13:07:03.472Z_zp5tx3uafdfs.sgf 	komi=7.0 raw_margin=None predicted=-9.1
+2015-11-10T07:58:02.706Z_kqkszo9ujg66.sgf 	komi=7.0 raw_margin=1.0 predicted=-8.1 ok
+2015-09-25T04:59:56.213Z_cjwyqxv41y7g.sgf 	komi=7.0 raw_margin=None predicted=-18.4
+2015-10-17T15:59:13.802Z_lltubbbti7ik.sgf 	komi=7.0 raw_margin=None predicted=37.8
+2015-11-09T13:13:56.283Z_68k8kxc27wf3.sgf 	komi=7.0 raw_margin=None predicted=5.8
+2015-01-08T08:08:28.682Z_x86t6bn2e9w0.sgf 	komi=7.0 raw_margin=4.5 predicted=12.8
+2015-04-30T13:24:49.485Z_vmtrqfa3dx6q.sgf 	komi=7.0 raw_margin=5.0 predicted=4.6 ok
+2015-10-22T12:23:37.219Z_7c1u7i5s97ts.sgf 	komi=7.0 raw_margin=None predicted=3.2
+2015-10-23T12:06:39.176Z_wchaqdu2oatv.sgf 	komi=7.0 raw_margin=None predicted=11.2
+2015-10-14T14:03:50.226Z_04256tz9h3na.sgf 	komi=7.0 raw_margin=None predicted=1.0
+2015-11-09T15:21:00.981Z_cgublt21kqej.sgf 	komi=7.0 raw_margin=9.0 predicted=9.1 ok
+2015-09-12T13:34:13.901Z_f3rvv7x7q7pq.sgf 	komi=7.0 raw_margin=None predicted=-6.2
+2015-10-28T02:24:18.369Z_z0fimrd61xlx.sgf 	komi=7.0 raw_margin=13.0 predicted=19.3 ok
+2015-12-20T10:51:57.977Z_b4szx4a60sy9.sgf 	komi=7.0 raw_margin=None predicted=36.0
+2015-10-28T02:31:43.253Z_bx84zwpthikf.sgf 	komi=7.0 raw_margin=None predicted=-0.0
+2015-12-19T21:04:19.464Z_hglq6u9dumjg.sgf 	komi=7.0 raw_margin=None predicted=8.0
+2015-12-22T14:34:46.372Z_07ytf1at1ptk.sgf 	komi=7.0 raw_margin=None predicted=11.2
+2015-01-07T02:41:49.019Z_urkgzoyvxco0.sgf 	komi=7.0 raw_margin=None predicted=-3.1
+2015-10-13T12:33:53.926Z_hlvd3rc696r9.sgf 	komi=7.0 raw_margin=None predicted=22.5
+2015-10-28T05:48:23.720Z_2ld07v3fotdi.sgf 	komi=7.0 raw_margin=None predicted=2.7
+2015-10-17T16:07:02.026Z_liqgq7m9508a.sgf 	komi=7.0 raw_margin=None predicted=-3.7
+2015-10-10T09:33:54.745Z_01ln3xzj4wkj.sgf 	komi=7.0 raw_margin=5.0 predicted=-4.8 ok
+2015-10-01T17:42:06.843Z_cvv5jpxo4xza.sgf 	komi=7.0 raw_margin=9.0 predicted=15.6 ok
+2015-12-17T09:40:48.906Z_ydb3tv95zymc.sgf 	komi=7.0 raw_margin=19.0 predicted=15.8 ok
+2015-04-11T17:17:13.605Z_dpm6khn4egm2.sgf 	komi=7.0 raw_margin=None predicted=8.6
+2015-10-18T21:17:12.064Z_jd6tawwgqja2.sgf 	komi=7.0 raw_margin=9.0 predicted=10.1 ok
+2015-02-16T08:49:23.074Z_0s29whr78m7n.sgf 	komi=7.0 raw_margin=None predicted=9.4
+2015-10-31T08:45:54.194Z_lkcn5gtsoi05.sgf 	komi=7.0 raw_margin=None predicted=-16.4
+2015-12-16T23:44:57.676Z_3033jkrzh49j.sgf 	komi=7.0 raw_margin=None predicted=12.1
+2015-12-17T04:11:59.597Z_4xu7ounzndpq.sgf 	komi=7.0 raw_margin=None predicted=3.8
+2015-10-24T04:00:39.623Z_k8604nbuw97p.sgf 	komi=7.0 raw_margin=3.0 predicted=19.6
+2015-10-22T04:34:40.640Z_0ntpc5hn1pgi.sgf 	komi=7.0 raw_margin=None predicted=6.9
+2015-10-06T22:53:27.209Z_cr6lwkb6np32.sgf 	komi=7.0 raw_margin=None predicted=26.5
+2015-11-08T04:54:02.352Z_bx3ke1v6wmax.sgf 	komi=7.0 raw_margin=None predicted=-1.4
+2015-10-16T09:24:16.845Z_q8520cksv975.sgf 	komi=7.0 raw_margin=9.0 predicted=-1.4
+2015-02-20T04:52:20.052Z_47ylrwgh7qvm.sgf 	komi=7.0 raw_margin=6.5 predicted=3.8 ok
+2015-12-26T02:45:18.893Z_jj0bz4wryiib.sgf 	komi=7.0 raw_margin=None predicted=11.1
+2015-09-12T02:13:52.299Z_scu0w3oj4jdh.sgf 	komi=7.0 raw_margin=None predicted=-4.2
+2015-12-03T04:33:27.809Z_y97zpqyf66g9.sgf 	komi=7.0 raw_margin=11.0 predicted=16.4 ok
+2015-10-22T13:56:55.401Z_qr2kei35tjsp.sgf 	komi=7.0 raw_margin=None predicted=8.5
+2015-12-15T00:01:59.136Z_l2vsjo8caoaz.sgf 	komi=7.0 raw_margin=None predicted=-2.2
+2015-04-04T08:14:30.728Z_pwxppopm23hf.sgf 	komi=7.0 raw_margin=None predicted=-0.6
+2015-11-10T16:30:08.691Z_f4i95218a0i1.sgf 	komi=7.0 raw_margin=None predicted=40.4
+2015-12-16T06:59:32.358Z_dnjiyz1v05m0.sgf 	komi=7.0 raw_margin=None predicted=10.5
+2015-12-19T14:40:22.027Z_emcsslu75twr.sgf 	komi=7.0 raw_margin=None predicted=2.4
+2015-12-16T10:01:48.107Z_pshro2lku6hg.sgf 	komi=7.0 raw_margin=None predicted=2.1
+2015-09-18T10:09:53.408Z_q1x1b8nb92yn.sgf 	komi=7.0 raw_margin=None predicted=5.2
+2015-11-29T14:16:46.597Z_tq1v5lumbsjw.sgf 	komi=7.0 raw_margin=None predicted=7.8
+2015-10-27T07:02:08.246Z_a4496k02fmwt.sgf 	komi=7.0 raw_margin=-37.0 predicted=8.0
+2015-12-17T12:48:27.904Z_3tywn36e6yxb.sgf 	komi=7.0 raw_margin=None predicted=13.6
+2015-10-28T13:59:09.883Z_zqps2w4nbde9.sgf 	komi=7.0 raw_margin=None predicted=-2.6
+2015-11-12T14:54:53.658Z_lqna6ne77hoy.sgf 	komi=7.0 raw_margin=None predicted=-3.8
+2015-10-31T23:58:48.064Z_bzo27hlgp1ja.sgf 	komi=7.0 raw_margin=None predicted=14.7
+2015-09-15T07:58:45.328Z_781x1bzx8v9d.sgf 	komi=7.0 raw_margin=None predicted=-23.8
+2015-10-18T01:22:21.509Z_yt0no9t1w2h6.sgf 	komi=7.0 raw_margin=1.0 predicted=-6.7 ok
+2015-10-31T07:34:11.789Z_hovoliip05lk.sgf 	komi=7.0 raw_margin=None predicted=1.2
+2015-10-26T03:36:24.554Z_v4hj4load8xb.sgf 	komi=7.0 raw_margin=None predicted=-3.9
+2015-11-13T17:40:12.572Z_ulnjjcohkhid.sgf 	komi=7.0 raw_margin=5.0 predicted=8.2
+2015-08-17T07:06:57.790Z_9z9mb51qn0ho.sgf 	komi=7.0 raw_margin=None predicted=-4.7
+2015-11-30T01:44:42.188Z_2cuxslzimgx1.sgf 	komi=7.0 raw_margin=None predicted=14.5
+2015-11-16T13:30:48.912Z_3w8kdhtpuxz2.sgf 	komi=7.0 raw_margin=None predicted=14.1
+2015-11-14T02:45:51.619Z_uk4dkf24avxh.sgf 	komi=7.0 raw_margin=None predicted=2.9
+2015-12-11T14:57:00.339Z_213zr8rbd8hn.sgf 	komi=7.0 raw_margin=None predicted=9.5
+2015-03-03T00:24:52.860Z_kyt0mrqkuip8.sgf 	komi=7.0 raw_margin=None predicted=0.3
+2015-11-21T06:45:02.082Z_5o22klzk5bj8.sgf 	komi=7.0 raw_margin=3.0 predicted=22.4
+2015-11-11T10:31:49.224Z_c29kd7wqn19s.sgf 	komi=7.0 raw_margin=None predicted=20.9
+2015-06-20T16:33:45.803Z_vh8ygmr04jrk.sgf 	komi=7.0 raw_margin=9.0 predicted=24.0 ok
+2015-12-10T02:06:57.931Z_s4q2t8it8f0o.sgf 	komi=7.0 raw_margin=5.0 predicted=8.9
+2015-12-14T14:42:45.153Z_68q81bbw60xh.sgf 	komi=7.0 raw_margin=None predicted=-3.8
+2015-10-28T11:13:32.374Z_c99mw4zok9la.sgf 	komi=7.0 raw_margin=None predicted=-16.8
+2015-04-26T13:51:06.128Z_y2lgwldqqeya.sgf 	komi=7.0 raw_margin=None predicted=11.7
+2015-08-10T00:59:43.664Z_5tq7ermt9c9s.sgf 	komi=7.0 raw_margin=None predicted=1.3
+2015-10-06T03:46:35.403Z_xnrsmlccmrii.sgf 	komi=7.0 raw_margin=None predicted=-6.8
+2015-11-24T01:50:05.819Z_hnb5y5fqlncy.sgf 	komi=7.0 raw_margin=15.0 predicted=25.8 ok
+2015-11-29T15:57:21.615Z_5f8zirglzb9a.sgf 	komi=7.0 raw_margin=None predicted=6.8
+2015-03-28T04:16:45.372Z_4dczyilg9nyc.sgf 	komi=7.0 raw_margin=5.0 predicted=7.2
+2015-12-02T23:38:20.714Z_0kbwykbmzick.sgf 	komi=7.0 raw_margin=None predicted=-5.6
+2015-09-13T16:47:01.823Z_l8e0rrvxl3ux.sgf 	komi=7.0 raw_margin=9.0 predicted=14.7 ok
+2015-10-08T15:46:35.511Z_leniium0iy1p.sgf 	komi=7.0 raw_margin=5.0 predicted=19.8
+2015-10-16T23:50:12.664Z_mqcp7u8jc03e.sgf 	komi=7.0 raw_margin=None predicted=22.6
+2015-09-11T16:31:30.695Z_8l1b4v707d1q.sgf 	komi=7.0 raw_margin=None predicted=-32.3
+2015-08-23T19:36:32.266Z_4ldti6o22869.sgf 	komi=7.0 raw_margin=None predicted=41.1
+2015-11-06T10:41:28.483Z_pzbur8y0ml7j.sgf 	komi=7.0 raw_margin=None predicted=-16.5
+2015-11-29T14:19:12.000Z_tdgi6eyvy0tg.sgf 	komi=7.0 raw_margin=None predicted=20.9
+2015-12-12T16:03:18.079Z_ohu4u95i0znz.sgf 	komi=7.0 raw_margin=None predicted=6.6
+2015-11-17T00:20:42.358Z_6tlquezrd0wi.sgf 	komi=7.0 raw_margin=None predicted=-5.8
+2015-09-17T10:35:08.002Z_03xppfvcoywe.sgf 	komi=7.0 raw_margin=None predicted=-8.0
+2015-10-24T00:43:31.935Z_2y20fjvwgspr.sgf 	komi=7.0 raw_margin=15.0 predicted=7.7 ok
+2015-12-10T15:52:46.693Z_b04rib0o1r9q.sgf 	komi=7.0 raw_margin=None predicted=12.6
+2015-11-17T20:26:01.716Z_v60slz59gt8l.sgf 	komi=7.0 raw_margin=None predicted=-6.1
+2015-10-13T12:59:13.395Z_vn6fglu2gnvg.sgf 	komi=7.0 raw_margin=None predicted=8.1
+2015-11-10T06:08:33.680Z_uoof5x7crzgt.sgf 	komi=7.0 raw_margin=None predicted=4.1
+2015-09-13T05:08:58.185Z_yjtga64zcr5a.sgf 	komi=7.0 raw_margin=9.0 predicted=-2.0
+2015-11-08T12:25:23.488Z_f3elaarw10vo.sgf 	komi=7.0 raw_margin=5.0 predicted=1.2 ok
+2015-12-22T09:26:20.382Z_oqty3lq0qrhv.sgf 	komi=7.0 raw_margin=None predicted=21.3
+2015-10-22T12:02:12.472Z_rxjiikfjo6u7.sgf 	komi=7.0 raw_margin=11.0 predicted=10.9 ok
+2015-11-27T03:36:59.834Z_60yjz4vdgsrh.sgf 	komi=7.0 raw_margin=None predicted=24.8
+2015-09-27T16:44:45.115Z_qrnp24vc96us.sgf 	komi=7.0 raw_margin=8.0 predicted=-0.0
+2015-09-12T10:29:50.021Z_g6oon1w9f0cr.sgf 	komi=7.0 raw_margin=None predicted=-4.1
+2015-02-11T08:47:08.956Z_uj00likbwjol_.sgf 	komi=7.0 raw_margin=None predicted=-3.2
+2015-09-11T09:53:38.542Z_y8hzaz9cqqiv.sgf 	komi=7.0 raw_margin=None predicted=-4.5
+2015-09-17T15:14:49.985Z_1xi1k7vdd30j.sgf 	komi=7.0 raw_margin=None predicted=0.2
+2015-10-05T11:25:39.247Z_363b339evjiy.sgf 	komi=7.0 raw_margin=9.0 predicted=-4.1
+2015-11-12T15:26:29.522Z_wfs0zvumt28d.sgf 	komi=7.0 raw_margin=11.0 predicted=-1.0
+2015-12-03T05:52:15.978Z_cwkcdxhc194a.sgf 	komi=7.0 raw_margin=None predicted=28.8
+2015-11-23T11:49:42.556Z_79sq6e4l0rkp.sgf 	komi=7.0 raw_margin=None predicted=14.6
+2015-12-18T00:27:11.927Z_xcwry0wo5e4p.sgf 	komi=7.0 raw_margin=1.0 predicted=11.1
+2015-12-19T10:14:51.654Z_f8eq4696qcib.sgf 	komi=7.0 raw_margin=None predicted=8.8
+2015-11-13T18:17:18.099Z_8qz44x401k98.sgf 	komi=7.0 raw_margin=-1.0 predicted=4.6 ok
+2015-06-17T05:23:59.657Z_oo9mn0n4zhbf.sgf 	komi=7.0 raw_margin=5.0 predicted=1.4 ok
+2015-10-14T13:49:54.053Z_vr8b9vkquk6w.sgf 	komi=7.0 raw_margin=1.0 predicted=6.2 ok
+2015-09-17T17:26:37.419Z_doixy631laqb.sgf 	komi=7.0 raw_margin=None predicted=12.6
+2015-12-16T05:46:06.865Z_9sngs5yhfbhh.sgf 	komi=7.0 raw_margin=None predicted=2.5
+2015-10-14T11:41:13.038Z_lwll17wn7l2g.sgf 	komi=7.0 raw_margin=None predicted=11.9
+2015-12-09T15:53:47.696Z_5bplurjqxggu.sgf 	komi=7.0 raw_margin=None predicted=30.2
+2015-11-21T00:26:19.035Z_y1i2yzdh3ypo.sgf 	komi=7.0 raw_margin=None predicted=-3.3
+2015-10-29T04:49:35.048Z_6t9vdzlv8uex.sgf 	komi=7.0 raw_margin=None predicted=8.1
+2015-10-02T05:50:39.918Z_e945j98cavnm.sgf 	komi=7.0 raw_margin=None predicted=-4.8
+2015-11-25T04:40:13.500Z_k4ouu0r0sfaf.sgf 	komi=7.0 raw_margin=None predicted=-10.2
+2015-12-24T13:02:02.141Z_xbrkwj1gm9k9.sgf 	komi=7.0 raw_margin=None predicted=6.5
+2015-11-23T19:23:58.280Z_0avq4n7rkfpw.sgf 	komi=7.0 raw_margin=None predicted=14.5
+2015-08-24T22:08:29.252Z_99uqtcymlsra.sgf 	komi=7.0 raw_margin=None predicted=8.2
+2015-08-20T15:28:13.399Z_pqys4kypy936.sgf 	komi=7.0 raw_margin=None predicted=-17.6
+2015-12-05T10:30:54.482Z_p2ajlye3uunm.sgf 	komi=7.0 raw_margin=13.0 predicted=12.8 ok
+2015-11-06T15:00:32.150Z_01sezhchwdvk.sgf 	komi=7.0 raw_margin=None predicted=11.5
+2015-11-11T18:17:51.612Z_h9mv3o2fmpj6.sgf 	komi=7.0 raw_margin=9.0 predicted=11.2 ok
+2015-11-28T02:26:30.987Z_j5n8iz4nnep8.sgf 	komi=7.0 raw_margin=None predicted=8.6
+2015-10-25T03:39:01.486Z_nfo41kgwyzxr.sgf 	komi=7.0 raw_margin=None predicted=5.5
+2015-10-24T12:38:48.347Z_k66ste7vk7yc.sgf 	komi=7.0 raw_margin=None predicted=12.5
+2015-08-04T05:57:29.599Z_7p6k23yurywr.sgf 	komi=7.0 raw_margin=None predicted=25.6
+2015-12-25T06:50:55.478Z_k4c4zhe50xab.sgf 	komi=7.0 raw_margin=None predicted=13.2
+2015-11-28T03:42:41.683Z_hnfog2ulapau.sgf 	komi=7.0 raw_margin=None predicted=5.8
+2015-10-12T07:18:17.292Z_dsguiwgo7z9a.sgf 	komi=7.0 raw_margin=None predicted=15.0
+2015-09-24T04:42:23.810Z_pau42596alfp.sgf 	komi=7.0 raw_margin=13.0 predicted=24.8 ok
+2015-09-18T02:41:44.385Z_luznp47xu6qd.sgf 	komi=7.0 raw_margin=None predicted=25.4
+2015-11-18T05:20:54.531Z_716jxim94qzl.sgf 	komi=7.0 raw_margin=None predicted=25.1
+2015-07-23T16:19:56.959Z_vsamvj917b7m.sgf 	komi=7.0 raw_margin=29.0 predicted=22.9 ok
+2015-10-07T17:40:35.831Z_6jjh9w0r31b2.sgf 	komi=7.0 raw_margin=-1.0 predicted=5.4 ok
+2015-02-01T11:14:50.891Z_1uvfppokvqzc.sgf 	komi=7.0 raw_margin=None predicted=51.6
+2015-11-08T15:16:38.852Z_683arhnymcij.sgf 	komi=7.0 raw_margin=5.0 predicted=12.2
+2015-12-24T10:26:03.465Z_vc0x3gvpsz9h.sgf 	komi=7.0 raw_margin=None predicted=16.7
+2015-12-11T18:06:32.865Z_riajwd5ybnbb.sgf 	komi=7.0 raw_margin=21.0 predicted=9.4 ok
+2015-11-15T14:00:15.539Z_9azhthgccg82.sgf 	komi=7.0 raw_margin=None predicted=-0.8
+2015-11-14T08:35:54.130Z_wsyp8v0i7ne1.sgf 	komi=7.0 raw_margin=5.0 predicted=6.4 ok
+2015-08-17T23:34:21.912Z_91f4xzhhvuu6.sgf 	komi=7.0 raw_margin=None predicted=10.8
+2015-01-18T00:38:01.970Z_zqozwzjbbrl2.sgf 	komi=7.0 raw_margin=8.5 predicted=21.8 ok
+2015-12-18T02:26:37.234Z_wcd63d8j2x41.sgf 	komi=7.0 raw_margin=9.0 predicted=25.4 ok

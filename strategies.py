@@ -15,6 +15,7 @@
 import os
 import random
 import time
+import numpy as np
 
 from absl import flags
 
@@ -95,7 +96,7 @@ class MCTSPlayer(MCTSPlayerInterface):
             self.temp_threshold = FLAGS.softpick_move_cutoff
 
         self.initialize_game()
-        self.root = None
+        self.root = None  # type: mcts.MCTSNode
         self.resign_threshold = resign_threshold or FLAGS.resign_threshold
         self.timed_match = timed_match
         assert (self.timed_match and self.seconds_per_move >
@@ -111,7 +112,7 @@ class MCTSPlayer(MCTSPlayerInterface):
     def get_result_string(self):
         return self.result_string
 
-    def initialize_game(self, position=None):
+    def initialize_game(self, position: go.Position = None):
         if position is None:
             position = go.Position()
         self.root = mcts.MCTSNode(position)
@@ -119,6 +120,8 @@ class MCTSPlayer(MCTSPlayerInterface):
         self.result_string = None
         self.comments = []
         self.searches_pi = []
+        # keep track of where in the game MCTS gets involved
+        self.init_position = position
 
     def suggest_move(self, position):
         """Used for playing a single game.
@@ -236,8 +239,9 @@ class MCTSPlayer(MCTSPlayerInterface):
         """Returns true if the player resigned. No further moves should be played"""
         return self.root.Q_perspective < self.resign_threshold
 
-    def set_result(self, winner, was_resign):
+    def set_result(self, winner, was_resign, black_margin_no_komi=None):
         self.result = winner
+        self.black_margin_no_komi = black_margin_no_komi
         if was_resign:
             string = "B+R" if winner == go.BLACK else "W+R"
         else:
@@ -248,12 +252,17 @@ class MCTSPlayer(MCTSPlayerInterface):
         assert self.result_string is not None
         pos = self.root.position
         if use_comments:
-            comments = self.comments or ['No comments.']
+            if not self.comments:
+                comments = ['No comments.']
+            else:
+                comments = self.comments
+                if len(comments) < pos.n:
+                    comments = ['' for i in range(pos.n - len(comments))] + comments
             comments[0] = ("Resign Threshold: %0.3f\n" %
                            self.resign_threshold) + comments[0]
         else:
             comments = []
-        return sgf_wrapper.make_sgf(pos.recent, self.result_string,
+        return sgf_wrapper.make_sgf(pos.recent, self.result_string, komi=pos.komi,
                                     white_name=os.path.basename(
                                         self.network.save_file) or "Unknown",
                                     black_name=os.path.basename(
@@ -261,9 +270,11 @@ class MCTSPlayer(MCTSPlayerInterface):
                                     comments=comments)
 
     def extract_data(self):
-        assert len(self.searches_pi) == self.root.position.n
+        assert len(self.searches_pi) == self.root.position.n - self.init_position.n
         assert self.result != 0
-        for pwc, pi in zip(go.replay_position(self.root.position, self.result),
+        result = self.black_margin_no_komi
+        assert result is not None
+        for pwc, pi in zip(go.replay_position(self.root.position, result, initial_position=self.init_position),
                            self.searches_pi):
             yield pwc.position, pi, pwc.result
 

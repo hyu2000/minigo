@@ -22,6 +22,7 @@ import mcts
 from tests import test_utils
 
 from absl import flags
+from absl.testing import absltest
 
 FLAGS = flags.FLAGS
 
@@ -274,3 +275,7 @@ class TestMctsNodes(test_utils.MinigoUnitTest):
         # Policy sums to 1.0, only legal moves have non-zero values.
         self.assertAlmostEqual(1.0, sum(root.child_prior))
         self.assertEqual(0, sum(root.child_prior * root.illegal_moves))
+
+
+if __name__ == '__main__':
+    absltest.main()

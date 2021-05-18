@@ -16,7 +16,7 @@ import random
 import tempfile
 
 import coords
-import dual_net
+import k2net as dual_net
 import preprocessing
 import features
 import go
@@ -27,7 +27,7 @@ import numpy as np
 import tensorflow as tf
 
 
-TEST_SGF = "(;CA[UTF-8]SZ[9]PB[Seth the best]PW[Andrew opens H4]KM[6.5]HA[0]RE[W+1.5]GM[1];B[fd];W[cf])"
+TEST_SGF = "(;CA[UTF-8]SZ[9]PB[Seth the best]PW[Andrew opens H4]KM[6.5]HA[0]RE[W+1]GM[1];B[fd];W[cf])"
 
 
 class TestPreprocessing(test_utils.MinigoUnitTest):
@@ -57,12 +57,21 @@ class TestPreprocessing(test_utils.MinigoUnitTest):
                     break
         return recovered_data
 
+    def extract_records(self, dataset):
+        samples = []
+        for pos_value, label_values in dataset:
+            samples.append((
+                pos_value,
+                label_values['pi_tensor'],
+                label_values['value_tensor']))
+        return samples
+
     def extract_data(self, tf_record, filter_amount=1, random_rotation=False):
-        pos_tensor, label_tensors = preprocessing.get_input_tensors(
+        dataset = preprocessing.get_input_tensors(
             1, 'nhwc', [tf_record], num_repeats=1, shuffle_records=False,
             shuffle_examples=False, filter_amount=filter_amount,
             random_rotation=random_rotation)
-        return self.get_data_tensors(pos_tensor, label_tensors)
+        return self.extract_records(dataset)
 
     def extract_tpu_data(self, tf_record, random_rotation=False):
         dataset = preprocessing.get_tpu_input_tensors(
@@ -157,6 +166,7 @@ class TestPreprocessing(test_utils.MinigoUnitTest):
             preprocessing.make_dataset_from_sgf(
                 sgf_file.name, record_file.name)
             recovered_data = self.extract_data(record_file.name)
+
         start_pos = go.Position()
         first_move = coords.from_sgf('fd')
         next_pos = start_pos.play_move(first_move)

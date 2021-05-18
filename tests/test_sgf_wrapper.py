@@ -14,10 +14,13 @@
 
 import unittest
 import go
-from sgf_wrapper import replay_sgf, translate_sgf_move, make_sgf
+from absl import logging
+from sgf_wrapper import replay_sgf, translate_sgf_move, make_sgf, replay_sgf_file, SGFReader
 
 import coords
 from tests import test_utils
+
+logging.set_verbosity(logging.INFO)
 
 JAPANESE_HANDICAP_SGF = "(;GM[1]FF[4]CA[UTF-8]AP[CGoban:3]ST[2]RU[Japanese]SZ[9]HA[2]RE[Void]KM[5.50]PW[test_white]PB[test_black]AB[gc][cg];W[ee];B[dg])"
 
@@ -161,6 +164,48 @@ class TestSgfWrapper(test_utils.MinigoUnitTest):
         final_replayed_position = positions_w_context[-1].position.play_move(
             positions_w_context[-1].next_move)
         self.assertEqualPositions(final_position, final_replayed_position)
+
+
+class TestReader(test_utils.MinigoUnitTest):
+    """ """
+    def test_good_sgf(self):
+        sgf = '/Users/hyu/Downloads/Minigo/1.sgf'
+        reader = SGFReader.from_file_compatible(sgf)
+        assert reader.board_size() == 9
+        assert reader.not_handicap()
+        self.assertEqual(-1, reader.result())
+        self.assertEqual(6.5, reader.komi())
+        self.assertEqual(-reader.UNKNOWN_MARGIN, reader.black_margin_adj())
+        self.assertEqual(-reader.UNKNOWN_MARGIN, reader.black_margin_adj(adjust_komi=True))
+
+        pwcs = [x for x in reader.iter_pwcs()]
+        logging.info('Found %d moves(pwc)', len(pwcs))
+
+    def test_NNGS(self):
+        # 'CoPyright' and illegal move
+        # sgf = '/Users/hyu/PycharmProjects/dlgo/9x9/games/tmp/jrd-manyfaces-07-20-17'
+        # 'CoPyright'; all legal moves; empty node at the end (common in NNGS)
+        sgf = '/Users/hyu/PycharmProjects/dlgo/9x9/games/tmp/jrd-tromp-07-17-29'
+
+        reader = SGFReader.from_file_compatible(sgf)
+        assert reader.board_size() == 9
+        assert reader.not_handicap()
+        self.assertEqual(1, reader.result())
+        self.assertEqual(5.5, reader.komi())
+        self.assertEqual(9.5, reader.black_margin_adj())
+        self.assertEqual(15, reader.black_margin_adj(adjust_komi=True))
+
+        pwcs = [x for x in reader.iter_pwcs()]
+        logging.info('Found %d moves(pwc)', len(pwcs))
+
+    def test_NNGS_EOF(self):
+        """ after the content, ignore extra '---' at EOF """
+        sgf = '/Users/hyu/PycharmProjects/dlgo/9x9/games/tmp/alfalfa-angie-26-14-20'
+        reader = SGFReader.from_file_compatible(sgf)
+        assert reader.board_size() == 9
+        assert reader.not_handicap()
+        pwcs = [x for x in reader.iter_pwcs()]
+        logging.info('Found %d moves(pwc)', len(pwcs))
 
 
 if __name__ == '__main__':

@@ -124,6 +124,15 @@ class TestFeatureExtraction(test_utils.MinigoUnitTest):
         # the group at 1, 0 has 18 liberties
         self.assertEqual(1, f[1, 0, 7])
 
+    def test_liberty_feature3(self):
+        f = features.liberty_feature3(TEST_POSITION)
+        self.assertEqual(f.shape, (9, 9, features.liberty_feature3.planes))
+
+        self.assertEqual(1, f[3, 0, 0])
+        self.assertEqual(0, f[3, 0, 1])
+        self.assertEqual(0, f[3, 1, 0])
+        self.assertEqual(1, f[3, 1, 2])
+
     def test_few_liberties_feature(self):
         f = features.few_liberties_feature(TEST_POSITION)
         self.assertEqual(

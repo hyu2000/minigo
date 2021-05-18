@@ -14,11 +14,15 @@
 
 """Utilities to create, read, write tf.Examples."""
 import functools
+import itertools
 import random
 
-import bigtable_input
+# import bigtable_input
+from typing import Iterable, List
+from absl import logging
+
 import coords
-import dual_net
+import k2net as dual_net
 import features as features_lib
 import go
 import sgf_wrapper
@@ -27,8 +31,7 @@ import symmetries
 import numpy as np
 import tensorflow as tf
 
-TF_RECORD_CONFIG = tf.python_io.TFRecordOptions(
-    tf.python_io.TFRecordCompressionType.ZLIB)
+TF_RECORD_CONFIG = tf.io.TFRecordOptions('ZLIB')
 
 
 def _one_hot(index):
@@ -37,7 +40,7 @@ def _one_hot(index):
     return onehot
 
 
-def make_tf_example(features, pi, value):
+def make_tf_example(features: np.ndarray, pi, value):
     """
     Args:
         features: [N, N, FEATURE_DIM] nparray of uint8
@@ -56,20 +59,20 @@ def make_tf_example(features, pi, value):
                 value=[value]))}))
 
 
-def write_tf_examples(filename, tf_examples, serialize=True):
+def write_tf_examples(filename, tf_examples: Iterable, serialize=True):
     """
     Args:
         filename: Where to write tf.records
         tf_examples: An iterable of tf.Example
         serialize: whether to serialize the examples.
     """
-    with tf.python_io.TFRecordWriter(
-            filename, options=TF_RECORD_CONFIG) as writer:
-        for ex in tf_examples:
+    with tf.io.TFRecordWriter(filename, options=TF_RECORD_CONFIG) as writer:
+        for i, ex in enumerate(tf_examples):
             if serialize:
                 writer.write(ex.SerializeToString())
             else:
                 writer.write(ex)
+        logging.info('Wrote %d exmples to %s', i, filename)
 
 
 def batch_parse_tf_example(batch_size, layout, example_batch):
@@ -84,12 +87,12 @@ def batch_parse_tf_example(batch_size, layout, example_batch):
     planes = dual_net.get_features_planes()
 
     features = {
-        'x': tf.FixedLenFeature([], tf.string),
-        'pi': tf.FixedLenFeature([], tf.string),
-        'outcome': tf.FixedLenFeature([], tf.float32),
+        'x': tf.io.FixedLenFeature([], tf.string),
+        'pi': tf.io.FixedLenFeature([], tf.string),
+        'outcome': tf.io.FixedLenFeature([], tf.float32),
     }
-    parsed = tf.parse_example(example_batch, features)
-    x = tf.decode_raw(parsed['x'], tf.uint8)
+    parsed = tf.io.parse_example(example_batch, features)
+    x = tf.io.decode_raw(parsed['x'], tf.uint8)
     x = tf.cast(x, tf.float32)
 
     if layout == 'nhwc':
@@ -98,7 +101,7 @@ def batch_parse_tf_example(batch_size, layout, example_batch):
         shape = [batch_size, planes, go.N, go.N]
     x = tf.reshape(x, shape)
 
-    pi = tf.decode_raw(parsed['pi'], tf.float32)
+    pi = tf.io.decode_raw(parsed['pi'], tf.float32)
     pi = tf.reshape(pi, [batch_size, go.N * go.N + 1])
     outcome = parsed['outcome']
     outcome.set_shape([batch_size])
@@ -200,7 +203,9 @@ def get_input_tensors(batch_size, feature_layout, tf_records, num_repeats=1,
             functools.partial(_random_rotation, feature_layout),
             batch_size))
 
-    return dataset.make_one_shot_iterator().get_next()
+    return dataset
+    return tf.compat.v1.data.make_one_shot_iterator(dataset).get_next()
+    # return dataset.make_one_shot_iterator().get_next()
 
 
 def get_tpu_input_tensors(batch_size, feature_layout, tf_records, num_repeats=1,
@@ -272,13 +277,25 @@ def make_dataset_from_selfplay(data_extracts):
     return tf_examples
 
 
-def make_dataset_from_sgf(sgf_filename, tf_record):
+def calc_samples_from_reader(reader: sgf_wrapper.SGFReader) -> Iterable:
+    pwcs = reader.iter_pwcs()
+    tf_examples = map(_make_tf_example_from_pwc, pwcs)
+    return tf_examples
+
+
+def calc_feature_from_pos(pos) -> np.ndarray:
+    f = dual_net.get_features()
+    features = features_lib.extract_features(pos, f)
+    return features
+
+
+def make_dataset_from_sgf(sgf_filename, tf_record_fname):
     pwcs = sgf_wrapper.replay_sgf_file(sgf_filename)
     tf_examples = map(_make_tf_example_from_pwc, pwcs)
-    write_tf_examples(tf_record, tf_examples)
+    write_tf_examples(tf_record_fname, tf_examples)
 
 
-def _make_tf_example_from_pwc(position_w_context):
+def _make_tf_example_from_pwc(position_w_context: go.PositionWithContext):
     f = dual_net.get_features()
     features = features_lib.extract_features(position_w_context.position, f)
     pi = _one_hot(coords.to_flat(position_w_context.next_move))

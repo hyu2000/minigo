@@ -47,21 +47,21 @@ _SGF_COLUMNS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
 _GTP_COLUMNS = 'ABCDEFGHJKLMNOPQRSTUVWXYZ'
 
 
-def from_flat(flat):
+def from_flat(flat: int):
     """Converts from a flattened coordinate to a Minigo coordinate."""
     if flat == go.N * go.N:
         return None
     return divmod(flat, go.N)
 
 
-def to_flat(coord):
+def to_flat(coord: tuple) -> int:
     """Converts from a Minigo coordinate to a flattened coordinate."""
     if coord is None:
         return go.N * go.N
     return go.N * coord[0] + coord[1]
 
 
-def from_sgf(sgfc):
+def from_sgf(sgfc: str) -> tuple:
     """Converts from an SGF coordinate to a Minigo coordinate."""
     if sgfc is None or sgfc == '' or (go.N <= 19 and sgfc == 'tt'):
         return None
@@ -91,3 +91,7 @@ def to_gtp(coord):
         return 'pass'
     y, x = coord
     return '{}{}'.format(_GTP_COLUMNS[x], go.N - y)
+
+
+def flat_to_gtp(flat: int):
+    return to_gtp(from_flat(flat))

@@ -32,7 +32,8 @@ import utils
 P = 8
 
 
-def make_onehot(feature, planes):
+def make_onehot(feature, planes: int):
+    """ onehot_features[:,:,i] = 1 iff a point has i+1 liberty """
     onehot_features = np.zeros(feature.shape + (planes,), dtype=np.uint8)
     capped = np.minimum(feature, planes)
     onehot_index_offsets = np.arange(0, utils.product(
@@ -104,6 +105,7 @@ def color_to_play_feature(position):
 
 @planes(3)
 def stone_color_feature(position):
+    """ this feature is from the pov of current player """
     board = position.board
     features = np.zeros([go.N, go.N, 3], dtype=np.uint8)
     if position.to_play == go.BLACK:
@@ -135,6 +137,12 @@ def recent_move_feature(position):
 @planes(P)
 def liberty_feature(position):
     return make_onehot(position.get_liberties(), P)
+
+
+@planes(3)
+def liberty_feature3(position: go.Position):
+    """ liberties for both black/white """
+    return make_onehot(position.get_liberties(), 3)
 
 
 @planes(3)
@@ -186,6 +194,16 @@ MLPERF07_FEATURES = [
 ]
 
 MLPERF07_FEATURES_PLANES = sum(f.planes for f in MLPERF07_FEATURES)
+
+
+""" DLGO sevenplane: black liberties, white liberties, ko violation """
+DLGO_FEATURES = [
+    stone_color_feature,
+    # ones_feature,
+    liberty_feature3,
+    color_to_play_feature
+]
+DLGO_FEATURES_PLANES = sum(f.planes for f in DLGO_FEATURES)
 
 
 def extract_features(position, features):

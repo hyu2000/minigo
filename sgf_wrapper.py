@@ -21,6 +21,8 @@ Most of the complexity here is dealing with two features of SGF:
 - Plays don't necessarily alternate colors; they can be repeated B or W moves
   This feature is used to handle free handicap placement.
 """
+from typing import Tuple, Optional
+
 import numpy as np
 import itertools
 
@@ -29,6 +31,8 @@ import go
 from go import Position, PositionWithContext
 import utils
 import sgf
+from absl import logging
+
 
 SGF_TEMPLATE = '''(;GM[1]FF[4]CA[UTF-8]AP[Minigo_sgfgenerator]RU[{ruleset}]
 SZ[{boardsize}]KM[{komi}]PW[{white_name}]PB[{black_name}]RE[{result}]
@@ -123,8 +127,10 @@ def get_next_move(node):
     props = node.next.properties
     if 'W' in props:
         return coords.from_sgf(props['W'][0])
-    else:
+    elif 'B' in props:
         return coords.from_sgf(props['B'][0])
+    else:
+        raise KeyError('node has no B/W property')
 
 
 def maybe_correct_next(pos, next_node):
@@ -163,6 +169,10 @@ def replay_sgf(sgf_contents):
     pos = Position(komi=komi)
     current_node = root_node
     while pos is not None and current_node.next is not None:
+        if len(current_node.next.properties) == 0:
+            # old sgf may have an empty node at the end
+            assert current_node.next.next is None
+            break
         pos = handle_node(pos, current_node)
         maybe_correct_next(pos, current_node.next)
         next_move = get_next_move(current_node)
@@ -170,7 +180,161 @@ def replay_sgf(sgf_contents):
         current_node = current_node.next
 
 
-def replay_sgf_file(sgf_file):
+def replay_sgf_file(sgf_file: str):
     with open(sgf_file) as f:
-        for pwc in replay_sgf(f.read()):
+        s = f.read()
+        for pwc in replay_sgf(s):
             yield pwc
+
+
+class SGFReader(object):
+    UNKNOWN_MARGIN = 1000
+    MISSING_MARGIN = 2000
+
+    def __init__(self, sgf_contents, name='unknown'):
+        self.root_node = get_sgf_root_node(sgf_contents)
+        self.props = self.root_node.properties
+        self.name = name
+
+        assert int(sgf_prop(self.props.get('GM', ['1']))) == 1, "Not a Go SGF!"
+
+    @staticmethod
+    def from_string(s) -> 'SGFReader':
+        return SGFReader(s)
+
+    @staticmethod
+    def from_file_compatible(fname: str) -> 'SGFReader':
+        with open(fname) as f:
+            s = f.read()
+            return SGFReader.from_string_compatible(s)
+
+    @staticmethod
+    def from_string_compatible(s: str, name='unknown') -> 'SGFReader':
+        """
+        NNGS uses older sgf format. Just need simple conversion
+        """
+        s = s.replace('CoPyright[', 'C[', 1)
+        # this happens in only one game in Pro
+        s = s.replace('MULTIGOGM[', 'C[', 1)
+        # quite some --- at EOF
+        s = s.replace('---', '', -1)
+        return SGFReader(s, name)
+
+    def komi(self) -> float:
+        km_prop = sgf_prop(self.props.get('KM'))
+        if km_prop is None:
+            return 0
+        komi = float(km_prop)
+        return komi
+
+    def board_size(self) -> int:
+        size_str = sgf_prop(self.props.get('SZ'))
+        return int(size_str)
+
+    def not_handicap(self) -> bool:
+        """ HA """
+        handicap = sgf_prop(self.props.get('HA'))
+        if handicap is None or handicap == 0:
+            return True
+        return False
+
+    def num_nodes(self):
+        """ rough estimates of #moves """
+        current_node = self.root_node
+        i = 0
+        while current_node.next is not None:
+            current_node = current_node.next
+            i += 1
+        return i
+
+    def last_pos(self):
+        """ last pos, based on iter_pwcs() """
+        komi = self.komi()
+        pos = Position(komi=komi)
+        current_node = self.root_node
+        i = 0
+        while pos is not None and current_node is not None:
+            try:
+                pos = handle_node(pos, current_node)
+                if current_node.next is not None:
+                    maybe_correct_next(pos, current_node.next)
+            except:
+                logging.exception(f'{self.name} failed iter thru game: step {i}')
+                break
+            current_node = current_node.next
+            i += 1
+        return pos
+
+    def iter_pwcs(self):
+        """ based on replay_sgf: result is black margin now """
+        komi = self.komi()
+        result = self.black_margin_adj(adjust_komi=True)
+        if result is None:
+            result = self.MISSING_MARGIN
+
+        pos = Position(komi=komi)
+        current_node = self.root_node
+        i = 0
+        while pos is not None and current_node.next is not None:
+            if len(current_node.next.properties) == 0:
+                # old sgf may have an empty node at the end
+                assert current_node.next.next is None
+                break
+            try:
+                pos = handle_node(pos, current_node)
+                maybe_correct_next(pos, current_node.next)
+                next_move = get_next_move(current_node)
+                yield PositionWithContext(pos, next_move, result)
+            except:
+                logging.exception(f'{self.name} failed iter thru game: step {i}')
+                break
+            current_node = current_node.next
+            i += 1
+
+    @staticmethod
+    def _parse_result_str(s: str) -> Tuple[int, float]:
+        """ B+R B+2.5 B+T """
+        s = s.upper()
+
+        winner = s[0]
+        result_sign = 0
+        if winner == 'B':
+            result_sign = 1
+        elif winner == 'W':
+            result_sign = -1
+
+        assert s[1] == '+'
+        detail = s[2:]
+        if 'A' <= detail[0] <= 'Z':
+            # most likely Resign or Time
+            return result_sign, SGFReader.UNKNOWN_MARGIN
+        return result_sign, float(detail)
+
+    def result(self) -> int:
+        """ minigo game result: 0 mean no RE """
+        result_str = sgf_prop(self.props.get('RE'))
+        if result_str is None:
+            return 0
+        result_sign, margin = self._parse_result_str(result_str)
+        return result_sign
+
+    def black_margin_adj(self, adjust_komi=False) -> Optional[float]:
+        """ winning margin for black. When adjusted for komi, it's the margin when komi=0
+
+        - no RE record: None
+        - R|T: +/-UNKNOWN_MARGIN
+          Resign can be either large or small, I'd guess large in general.
+        -
+        """
+        result_str = sgf_prop(self.props.get('RE'))
+        if result_str is None:
+            return None
+
+        result_sign, margin = self._parse_result_str(result_str)
+        black_margin = result_sign * margin
+
+        # adjust for komi
+        if adjust_komi and margin != self.UNKNOWN_MARGIN:
+            black_margin += self.komi()
+
+        return black_margin

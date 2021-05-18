@@ -22,13 +22,15 @@ import socket
 import time
 
 from absl import app, flags
-from tensorflow import gfile
+import tensorflow as tf
 
 import coords
-import dual_net
+import k2net as dual_net
 import preprocessing
+from sgf_wrapper import SGFReader
 from strategies import MCTSPlayer
 import utils
+import myconf
 
 flags.DEFINE_string('load_file', None, 'Path to model save files.')
 flags.DEFINE_string('selfplay_dir', None, 'Where to write game data.')
@@ -46,7 +48,7 @@ flags.declare_key_flag('num_readouts')
 FLAGS = flags.FLAGS
 
 
-def play(network):
+def play(network, init_sgf=None):
     """Plays out a self-play match, returning a MCTSPlayer object containing:
         - the final position
         - the n x 362 tensor of floats representing the mcts search probabilities
@@ -62,7 +64,11 @@ def play(network):
 
     player = MCTSPlayer(network, resign_threshold=resign_threshold)
 
-    player.initialize_game()
+    init_position = None
+    if init_sgf:
+        reader = SGFReader.from_file_compatible(init_sgf)
+        init_position = reader.last_pos()
+    player.initialize_game(position=init_position)
 
     # Must run this once at the start to expand the root node.
     first_node = player.root.select_leaf()
@@ -82,13 +88,14 @@ def play(network):
             print(player.root.describe())
 
         if player.should_resign():
-            player.set_result(-1 * player.root.position.to_play,
-                              was_resign=True)
+            pos = player.root.position
+            player.set_result(-1 * pos.to_play, was_resign=True, black_margin_no_komi=-1000 * pos.to_play)
             break
         move = player.pick_move()
         player.play_move(move)
         if player.root.is_done():
-            player.set_result(player.root.position.result(), was_resign=False)
+            pos = player.root.position
+            player.set_result(pos.result(), was_resign=False, black_margin_no_komi=pos.score() + pos.komi)
             break
 
         if (FLAGS.verbose >= 2) or (FLAGS.verbose >= 1 and player.root.position.n % 10 == 9):
@@ -107,7 +114,7 @@ def play(network):
     return player
 
 
-def run_game(load_file, selfplay_dir=None, holdout_dir=None,
+def run_game(load_file, init_sgf=None, selfplay_dir=None, holdout_dir=None,
              sgf_dir=None, holdout_pct=0.05):
     """Takes a played game and record results and game data."""
     if sgf_dir is not None:
@@ -123,14 +130,14 @@ def run_game(load_file, selfplay_dir=None, holdout_dir=None,
         network = dual_net.DualNetwork(load_file)
 
     with utils.logged_timer("Playing game"):
-        player = play(network)
+        player = play(network, init_sgf=init_sgf)
 
     output_name = '{}-{}'.format(int(time.time()), socket.gethostname())
     game_data = player.extract_data()
     if sgf_dir is not None:
-        with gfile.GFile(os.path.join(minimal_sgf_dir, '{}.sgf'.format(output_name)), 'w') as f:
+        with tf.io.gfile.GFile(os.path.join(minimal_sgf_dir, '{}.sgf'.format(output_name)), 'w') as f:
             f.write(player.to_sgf(use_comments=False))
-        with gfile.GFile(os.path.join(full_sgf_dir, '{}.sgf'.format(output_name)), 'w') as f:
+        with tf.io.gfile.GFile(os.path.join(full_sgf_dir, '{}.sgf'.format(output_name)), 'w') as f:
             f.write(player.to_sgf())
 
     tf_examples = preprocessing.make_dataset_from_selfplay(game_data)
@@ -152,12 +159,15 @@ def main(argv):
     del argv  # Unused
     flags.mark_flag_as_required('load_file')
 
+    init_sgf = '/Users/hyu/PycharmProjects/dlgo/9x9/games/Pro/9x9/Minigo/890826.sgf'
+
     run_game(
         load_file=FLAGS.load_file,
+        init_sgf=init_sgf,
         selfplay_dir=FLAGS.selfplay_dir,
         holdout_dir=FLAGS.holdout_dir,
         holdout_pct=FLAGS.holdout_pct,
-        sgf_dir=FLAGS.sgf_dir)
+        sgf_dir=f'{myconf.EXP_HOME}/selfplay')
 
 
 if __name__ == '__main__':

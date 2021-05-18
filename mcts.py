@@ -79,7 +79,7 @@ class MCTSNode(object):
             parent = DummyNode()
         self.parent = parent
         self.fmove = fmove  # move that led to this position, as flattened coords
-        self.position = position
+        self.position = position  # type: go.Position
         self.is_expanded = False
         self.losses_applied = 0  # number of virtual losses on this node
         # using child_() allows vectorized computation of action score.
@@ -112,7 +112,7 @@ class MCTSNode(object):
                 self.child_prior / (1 + self.child_N))
 
     @property
-    def Q(self):
+    def Q(self) -> float:
         return self.W / (1 + self.N)
 
     @property
@@ -132,11 +132,11 @@ class MCTSNode(object):
         self.parent.child_W[self.fmove] = value
 
     @property
-    def Q_perspective(self):
+    def Q_perspective(self) -> float:
         """Return value of position, from perspective of player to play."""
         return self.Q * self.position.to_play
 
-    def select_leaf(self):
+    def select_leaf(self) -> 'MCTSNode':
         current = self
         pass_move = go.N * go.N
         while True:
@@ -188,11 +188,15 @@ class MCTSNode(object):
             return
         self.parent.revert_virtual_loss(up_to)
 
-    def incorporate_results(self, move_probabilities, value, up_to):
+    def incorporate_results(self, move_probabilities, raw_value, up_to):
         assert move_probabilities.shape == (go.N * go.N + 1,)
         # A finished game should not be going through this code path - should
         # directly call backup_value() on the result of the game.
         assert not self.position.is_game_over()
+
+        # raw_value can be margin. normalize it to (-1, 1)
+        # self._raw_margin = raw_value
+        value = np.tanh((raw_value - self.position.komi) / 7.)
 
         # If a node was picked multiple times (despite vlosses), we shouldn't
         # expand it more than once.
@@ -307,6 +311,7 @@ class MCTSNode(object):
         # Dump out some statistics
         output = []
         output.append("{q:.4f}\n".format(q=self.Q))
+        # output.append("Q={q:.4f} m={v:.4f}\n".format(q=self.Q, v=self._raw_margin))
         output.append(self.most_visited_path())
         output.append(
             "move : action    Q     U     P   P-Dir    N  soft-N  p-delta  p-rel")

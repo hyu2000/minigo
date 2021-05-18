@@ -68,10 +68,10 @@ def place_stones(board, color, stones):
         board[s] = color
 
 
-def replay_position(position, result):
+def replay_position(position, result, initial_position=None):
     """
     Wrapper for a go.Position which replays its history.
-    Assumes an empty start position! (i.e. no handicap, and history must be exhaustive.)
+    # Assumes an empty start position! (i.e. no handicap, and history must be exhaustive.)
 
     Result must be passed in, since a resign cannot be inferred from position
     history alone.
@@ -79,9 +79,11 @@ def replay_position(position, result):
     for position_w_context in replay_position(position):
         print(position_w_context.position)
     """
+    pos = initial_position
+    if pos is None:
+        pos = Position(komi=position.komi)
     assert position.n == len(position.recent), "Position history is incomplete"
-    pos = Position(komi=position.komi)
-    for player_move in position.recent:
+    for player_move in position.recent[pos.n:]:
         color, next_move = player_move
         yield PositionWithContext(pos, next_move, result)
         pos = pos.play_move(next_move, color=color)
@@ -285,7 +287,7 @@ class LibertyTracker():
 
 
 class Position():
-    def __init__(self, board=None, n=0, komi=7.5, caps=(0, 0),
+    def __init__(self, board=None, n=0, komi=5.5, caps=(0, 0),
                  lib_tracker=None, ko=None, recent=tuple(),
                  board_deltas=None, to_play=BLACK):
         """

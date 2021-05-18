@@ -16,6 +16,7 @@ from unittest import mock
 import numpy as np
 
 from absl import flags
+from absl.testing import absltest
 
 import coords
 import go
@@ -55,6 +56,16 @@ SEND_TWO_RETURN_ONE = go.Position(
     ko=None,
     recent=(go.PlayerMove(go.BLACK, (0, 1)),
             go.PlayerMove(go.WHITE, (0, 8))),
+    to_play=go.BLACK
+)
+
+ALMOST_DONE_POSITION = go.Position(
+    board=ALMOST_DONE_BOARD,
+    n=70,
+    komi=2.5,
+    caps=(1, 4),
+    ko=None,
+    recent=tuple(),
     to_play=go.BLACK
 )
 
@@ -314,3 +325,25 @@ class TestMCTSPlayer(test_utils.MinigoUnitTest):
         # Result should say White is the winner
         self.assertEqual(go.WHITE, result)
         self.assertEqual("W+R", player.result_string)
+
+    def test_extract_data_from_existing_game(self):
+        # need ALMOST_DONE_POSITION
+        player = initialize_almost_done_player()
+        print(player.root.position)
+        assert player.root.position.n == 70
+        player.tree_search()
+        player.play_move(coords.from_gtp('D9'))
+
+        player.tree_search()
+        player.play_move(None)
+        player.tree_search()
+        player.play_move(None)
+        self.assertTrue(player.root.is_done())
+        player.set_result(player.root.position.result(), was_resign=False)
+
+        data = list(player.extract_data())
+        self.assertEqual(3, len(data))
+
+
+if __name__ == '__main__':
+    absltest.main()

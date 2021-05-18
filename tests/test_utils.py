@@ -42,6 +42,22 @@ def load_board(string):
     return board
 
 
+def print_board(board: np.ndarray):
+    """ Position.__str__ is a bit fancier
+    """
+    player_to_char = {go.BLACK: 'x', go.WHITE: 'o', go.EMPTY: ' '}
+    vmap = np.vectorize(lambda x: player_to_char[x])
+    char_board = vmap(board)
+
+    header = ' ' * 2 + ''.join(['%3d' % x for x in range(board.shape[1])])
+    lines = [header]
+    for i, row in enumerate(char_board):
+        line = '%2d  %s' % (i, '  '.join(row))
+        lines.append(line)
+    s = '\n'.join(lines)
+    print(s)
+
+
 class TestUtils(unittest.TestCase):
     def test_parse_game_result(self):
         self.assertEqual(go.BLACK, utils.parse_game_result('B+3.5'))
