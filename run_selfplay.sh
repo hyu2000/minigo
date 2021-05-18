@@ -1,7 +1,7 @@
 #EXP_HOME=/content
 DRIVE_HOME=/content/drive/MyDrive/dlgo
 
-BOARD_SIZE=9
+export BOARD_SIZE=9
 
 python3 run_endgame.py \
   --verbose=0 \
