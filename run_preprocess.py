@@ -2,7 +2,6 @@
 import itertools
 import random
 from collections import Counter, defaultdict
-from functools import partial
 from typing import List, Iterable
 
 import numpy as np
@@ -10,7 +9,7 @@ import numpy as np
 import preprocessing
 import myconf
 from sgf_wrapper import SGFReader
-from tar_dataset import TarDataSet
+from tar_dataset import GameStore
 from absl import logging
 
 
@@ -50,27 +49,6 @@ class GameStats(object):
 
         qtiles = np.quantile(list(self.dur_counter.elements()), [0.01, 0.25, 0.5, 0.75, 0.99])
         print(qtiles)
-
-
-class GameStore(object):
-    """ easy access to TarDataSet, game_iter, move_iter """
-
-    def __init__(self):
-        data_dir = myconf.DATA_DIR
-        tgz_fname = f'{data_dir}/Pro/9x9.tgz'
-        self.ds_pro = TarDataSet(tgz_fname, handle_old_sgf=True)
-        tgz_fname = f'{data_dir}/top50.tgz'
-        self.ds_top = TarDataSet(tgz_fname)
-        tgz_fname = f'{data_dir}/nngs.tgz'
-        self.ds_nngs = TarDataSet(tgz_fname, check_sgf_suffix=False, handle_old_sgf=True)
-
-        self.all_dss = [self.ds_pro, self.ds_top, self.ds_nngs]
-
-    def game_iter(self, dss: Iterable[TarDataSet], filter_game=False):
-        it = itertools.chain.from_iterable(ds.game_iter() for ds in dss)
-        if filter_game:
-            it = filter(lambda x: TarDataSet.basic_filter(x[1], x[0]), it)
-        return it
 
 
 def summarize():

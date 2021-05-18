@@ -56,7 +56,11 @@ gokif2: no RE
 """
 import itertools
 import tarfile
+from typing import Iterable
+
 from absl import logging
+
+import myconf
 from sgf_wrapper import SGFReader
 
 
@@ -165,3 +169,23 @@ class TarDataSet(object):
                 print(tarinfo.name, "is", tarinfo.size, "bytes in size and is ", end="")
 
         logging.info('total: %s items', total)
+
+
+class GameStore(object):
+    """ easy access to TarDataSet, game_iter, move_iter """
+
+    def __init__(self, data_dir=myconf.DATA_DIR):
+        tgz_fname = f'{data_dir}/pro.tgz'
+        self.ds_pro = TarDataSet(tgz_fname, handle_old_sgf=True)
+        tgz_fname = f'{data_dir}/top50.tgz'
+        self.ds_top = TarDataSet(tgz_fname)
+        tgz_fname = f'{data_dir}/nngs.tgz'
+        self.ds_nngs = TarDataSet(tgz_fname, check_sgf_suffix=False, handle_old_sgf=True)
+
+        self.all_dss = [self.ds_pro, self.ds_top, self.ds_nngs]
+
+    def game_iter(self, dss: Iterable[TarDataSet], filter_game=False):
+        it = itertools.chain.from_iterable(ds.game_iter() for ds in dss)
+        if filter_game:
+            it = filter(lambda x: TarDataSet.basic_filter(x[1], x[0]), it)
+        return it
