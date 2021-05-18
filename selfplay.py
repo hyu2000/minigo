@@ -37,7 +37,7 @@ flags.DEFINE_string('selfplay_dir', None, 'Where to write game data.')
 flags.DEFINE_string('holdout_dir', None, 'Where to write held-out game data.')
 flags.DEFINE_string('sgf_dir', None, 'Where to write human-readable SGFs.')
 flags.DEFINE_float('holdout_pct', 0.05, 'What percent of games to hold out.')
-flags.DEFINE_float('resign_disable_pct', 0.05,
+flags.DEFINE_float('resign_disable_pct', 1.0,
                    'What percent of games to disable resign for.')
 
 # From strategies.py
@@ -160,14 +160,20 @@ def main(argv):
     flags.mark_flag_as_required('load_file')
 
     init_sgf = '/Users/hyu/PycharmProjects/dlgo/9x9/games/Pro/9x9/Minigo/890826.sgf'
+    init_sgf = '/Users/hyu/PycharmProjects/dlgo/9x9/games/Pro/9x9/Minigo/001203.sgf'
+    init_sgf = None
 
     run_game(
         load_file=FLAGS.load_file,
         init_sgf=init_sgf,
         selfplay_dir=FLAGS.selfplay_dir,
         holdout_dir=FLAGS.holdout_dir,
-        holdout_pct=FLAGS.holdout_pct,
-        sgf_dir=f'{myconf.EXP_HOME}/selfplay')
+        # selfplay_dir=f'{myconf.EXP_HOME}/selfplay/tfdata',
+        # holdout_dir= f'{myconf.EXP_HOME}/selfplay/tfdata',
+        holdout_pct=0.0,
+        # sgf_dir=f'{myconf.SELFPLAY_DIR}'
+        sgf_dir=FLAGS.sgf_dir
+    )
 
 
 if __name__ == '__main__':
