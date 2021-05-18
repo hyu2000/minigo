@@ -25,6 +25,7 @@ from absl import app, flags
 import tensorflow as tf
 
 import coords
+import go
 import k2net as dual_net
 import preprocessing
 from sgf_wrapper import SGFReader
@@ -37,7 +38,7 @@ flags.DEFINE_string('selfplay_dir', None, 'Where to write game data.')
 flags.DEFINE_string('holdout_dir', None, 'Where to write held-out game data.')
 flags.DEFINE_string('sgf_dir', None, 'Where to write human-readable SGFs.')
 flags.DEFINE_float('holdout_pct', 0.05, 'What percent of games to hold out.')
-flags.DEFINE_float('resign_disable_pct', 1.0,
+flags.DEFINE_float('resign_disable_pct', 0.05,
                    'What percent of games to disable resign for.')
 
 # From strategies.py
@@ -48,7 +49,7 @@ flags.declare_key_flag('num_readouts')
 FLAGS = flags.FLAGS
 
 
-def play(network, init_sgf=None):
+def play(network, init_position=None):
     """Plays out a self-play match, returning a MCTSPlayer object containing:
         - the final position
         - the n x 362 tensor of floats representing the mcts search probabilities
@@ -64,10 +65,6 @@ def play(network, init_sgf=None):
 
     player = MCTSPlayer(network, resign_threshold=resign_threshold)
 
-    init_position = None
-    if init_sgf:
-        reader = SGFReader.from_file_compatible(init_sgf)
-        init_position = reader.last_pos()
     player.initialize_game(position=init_position)
 
     # Must run this once at the start to expand the root node.
@@ -114,8 +111,8 @@ def play(network, init_sgf=None):
     return player
 
 
-def run_game(load_file, init_sgf=None, selfplay_dir=None, holdout_dir=None,
-             sgf_dir=None, holdout_pct=0.05):
+def run_game(dnn, init_position: go.Position=None, selfplay_dir=None, holdout_dir=None,
+             sgf_dir=None, holdout_pct=0.05) -> MCTSPlayer:
     """Takes a played game and record results and game data."""
     if sgf_dir is not None:
         minimal_sgf_dir = os.path.join(sgf_dir, 'clean')
@@ -126,11 +123,8 @@ def run_game(load_file, init_sgf=None, selfplay_dir=None, holdout_dir=None,
         utils.ensure_dir_exists(selfplay_dir)
         utils.ensure_dir_exists(holdout_dir)
 
-    with utils.logged_timer("Loading weights from %s ... " % load_file):
-        network = dual_net.DualNetwork(load_file)
-
     with utils.logged_timer("Playing game"):
-        player = play(network, init_sgf=init_sgf)
+        player = play(dnn, init_position=init_position)
 
     output_name = '{}-{}'.format(int(time.time()), socket.gethostname())
     game_data = player.extract_data()
@@ -153,6 +147,8 @@ def run_game(load_file, init_sgf=None, selfplay_dir=None, holdout_dir=None,
 
         preprocessing.write_tf_examples(fname, tf_examples)
 
+    return player
+
 
 def main(argv):
     """Entry point for running one selfplay game."""
@@ -163,9 +159,18 @@ def main(argv):
     init_sgf = '/Users/hyu/PycharmProjects/dlgo/9x9/games/Pro/9x9/Minigo/001203.sgf'
     init_sgf = None
 
+    init_position = None
+    if init_sgf:
+        reader = SGFReader.from_file_compatible(init_sgf)
+        init_position = reader.last_pos()
+
+    load_file = f'{myconf.MODELS_DIR}/model3_epoch_5.h5'
+    with utils.logged_timer("Loading weights from %s ... " % load_file):
+        network = dual_net.DualNetwork(load_file)
+
     run_game(
-        load_file=FLAGS.load_file,
-        init_sgf=init_sgf,
+        network,
+        init_position=init_position,
         selfplay_dir=FLAGS.selfplay_dir,
         holdout_dir=FLAGS.holdout_dir,
         # selfplay_dir=f'{myconf.EXP_HOME}/selfplay/tfdata',
