@@ -207,6 +207,14 @@ class TestReader(test_utils.MinigoUnitTest):
         pwcs = [x for x in reader.iter_pwcs()]
         logging.info('Found %d moves(pwc)', len(pwcs))
 
+    def test_skip_final_pass(self):
+        """ """
+        sgf = '/Users/hyu/PycharmProjects/dlgo/9x9/games/Pro/9x9/computer/OZ2.sgf'
+        reader = SGFReader.from_file_compatible(sgf)
+        last_pos = reader.last_pos()
+        last_pos_ignore_pass = reader.last_pos(ignore_final_pass=True)
+        assert last_pos_ignore_pass.n + 2 == last_pos.n
+
 
 if __name__ == '__main__':
     unittest.main()

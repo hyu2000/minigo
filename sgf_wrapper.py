@@ -261,7 +261,7 @@ class SGFReader(object):
                 pos = handle_node(pos, current_node)
                 if current_node.next is not None:
                     maybe_correct_next(pos, current_node.next)
-                if len(pos.recent) >= 1 and pos.recent[-1] is not None:
+                if len(pos.recent) >= 1 and pos.recent[-1].move is not None:
                     last_pos_before_pass = pos
             except:
                 logging.exception(f'{self.name} failed iter thru game: step {i}')
