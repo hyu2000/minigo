@@ -90,6 +90,12 @@ def compile_dual():
     return model
 
 
+def load_model(fname):
+    model = compile_dual()
+    model.load_weights(fname)
+    return model
+
+
 def test_save_model():
     """
     h5 is old keras full model format (rather than the TF full model format)
@@ -109,9 +115,7 @@ def test_save_model():
 def test_update_model():
     """ load existing weights, but change model config"""
     fname = f'{myconf.EXP_HOME}/checkpoints/model3_epoch_5.h5'
-
-    model = compile_dual()
-    model.load_weights(fname)
+    model = load_model(fname)
     model.save(f'{myconf.EXP_HOME}/checkpoints/model3_epoch_5.new.h5')
 
 
