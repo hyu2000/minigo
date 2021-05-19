@@ -55,6 +55,7 @@ gokif2: no RE
 
 """
 import itertools
+import random
 import tarfile
 from typing import Iterable
 
@@ -104,9 +105,11 @@ class TarDataSet(object):
         else:
             return SGFReader.from_string(sgf_content)
 
-    def game_iter(self):
+    def game_iter(self, shuffle=False):
         """ generator -> game_id, SGFReader """
         name_list = self._tarfile.getnames()
+        if shuffle:
+            random.shuffle(name_list)
         total, total_used = 0, 0
         for game_id in name_list:
             total += 1
@@ -184,8 +187,8 @@ class GameStore(object):
 
         self.all_dss = [self.ds_pro, self.ds_top, self.ds_nngs]
 
-    def game_iter(self, dss: Iterable[TarDataSet], filter_game=False):
-        it = itertools.chain.from_iterable(ds.game_iter() for ds in dss)
+    def game_iter(self, dss: Iterable[TarDataSet], filter_game=False, shuffle=False):
+        it = itertools.chain.from_iterable(ds.game_iter(shuffle=shuffle) for ds in dss)
         if filter_game:
             it = filter(lambda x: TarDataSet.basic_filter(x[1], x[0]), it)
         return it
