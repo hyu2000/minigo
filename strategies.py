@@ -122,7 +122,6 @@ class MCTSPlayer(MCTSPlayerInterface):
         self.searches_pi = []
         # keep track of where in the game MCTS gets involved
         self.init_position = position
-        self.init_root = self.root  # TODO remove
 
     def suggest_move(self, position):
         """Used for playing a single game.
