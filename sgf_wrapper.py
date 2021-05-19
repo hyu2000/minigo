@@ -247,10 +247,13 @@ class SGFReader(object):
             i += 1
         return i
 
-    def last_pos(self):
-        """ last pos, based on iter_pwcs() """
+    def last_pos(self, ignore_final_pass=False) -> go.Position:
+        """ last pos, based on iter_pwcs()
+        ignore_final_pass: when a game ended with single or two passes, return the position before that
+        """
         komi = self.komi()
         pos = Position(komi=komi)
+        last_pos_before_pass = pos
         current_node = self.root_node
         i = 0
         while pos is not None and current_node is not None:
@@ -258,12 +261,18 @@ class SGFReader(object):
                 pos = handle_node(pos, current_node)
                 if current_node.next is not None:
                     maybe_correct_next(pos, current_node.next)
+                if len(pos.recent) >= 1 and pos.recent[-1] is not None:
+                    last_pos_before_pass = pos
             except:
                 logging.exception(f'{self.name} failed iter thru game: step {i}')
                 break
             current_node = current_node.next
             i += 1
-        return pos
+
+        if ignore_final_pass:
+            return last_pos_before_pass
+        else:
+            return pos
 
     def iter_pwcs(self):
         """ based on replay_sgf: result is black margin now """

@@ -22,7 +22,7 @@ def play_endgame():
     model_file = FLAGS.load_file
     network = dual_net.DualNetwork(model_file)
     for i, (game_id, reader) in enumerate(game_iter):
-        pos = reader.last_pos()
+        pos = reader.last_pos(ignore_final_pass=True)
 
         _, val0 = network.run(pos)
         if True:
