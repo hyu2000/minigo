@@ -36,8 +36,9 @@ def play_endgame():
             margin_rec = reader.black_margin_adj(adjust_komi=True)
             final_pos = player.root.position
             _, val1 = network.run(final_pos)
-            logging.info(f'scoring {game_id}: RE=%.1f vs %.1f {pos.n} => {final_pos.n} \t%.1f %.1f',
-                         margin_rec, margin_est, val0, val1)
+            final_q = player.root.Q
+            logging.info(f'scoring {game_id}: RE=( %.1f %.1f ) vs %.1f \t{pos.n} => {final_pos.n} \t%.1f %.1f %.2f',
+                         reader.komi(), margin_rec, margin_est, val0, val1, final_q)
 
 
 def main(argv):

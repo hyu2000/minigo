@@ -9,7 +9,7 @@ python3 run_endgame.py \
   --selfplay_dir="${DRIVE_HOME}/selfplay/train" \
   --holdout_dir="${DRIVE_HOME}/selfplay/val" \
   --sgf_dir="${DRIVE_HOME}/selfplay/sgf" \
-  --num_readouts=400 \
+  --num_readouts=200 \
   --parallel_readouts=32 \
   --load_file="${DRIVE_HOME}/checkpoints/model3_epoch_5.h5"
   2>&1 | tee "${DRIVE_HOME}/run_endgame.log"
