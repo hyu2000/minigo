@@ -8,9 +8,7 @@ import os.path
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
-from pprint import pprint
-from absl import logging
-import utils
+from absl import logging, flags
 import go
 import myconf
 import k2net as dual_net
@@ -88,7 +86,7 @@ def compile_dual():
                       # 'value': custom_value_accuracy,
                       # 'value':  MyBinaryAccuracy(name="vacc")
                   })
-    model.summary()
+    # model.summary()
     return model
 
 
@@ -103,6 +101,7 @@ def test_save_model():
     fname = f'{FEATURES_DIR}/dualnet.0.h5'
 
     model = compile_dual()
+    model.summary()
     model.save(fname)
     logging.info('initial model saved to %s', fname)
 
@@ -182,6 +181,20 @@ def load_dataset(file_pattern: str):
 
     # filenames = [f'{myconf.FEATURES_DIR}/pro.tfexamples']
     filenames = tf.data.Dataset.list_files(f'{FEATURES_DIR}/{file_pattern}.tfexamples')
+    dataset = tf.data.TFRecordDataset(
+        filenames,
+        compression_type='ZLIB'
+    )  # automatically interleaves reads from multiple files
+    dataset = dataset.batch(BATCH_READ_SIZE).map(
+        read_tfrecord, num_parallel_calls=tf.data.experimental.AUTOTUNE
+    ).unbatch()
+    return dataset
+
+
+def load_selfplay_data(selfplay_dir: str):
+    BATCH_READ_SIZE = 64
+
+    filenames = tf.data.Dataset.list_files(f'{selfplay_dir}/*.tfrecord.zz')
     dataset = tf.data.TFRecordDataset(
         filenames,
         compression_type='ZLIB'
