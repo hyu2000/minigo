@@ -1,4 +1,5 @@
 """ selfplay on endgames """
+import numpy as np
 import myconf
 from selfplay import run_game
 from tar_dataset import GameStore
@@ -36,6 +37,8 @@ def play_endgames(start_idx=0):
                               )
             margin_est = player.black_margin_no_komi
             margin_rec = reader.black_margin_adj(adjust_komi=True)
+            if margin_rec is None:
+                margin_rec = np.nan
             final_pos = player.root.position
             _, val1 = network.run(final_pos)
             final_q = player.root.Q
