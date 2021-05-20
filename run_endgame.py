@@ -26,7 +26,7 @@ def play_endgame():
 
         _, val0 = network.run(pos)
         if True:
-            player = run_game(network, init_position=pos,
+            player = run_game(network, init_position=pos, game_id=game_id,
                               selfplay_dir=FLAGS.selfplay_dir,
                               holdout_dir=FLAGS.holdout_dir,
                               holdout_pct=FLAGS.holdout_pct,

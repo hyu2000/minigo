@@ -111,7 +111,8 @@ def play(network, init_position=None):
     return player
 
 
-def run_game(dnn, init_position: go.Position=None, selfplay_dir=None, holdout_dir=None,
+def run_game(dnn, init_position: go.Position=None, game_id=None,
+             selfplay_dir=None, holdout_dir=None,
              sgf_dir=None, holdout_pct=0.05) -> MCTSPlayer:
     """Takes a played game and record results and game data."""
     if sgf_dir is not None:
@@ -129,9 +130,10 @@ def run_game(dnn, init_position: go.Position=None, selfplay_dir=None, holdout_di
     output_name = '{}-{}'.format(int(time.time()), socket.gethostname())
     game_data = player.extract_data()
     if sgf_dir is not None:
-        with tf.io.gfile.GFile(os.path.join(minimal_sgf_dir, '{}.sgf'.format(output_name)), 'w') as f:
+        sgf_name = os.path.splitext(os.path.basename(game_id))[0] if game_id else output_name
+        with tf.io.gfile.GFile(os.path.join(minimal_sgf_dir, '{}.sgf'.format(sgf_name)), 'w') as f:
             f.write(player.to_sgf(use_comments=False))
-        with tf.io.gfile.GFile(os.path.join(full_sgf_dir, '{}.sgf'.format(output_name)), 'w') as f:
+        with tf.io.gfile.GFile(os.path.join(full_sgf_dir, '{}.sgf'.format(sgf_name)), 'w') as f:
             f.write(player.to_sgf())
 
     tf_examples = preprocessing.make_dataset_from_selfplay(game_data)
@@ -155,29 +157,30 @@ def main(argv):
     del argv  # Unused
     flags.mark_flag_as_required('load_file')
 
+    # one dead white group (1 eye); two empty spots
     init_sgf = '/Users/hyu/PycharmProjects/dlgo/9x9/games/Pro/9x9/Minigo/890826.sgf'
-    init_sgf = '/Users/hyu/PycharmProjects/dlgo/9x9/games/Pro/9x9/Minigo/001203.sgf'
-    init_sgf = None
+    # init_sgf = '/Users/hyu/PycharmProjects/dlgo/9x9/games/Pro/9x9/Minigo/001203.sgf'
+    init_sgf = '/Users/hyu/PycharmProjects/dlgo/9x9/games/tmp/2.sgf'
 
     init_position = None
     if init_sgf:
         reader = SGFReader.from_file_compatible(init_sgf)
-        init_position = reader.last_pos()
+        init_position = reader.last_pos(ignore_final_pass=True)
 
-    load_file = f'{myconf.MODELS_DIR}/model3_epoch_5.h5'
+    load_file = f'{myconf.MODELS_DIR}/endgame_epoch_3.h5'
     with utils.logged_timer("Loading weights from %s ... " % load_file):
         network = dual_net.DualNetwork(load_file)
 
     run_game(
         network,
-        init_position=init_position,
+        init_position=init_position, game_id=init_sgf,
         selfplay_dir=FLAGS.selfplay_dir,
         holdout_dir=FLAGS.holdout_dir,
         # selfplay_dir=f'{myconf.EXP_HOME}/selfplay/tfdata',
         # holdout_dir= f'{myconf.EXP_HOME}/selfplay/tfdata',
         holdout_pct=0.0,
-        # sgf_dir=f'{myconf.SELFPLAY_DIR}'
-        sgf_dir=FLAGS.sgf_dir
+        sgf_dir=f'{myconf.SELFPLAY_DIR}'
+        # sgf_dir=FLAGS.sgf_dir
     )
 
 
