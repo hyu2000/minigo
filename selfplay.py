@@ -130,7 +130,9 @@ def run_game(dnn, init_position: go.Position=None, game_id=None,
     output_name = '{}-{}'.format(int(time.time()), socket.gethostname())
     game_data = player.extract_data()
     if sgf_dir is not None:
-        sgf_name = os.path.splitext(os.path.basename(game_id))[0] if game_id else output_name
+        sgf_name = output_name
+        if game_id:
+            sgf_name = '{}-{}'.format(os.path.splitext(os.path.basename(game_id))[0], int(time.time()))
         with tf.io.gfile.GFile(os.path.join(minimal_sgf_dir, '{}.sgf'.format(sgf_name)), 'w') as f:
             f.write(player.to_sgf(use_comments=False))
         with tf.io.gfile.GFile(os.path.join(full_sgf_dir, '{}.sgf'.format(sgf_name)), 'w') as f:
@@ -160,6 +162,7 @@ def main(argv):
     # one dead white group (1 eye); two empty spots
     init_sgf = '/Users/hyu/PycharmProjects/dlgo/9x9/games/Pro/9x9/Minigo/890826.sgf'
     # init_sgf = '/Users/hyu/PycharmProjects/dlgo/9x9/games/Pro/9x9/Minigo/001203.sgf'
+    # W+3.5: well defined. only J9 up for grab, but black needs to protect G8 first. Also no need for B:D2
     init_sgf = '/Users/hyu/PycharmProjects/dlgo/9x9/games/tmp/2.sgf'
 
     init_position = None
