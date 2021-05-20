@@ -505,7 +505,9 @@ class Position():
                 self.recent[-2].move is None)
 
     def score(self):
-        'Return score from B perspective. If W is winning, score is negative.'
+        """Return score from B perspective. If W is winning, score is negative.
+        score = 0 could happen if komi is integer
+        """
         working_board = np.copy(self.board)
         while EMPTY in working_board:
             unassigned_spaces = np.where(working_board == EMPTY)

@@ -271,7 +271,7 @@ class MCTSPlayer(MCTSPlayerInterface):
 
     def extract_data(self):
         assert len(self.searches_pi) == self.root.position.n - self.init_position.n
-        assert self.result != 0
+        # assert self.result != 0
         result = self.black_margin_no_komi
         assert result is not None
         for pwc, pi in zip(go.replay_position(self.root.position, result, initial_position=self.init_position),
