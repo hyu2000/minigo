@@ -7,6 +7,18 @@ For simplicity, just look at win/loss accuracy (since many games has no margin r
 - accuracy at different game stages: every 10 moves?
 - also run Tromp scoring for comparison
 - win/loss accuracy after MCTS search on final position
+
+Pro:
+I0525 14:10:27.492900 4547440128 eval_vnet.py:63] Total 462 games, final acc: Tromp 0.51, vnet 0.62
+	Count [' 462', ' 462', ' 461', ' 416', ' 302', ' 159', '  53', '  15', '   5']
+	Tromp ['0.53', '0.53', '0.53', '0.52', '0.53', '0.53', '0.47', '0.47', '0.40']
+	vnet  ['0.53', '0.52', '0.55', '0.59', '0.61', '0.65', '0.62', '0.60', '0.60']
+
+Top50 (random 500)
+[' 500', ' 500', ' 500', ' 495', ' 445', ' 344', ' 201', '  73', '  26', '   9', '   1'],
+['0.53', '0.53', '0.53', '0.53', '0.49', '0.51', '0.55', '0.56', '0.54', '0.67', '1.00'],
+['0.53', '0.54', '0.57', '0.58', '0.60', '0.62', '0.63', '0.63', '0.69', '0.89', '1.00'])
+
 """
 from typing import List
 
@@ -58,7 +70,8 @@ class ScoreStats(object):
                      self.num_games, self.tromp_final / self.num_games, self.vnet_final / self.num_games)
         max_steps = (self.total_counters > 0).sum()
         total_counts = self.total_counters[:max_steps]
-        logging.info('By turns:\n\tTromp %s\n\tvnet  %s',
+        logging.info('By turns:\n\tCount %s\n\tTromp %s\n\tvnet  %s\n',
+                     ['%4d' % x for x in total_counts],
                      ['%.2f' % x for x in self.tromp_counters[:max_steps] / total_counts],
                      ['%.2f' % x for x in self.vnet_counters[ :max_steps] / total_counts])
 
@@ -95,7 +108,7 @@ def run_games(start_idx=0):
     """
     # store = GameStore(data_dir=FLAGS.tar_dir)
     store = GameStore(data_dir=f'{myconf.DATA_DIR}')
-    game_iter = store.game_iter([store.ds_pro, store.ds_top], filter_game=True)
+    game_iter = store.game_iter([store.ds_pro], filter_game=True, shuffle=True)
 
     # model_file = FLAGS.load_file
     model_file = f'{myconf.MODELS_DIR}/model3_epoch_5.h5'
@@ -106,8 +119,7 @@ def run_games(start_idx=0):
             continue
 
         run_game(network, game_id, reader, stats)
-        # if game_idx > 3:
-        #     break
+        if stats.num_games >= 500: break
     stats.report()
 
 
