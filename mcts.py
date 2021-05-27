@@ -137,12 +137,18 @@ class MCTSNode(object):
         return self.Q * self.position.to_play
 
     def select_leaf(self) -> 'MCTSNode':
+        """ select a leaf for evaluation/expansion
+        """
         current = self
         pass_move = go.N * go.N
         while True:
             # if a node has never been evaluated, we have no basis to select a child.
             if not current.is_expanded:
                 break
+            # if current.is_done():
+            #     logging.warning('select_leaf: not expanding node.is_done()')
+            # still search so we can evaluate even after pass-pass
+
             # HACK: if last move was a pass, always investigate double-pass first
             # to avoid situations where we auto-lose by passing too early.
             if (current.position.recent and

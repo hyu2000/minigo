@@ -200,11 +200,11 @@ class MCTSPlayer(MCTSPlayerInterface):
             leaf = self.root.select_leaf()
             if self.verbosity >= 4:
                 dbg(self.show_path_to_root(leaf))
-            # if game is over, override the value estimate with the true score
-            if leaf.is_done():
-                value = 1 if leaf.position.score() > 0 else -1
-                leaf.backup_value(value, up_to=self.root)
-                continue
+            # # if game is over, override the value estimate with the true score
+            # if leaf.is_done():
+            #     value = 1 if leaf.position.score() > 0 else -1
+            #     leaf.backup_value(value, up_to=self.root)
+            #     continue
             leaf.add_virtual_loss(up_to=self.root)
             leaves.append(leaf)
         if leaves:
