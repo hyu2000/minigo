@@ -8,6 +8,7 @@ For simplicity, just look at win/loss accuracy (since many games has no margin r
 - also run Tromp scoring for comparison
 - win/loss accuracy after MCTS search on final position
 """
+from strategies import MCTSPlayer
 
 """  Result:
 Pro:
@@ -53,6 +54,7 @@ class ScoreStats(object):
         self.num_games = 0
         self.tromp_final = 0
         self.vnet_final  = 0
+        self.mcts_final  = 0
         self.tromp_counters = np.zeros(NUM_TURNS_COUNTED)
         self.vnet_counters  = np.zeros(NUM_TURNS_COUNTED)
         self.total_counters = np.zeros(NUM_TURNS_COUNTED)
@@ -63,7 +65,7 @@ class ScoreStats(object):
         assert len(arr.shape) == 1 and pad_right >= 0
         return np.pad(arr, [(0, pad_right)], constant_values=const_val)
 
-    def add_game(self, win_loss: int, tromp_final: int, vnet_final: int,
+    def add_game(self, win_loss: int, mcts_final: int, tromp_final: int, vnet_final: int,
                  tromp_binary_by_turns: List[int], vnet_binary_by_turns: List[int]):
         assert len(tromp_binary_by_turns) <= NUM_TURNS_COUNTED
         self.num_games += 1
@@ -74,16 +76,36 @@ class ScoreStats(object):
         self.total_counters += self._pad_np_1darray(np.ones(num_steps), NUM_TURNS_COUNTED)
         self.tromp_final += tromp_final == win_loss
         self.vnet_final  +=  vnet_final == win_loss
+        self.mcts_final  +=  mcts_final == win_loss
 
     def report(self):
-        logging.info('Total %d games, final acc: Tromp %.2f, vnet %.2f',
-                     self.num_games, self.tromp_final / self.num_games, self.vnet_final / self.num_games)
+        logging.info('Total %d games, final acc: Tromp %.2f, vnet %.2f, mcts %.2f',
+                     self.num_games, self.tromp_final / self.num_games,
+                     self.vnet_final / self.num_games, self.mcts_final / self.num_games)
         max_steps = (self.total_counters > 0).sum()
         total_counts = self.total_counters[:max_steps]
         logging.info('By turns:\n\tCount %s\n\tTromp %s\n\tvnet  %s\n',
                      ['%4d' % x for x in total_counts],
                      ['%.2f' % x for x in self.tromp_counters[:max_steps] / total_counts],
                      ['%.2f' % x for x in self.vnet_counters[ :max_steps] / total_counts])
+
+
+def run_tree_search(network, init_position):
+    NUM_READOUTS = 200
+
+    player = MCTSPlayer(network, resign_threshold=-1)  # no resign
+    player.initialize_game(position=init_position)
+
+    # Must run this once at the start to expand the root node.
+    first_node = player.root.select_leaf()
+    prob, val = network.run(first_node.position)
+    first_node.incorporate_results(prob, val, first_node)
+
+    while player.root.N < NUM_READOUTS:
+        player.tree_search()
+
+    q = player.root.Q
+    return np.sign(q - 0.5)
 
 
 def run_game(network, game_id, reader: SGFReader, stats: ScoreStats):
@@ -101,6 +123,7 @@ def run_game(network, game_id, reader: SGFReader, stats: ScoreStats):
             pos_to_eval.append(position)
     # last position
     pos_to_eval.append(pwc.position)
+    mcts_binary = run_tree_search(network, pwc.position)
 
     tromp_scores = [p.score() for p in pos_to_eval]
     tromp_binary = [np.sign(s) for s in tromp_scores]
@@ -110,7 +133,7 @@ def run_game(network, game_id, reader: SGFReader, stats: ScoreStats):
 
     tromp_final = tromp_binary.pop()
     vnet_final  = vnet_binary.pop()
-    stats.add_game(win_loss, tromp_final, vnet_final, tromp_binary, vnet_binary)
+    stats.add_game(win_loss, mcts_binary, tromp_final, vnet_final, tromp_binary, vnet_binary)
 
 
 def run_games(start_idx=0):
@@ -118,7 +141,7 @@ def run_games(start_idx=0):
     """
     # store = GameStore(data_dir=FLAGS.tar_dir)
     store = GameStore(data_dir=f'{myconf.DATA_DIR}')
-    game_iter = store.game_iter([store.ds_pro], filter_game=True, shuffle=True)
+    game_iter = store.game_iter([store.ds_nngs], filter_game=True, shuffle=True)
 
     # model_file = FLAGS.load_file
     model_file = f'{myconf.MODELS_DIR}/model3_epoch_5.h5'
@@ -129,7 +152,10 @@ def run_games(start_idx=0):
             continue
 
         run_game(network, game_id, reader, stats)
-        if stats.num_games >= 500: break
+        if stats.num_games >= 200: break
+        if stats.num_games % 10 == 0:
+            print('.', end='')
+    print()
     stats.report()
 
 
