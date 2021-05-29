@@ -91,6 +91,8 @@ class MCTSNode(object):
         self.child_prior = np.zeros([go.N * go.N + 1], dtype=np.float32)
         self.children = {}  # map of flattened moves to resulting MCTSNode
 
+        self.raw_margin = np.nan
+
     def __repr__(self):
         return "<MCTSNode move=%s, N=%s, to_play=%s>" % (
             self.position.recent[-1:], self.N, self.position.to_play)
@@ -106,10 +108,8 @@ class MCTSNode(object):
 
     @property
     def child_U(self):
-        return ((2.0 * (math.log(
-                (1.0 + self.N + FLAGS.c_puct_base) / FLAGS.c_puct_base)
-                       + FLAGS.c_puct_init)) * math.sqrt(max(1, self.N - 1)) *
-                self.child_prior / (1 + self.child_N))
+        return (math.log((1.0 + self.N + FLAGS.c_puct_base) / FLAGS.c_puct_base) + FLAGS.c_puct_init) * \
+               2.0 * math.sqrt(max(1, self.N - 1)) * self.child_prior / (1 + self.child_N)
 
     @property
     def Q(self) -> float:
@@ -201,8 +201,9 @@ class MCTSNode(object):
         # assert not self.position.is_game_over()
 
         # raw_value can be margin. normalize it to (-1, 1)
-        # self._raw_margin = raw_value
-        value = np.tanh((raw_value - self.position.komi) / 7.)
+        self.raw_margin = raw_value
+        # value = np.tanh((raw_value - self.position.komi) / 7.)
+        value = np.sign(raw_value - self.position.komi)
 
         # If a node was picked multiple times (despite vlosses), we shouldn't
         # expand it more than once.
@@ -316,8 +317,8 @@ class MCTSNode(object):
             p_delta), where=prior != 0)
         # Dump out some statistics
         output = []
-        output.append("{q:.4f}\n".format(q=self.Q))
-        # output.append("Q={q:.4f} m={v:.4f}\n".format(q=self.Q, v=self._raw_margin))
+        # output.append("{q:.4f}\n".format(q=self.Q))
+        output.append("Q={q:.4f} m={v:.4f}\n".format(q=self.Q, v=self.raw_margin))
         output.append(self.most_visited_path())
         output.append(
             "move : action    Q     U     P   P-Dir    N  soft-N  p-delta  p-rel")

@@ -22,6 +22,7 @@ import socket
 import time
 
 from absl import app, flags
+import numpy as np
 import tensorflow as tf
 
 import coords
@@ -92,7 +93,9 @@ def play(network, init_position=None):
         player.play_move(move)
         if player.root.is_done():
             pos = player.root.position
-            player.set_result(pos.result(), was_resign=False, black_margin_no_komi=pos.score() + pos.komi)
+            raw_margin = player.root.raw_margin
+            assert not np.isnan(raw_margin)
+            player.set_result(np.sign(raw_margin - pos.komi), was_resign=False, black_margin_no_komi=raw_margin)
             break
 
         if (FLAGS.verbose >= 2) or (FLAGS.verbose >= 1 and player.root.position.n % 10 == 9):

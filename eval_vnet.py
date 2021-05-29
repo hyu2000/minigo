@@ -13,6 +13,7 @@ from strategies import MCTSPlayer
 """  Result:
 Pro:
 I0525 14:10:27.492900 4547440128 eval_vnet.py:63] Total 462 games, final acc: Tromp 0.51, vnet 0.62
+ position.n    0      10      20      30      40      50      60      70      80
 	Count [' 462', ' 462', ' 461', ' 416', ' 302', ' 159', '  53', '  15', '   5']
 	Tromp ['0.53', '0.53', '0.53', '0.52', '0.53', '0.53', '0.47', '0.47', '0.40']
 	vnet  ['0.53', '0.52', '0.55', '0.59', '0.61', '0.65', '0.62', '0.60', '0.60']
@@ -122,8 +123,10 @@ def run_game(network, game_id, reader: SGFReader, stats: ScoreStats):
         if position.n % 10 == 0:
             pos_to_eval.append(position)
     # last position
-    pos_to_eval.append(pwc.position)
-    mcts_binary = run_tree_search(network, pwc.position)
+    position = pwc.position
+    # position = pos_to_eval[2]
+    pos_to_eval.append(position)
+    mcts_binary = run_tree_search(network, position)
 
     tromp_scores = [p.score() for p in pos_to_eval]
     tromp_binary = [np.sign(s) for s in tromp_scores]
