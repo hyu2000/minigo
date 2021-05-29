@@ -21,7 +21,7 @@ AlphaGo (AG) paper.
 import collections
 import math
 
-from absl import flags
+from absl import flags, logging
 import numpy as np
 
 import coords
@@ -145,10 +145,8 @@ class MCTSNode(object):
             # if a node has never been evaluated, we have no basis to select a child.
             if not current.is_expanded:
                 break
-            # if current.is_done():
-            #     logging.warning('select_leaf: not expanding node.is_done()')
-            # still search so we can evaluate even after pass-pass
 
+            # hyu: don't understand this hack
             # HACK: if last move was a pass, always investigate double-pass first
             # to avoid situations where we auto-lose by passing too early.
             if (current.position.recent and
@@ -195,6 +193,7 @@ class MCTSNode(object):
         self.parent.revert_virtual_loss(up_to)
 
     def incorporate_results(self, move_probabilities, raw_value, up_to):
+        """ this expands the current node, if not already """
         assert move_probabilities.shape == (go.N * go.N + 1,)
         # A finished game should not be going through this code path - should
         # directly call backup_value() on the result of the game.

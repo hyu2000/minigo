@@ -212,7 +212,12 @@ class MCTSPlayer(MCTSPlayerInterface):
                 [leaf.position for leaf in leaves])
             for leaf, move_prob, value in zip(leaves, move_probs, values):
                 leaf.revert_virtual_loss(up_to=self.root)
-                leaf.incorporate_results(move_prob, value, up_to=self.root)
+                if leaf.is_done():
+                    leaf.raw_margin = value
+                    win_loss = np.sign(value - leaf.position.komi)
+                    leaf.backup_value(win_loss, up_to=self.root)
+                else:
+                    leaf.incorporate_results(move_prob, value, up_to=self.root)
         return leaves
 
     def show_path_to_root(self, node):
