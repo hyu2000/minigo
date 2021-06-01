@@ -162,18 +162,20 @@ def main(argv):
     del argv  # Unused
     flags.mark_flag_as_required('load_file')
 
-    # one dead white group (1 eye); two empty spots
+    # B+0.5, KM5.5 (B+1.5 by Chinese scoring): one dead white group (1 eye); two empty spots
     init_sgf = '/Users/hyu/PycharmProjects/dlgo/9x9/games/Pro/9x9/Minigo/890826.sgf'
     # init_sgf = '/Users/hyu/PycharmProjects/dlgo/9x9/games/Pro/9x9/Minigo/001203.sgf'
     # W+3.5: well defined. only J9 up for grab, but black needs to protect G8 first. Also no need for B:D2
-    init_sgf = '/Users/hyu/PycharmProjects/dlgo/9x9/games/tmp/2.sgf'
+    # init_sgf = '/Users/hyu/PycharmProjects/dlgo/9x9/games/tmp/2.sgf'
+    # B+9.5, KM5.5: finalized. two dead white stones
+    init_sgf = '/Users/hyu/PycharmProjects/dlgo/9x9/games/tmp/jrd-tromp-07-17-29.sgf'
 
     init_position = None
     if init_sgf:
         reader = SGFReader.from_file_compatible(init_sgf)
         init_position = reader.last_pos(ignore_final_pass=True)
 
-    load_file = f'{myconf.MODELS_DIR}/endgame_epoch_3.h5'
+    load_file = f'{myconf.MODELS_DIR}/model3_epoch_5.h5'
     with utils.logged_timer("Loading weights from %s ... " % load_file):
         network = dual_net.DualNetwork(load_file)
 

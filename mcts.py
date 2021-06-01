@@ -324,7 +324,7 @@ class MCTSNode(object):
         for i in ranked_children[:15]:
             if self.child_N[i] == 0:
                 break
-            output.append("\n{!s:4} : {: .3f} {: .3f} {:.3f} {:.3f} {:.3f} {:5d} {:.4f} {: .5f} {: .2f}".format(
+            output.append("\n{!s:4} : {: .3f} {: .3f} {:.3f} {:.3f} {:.3f} {:5d} {:.4f} {: .5f} {: .2f} {:s}".format(
                 coords.to_gtp(coords.from_flat(i)),
                 self.child_action_score[i],
                 self.child_Q[i],
@@ -334,5 +334,7 @@ class MCTSNode(object):
                 int(self.child_N[i]),
                 soft_n[i],
                 p_delta[i],
-                p_rel[i]))
+                p_rel[i],
+                'm=%.1f' % self.children[i].raw_margin if i in self.children else ''
+            ))
         return ''.join(output)
