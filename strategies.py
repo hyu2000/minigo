@@ -200,11 +200,13 @@ class MCTSPlayer(MCTSPlayerInterface):
             leaf = self.root.select_leaf()
             if self.verbosity >= 4:
                 dbg(self.show_path_to_root(leaf))
-            # # if game is over, override the value estimate with the true score
-            # if leaf.is_done():
-            #     value = 1 if leaf.position.score() > 0 else -1
-            #     leaf.backup_value(value, up_to=self.root)
-            #     continue
+            # if game is over, override the value estimate with the true score
+            if leaf.is_done():
+                value = leaf.position.score()
+                leaf.raw_margin = value + leaf.position.komi
+                win_loss = np.sign(value)
+                leaf.backup_value(win_loss, up_to=self.root)
+                continue
             leaf.add_virtual_loss(up_to=self.root)
             leaves.append(leaf)
         if leaves:
@@ -212,12 +214,7 @@ class MCTSPlayer(MCTSPlayerInterface):
                 [leaf.position for leaf in leaves])
             for leaf, move_prob, value in zip(leaves, move_probs, values):
                 leaf.revert_virtual_loss(up_to=self.root)
-                if leaf.is_done():
-                    leaf.raw_margin = value
-                    win_loss = np.sign(value - leaf.position.komi)
-                    leaf.backup_value(win_loss, up_to=self.root)
-                else:
-                    leaf.incorporate_results(move_prob, value, up_to=self.root)
+                leaf.incorporate_results(move_prob, value, up_to=self.root)
         return leaves
 
     def show_path_to_root(self, node):
