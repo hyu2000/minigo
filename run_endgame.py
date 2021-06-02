@@ -47,7 +47,7 @@ def play_endgames(start_idx=0):
 
 
 def main(argv):
-    play_endgames(start_idx=462)
+    play_endgames(start_idx=0)
 
 
 if __name__ == '__main__':
