@@ -17,7 +17,7 @@ def play_endgames(start_idx=0):
     some MCTS lookahead might help
     """
     store = GameStore(data_dir=FLAGS.tar_dir)
-    game_iter = store.game_iter([store.ds_pro, store.ds_top], filter_game=True)
+    game_iter = store.game_iter([store.ds_nngs], filter_game=True)
 
     # model_file = f'{myconf.MODELS_DIR}/model3_epoch_5.h5'
     model_file = FLAGS.load_file
@@ -27,6 +27,7 @@ def play_endgames(start_idx=0):
             continue
         pos = reader.last_pos(ignore_final_pass=True)
 
+        tromp0 = pos.score() + pos.komi
         _, val0 = network.run(pos)
         if True:
             player = run_game(network, init_position=pos, game_id=game_id,
@@ -42,8 +43,8 @@ def play_endgames(start_idx=0):
             final_pos = player.root.position
             _, val1 = network.run(final_pos)
             final_q = player.root.Q
-            logging.info(f'{i} scoring {game_id}: RE=( %.1f %.1f ) => %.1f \t\t%.1f %.1f %.2f %d',
-                         reader.komi(), margin_rec, margin_est, val0, val1, final_q, player.root.N)
+            logging.info(f'{i} scoring {game_id}: RE=( %.1f %.1f ) %.1f => %.1f \t\t%.1f %.1f',
+                         reader.komi(), margin_rec, tromp0, margin_est, val0, val1)
 
 
 def main(argv):
