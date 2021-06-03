@@ -1,7 +1,7 @@
 """ selfplay on endgames """
 import numpy as np
 import myconf
-from selfplay import run_game
+from selfplay import run_game, create_dir_if_needed
 from tar_dataset import GameStore
 import k2net as dual_net
 from absl import logging, app, flags
@@ -22,6 +22,9 @@ def play_endgames(start_idx=0):
     # model_file = f'{myconf.MODELS_DIR}/model3_epoch_5.h5'
     model_file = FLAGS.load_file
     network = dual_net.DualNetwork(model_file)
+    create_dir_if_needed(selfplay_dir=FLAGS.selfplay_dir, holdout_dir=FLAGS.holdout_dir,
+                         sgf_dir=FLAGS.sgf_dir)
+
     for i, (game_id, reader) in enumerate(game_iter):
         if i < start_idx:
             continue

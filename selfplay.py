@@ -114,19 +114,22 @@ def play(network, init_position=None):
     return player
 
 
-def run_game(dnn, init_position: go.Position=None, game_id=None,
-             selfplay_dir=None, holdout_dir=None,
-             sgf_dir=None, holdout_pct=0.05) -> MCTSPlayer:
-    """Takes a played game and record results and game data."""
+def create_dir_if_needed(selfplay_dir=None, holdout_dir=None, sgf_dir=None):
+    """ run this only once """
     if sgf_dir is not None:
-        minimal_sgf_dir = os.path.join(sgf_dir, 'clean')
+        # minimal_sgf_dir = os.path.join(sgf_dir, 'clean')
         full_sgf_dir = os.path.join(sgf_dir, 'full')
-        utils.ensure_dir_exists(minimal_sgf_dir)
+        # utils.ensure_dir_exists(minimal_sgf_dir)
         utils.ensure_dir_exists(full_sgf_dir)
     if selfplay_dir is not None:
         utils.ensure_dir_exists(selfplay_dir)
         utils.ensure_dir_exists(holdout_dir)
 
+
+def run_game(dnn, init_position: go.Position=None, game_id=None,
+             selfplay_dir=None, holdout_dir=None,
+             sgf_dir=None, holdout_pct=0.05) -> MCTSPlayer:
+    """Takes a played game and record results and game data."""
     with utils.logged_timer("Playing game"):
         player = play(dnn, init_position=init_position)
 
@@ -136,9 +139,9 @@ def run_game(dnn, init_position: go.Position=None, game_id=None,
         sgf_name = output_name
         if game_id:
             sgf_name = '{}-{}'.format(os.path.splitext(os.path.basename(game_id))[0], int(time.time()))
-        with tf.io.gfile.GFile(os.path.join(minimal_sgf_dir, '{}.sgf'.format(sgf_name)), 'w') as f:
-            f.write(player.to_sgf(use_comments=False))
-        with tf.io.gfile.GFile(os.path.join(full_sgf_dir, '{}.sgf'.format(sgf_name)), 'w') as f:
+        # with tf.io.gfile.GFile(os.path.join(minimal_sgf_dir, '{}.sgf'.format(sgf_name)), 'w') as f:
+        #     f.write(player.to_sgf(use_comments=False))
+        with tf.io.gfile.GFile(os.path.join(sgf_dir, 'full', '{}.sgf'.format(sgf_name)), 'w') as f:
             f.write(player.to_sgf())
 
     tf_examples = preprocessing.make_dataset_from_selfplay(game_data)
@@ -168,17 +171,19 @@ def main(argv):
     # W+3.5: well defined. only J9 up for grab, but black needs to protect G8 first. Also no need for B:D2
     # init_sgf = '/Users/hyu/PycharmProjects/dlgo/9x9/games/tmp/2.sgf'
     # B+9.5, KM5.5: finalized. two dead white stones
-    init_sgf = '/Users/hyu/PycharmProjects/dlgo/9x9/games/tmp/jrd-tromp-07-17-29.sgf'
+    # init_sgf = '/Users/hyu/PycharmProjects/dlgo/9x9/games/tmp/jrd-tromp-07-17-29.sgf'
 
     init_position = None
     if init_sgf:
         reader = SGFReader.from_file_compatible(init_sgf)
         init_position = reader.last_pos(ignore_final_pass=True)
 
-    load_file = f'{myconf.MODELS_DIR}/model3_epoch_5.h5'
+    load_file = f'{myconf.MODELS_DIR}/endgame_epoch_2.h5'
     with utils.logged_timer("Loading weights from %s ... " % load_file):
         network = dual_net.DualNetwork(load_file)
 
+    create_dir_if_needed(selfplay_dir=FLAGS.selfplay_dir, holdout_dir=FLAGS.holdout_dir,
+                         sgf_dir=FLAGS.sgf_dir)
     run_game(
         network,
         init_position=init_position, game_id=init_sgf,
