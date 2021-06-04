@@ -11,6 +11,6 @@ python3 run_endgame.py \
   --sgf_dir="${DRIVE_HOME}/selfplay/sgf" \
   --num_readouts=200 \
   --parallel_readouts=16 \
-  --load_file="${DRIVE_HOME}/checkpoints/model4_epoch_2.h5"
+  --load_file="${DRIVE_HOME}/checkpoints/model5_epoch_1.h5"
   2>&1 | tee >> "${DRIVE_HOME}/run_endgame.log"
 
