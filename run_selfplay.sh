@@ -12,6 +12,6 @@ python3 run_endgame.py \
   --num_readouts=400 \
   --dirichlet_noise_weight=0.025 \
   --parallel_readouts=16 \
-  --load_file="${DRIVE_HOME}/checkpoints/model4_epoch_2.h5"
+  --load_file="${DRIVE_HOME}/checkpoints/model4_epoch_2.h5" \
   2>&1 | tee >> "${DRIVE_HOME}/run_endgame.log"
 
