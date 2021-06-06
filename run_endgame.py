@@ -26,6 +26,8 @@ def play_endgames(start_idx=0):
                          sgf_dir=FLAGS.sgf_dir)
 
     for i, (game_id, reader) in enumerate(game_iter):
+        if i > 500:
+            break
         if i < start_idx:
             continue
         pos = reader.last_pos(ignore_final_pass=True)
