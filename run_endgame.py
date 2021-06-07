@@ -12,7 +12,7 @@ flags.DEFINE_string('tar_dir', None, 'Where to find TarDataSets.')
 FLAGS = flags.FLAGS
 
 
-def play_endgames(start_idx=0):
+def play_endgames(start_idx=0, num_games=500):
     """ use DNN to score endgame, measure how accurate it is to the RE record
     some MCTS lookahead might help
     """
@@ -26,10 +26,10 @@ def play_endgames(start_idx=0):
                          sgf_dir=FLAGS.sgf_dir)
 
     for i, (game_id, reader) in enumerate(game_iter):
-        if i > 500:
-            break
         if i < start_idx:
             continue
+        if i >= start_idx + num_games:
+            break
         pos = reader.last_pos(ignore_final_pass=True)
 
         tromp0 = pos.score() + pos.komi
@@ -47,13 +47,12 @@ def play_endgames(start_idx=0):
                 margin_rec = np.nan
             final_pos = player.root.position
             _, val1 = network.run(final_pos)
-            final_q = player.root.Q
-            logging.info(f'{i} scoring {game_id}: RE=( %.1f %.1f ) %.1f => %.1f \t\t%.1f %.1f',
-                         reader.komi(), margin_rec, tromp0, margin_est, val0, val1)
+            logging.info(f'{i} scoring {game_id}: RE=( %.1f %.1f ) %.1f {pos.n} => {final_pos.n} \t\t%.1f %.1f',
+                         reader.komi(), margin_rec, margin_est, val0, val1)
 
 
 def main(argv):
-    play_endgames(start_idx=0)
+    play_endgames(start_idx=0, num_games=500)
 
 
 if __name__ == '__main__':
