@@ -67,9 +67,10 @@ def build_model(input_shape):
     x = keras.layers.BatchNormalization()(x)
     x = keras.layers.Activation('relu')(x)
     x = keras.layers.Flatten()(x)
-    x = keras.layers.Dense(64, activation='relu')(x)
+    x = keras.layers.Dense(64, activation='relu', kernel_regularizer=keras.regularizers.l2(0.001))(x)
     # predicting black_margin now
-    output_value = keras.layers.Dense(1, activation=None, name='value')(x)
+    output_value = keras.layers.Dense(1, activation=None, kernel_regularizer=keras.regularizers.l2(0.001),
+                                      name='value')(x)
 
     # policy head
     # final conv, to get down to 1 filter (for score)
