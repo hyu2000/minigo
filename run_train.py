@@ -196,14 +196,28 @@ def load_dataset(file_pattern: str):
 
 
 def load_selfplay_data(selfplay_dir: str):
+    """ many small files. need perf tune:
+
+dataset = tf.data.TFRecordDataset(filenames_to_read,
+    compression_type=None,    # or 'GZIP', 'ZLIB' if compress you data.
+    buffer_size=10240,        # any buffer size you want or 0 means no buffering
+    num_parallel_reads=os.cpu_count()  # or 0 means sequentially reading
+    )
+
+# Maybe you want to prefetch some data first.
+dataset = dataset.prefetch(buffer_size=batch_size)
+
+    """
     BATCH_READ_SIZE = 64
 
     filenames = tf.data.Dataset.list_files(f'{selfplay_dir}/*.tfrecord.zz')
     dataset = tf.data.TFRecordDataset(
         filenames,
-        compression_type='ZLIB'
-    )  # automatically interleaves reads from multiple files
-    dataset = dataset.batch(BATCH_READ_SIZE).map(
+        compression_type='ZLIB',
+        num_parallel_reads=8
+        # automatically interleaves reads from multiple files
+    )
+    dataset = dataset.batch(BATCH_READ_SIZE).prefetch(tf.data.AUTOTUNE).map(
         read_tfrecord, num_parallel_calls=tf.data.experimental.AUTOTUNE
     ).unbatch()
     return dataset
