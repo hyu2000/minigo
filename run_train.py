@@ -79,8 +79,8 @@ def compile_dual():
                       'policy': 'categorical_crossentropy',
                       'value': custom_MSE_loss},
                   loss_weights={
-                      'policy': 0.8,
-                      'value':  0.2},
+                      'policy': 0.98,
+                      'value':  0.02},
                   metrics={
                       'policy': keras.metrics.CategoricalAccuracy(name="move_acc"),
                       # 'value': custom_value_accuracy,
