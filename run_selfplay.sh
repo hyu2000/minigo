@@ -13,5 +13,5 @@ python3 run_endgame.py \
   --dirichlet_noise_weight=0.025 \
   --parallel_readouts=16 \
   --load_file="${DRIVE_HOME}/checkpoints/model4_epoch_1.h5" \
-  2>&1 | tee -a "${DRIVE_HOME}/run_endgame.log"
+  2>&1 | tee "${DRIVE_HOME}/run_endgame.log"
 
