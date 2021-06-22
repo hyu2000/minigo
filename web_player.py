@@ -46,7 +46,7 @@ class WebPlayer(object):
 
 
 def test_player():
-    dnn = DualNetwork(f'{myconf.EXP_HOME}/checkpoints/model_epoch_3.h5')
+    dnn = DualNetwork(f'{myconf.EXP_HOME}/checkpoints/model3_epoch_5.h5')
     player = WebPlayer(dnn)
     moves_history = []
     for i in range(5):

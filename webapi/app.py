@@ -7,7 +7,7 @@ from k2net import DualNetwork
 
 static_path = '/Users/hyu/PycharmProjects/dlgo/deep_learning_and_the_game_of_go/code/dlgo/httpfrontend/static'
 app = Flask(__name__, static_folder=static_path)
-dnn = DualNetwork(f'{myconf.EXP_HOME}/checkpoints/model_epoch_3.h5')
+dnn = DualNetwork(f'{myconf.EXP_HOME}/checkpoints/model3_epoch_5.h5')
 player = web_player.WebPlayer(dnn)
 
 
