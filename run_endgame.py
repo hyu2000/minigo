@@ -52,7 +52,7 @@ def play_endgames(start_idx=0, num_games=500):
 
 
 def main(argv):
-    play_endgames(start_idx=0, num_games=2000)
+    play_endgames(start_idx=0, num_games=500)
 
 
 if __name__ == '__main__':
