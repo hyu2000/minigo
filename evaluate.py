@@ -17,12 +17,13 @@
 import os
 import time
 from absl import app, flags
-from tensorflow import gfile
+from tensorflow.python import gfile
 
-import dual_net
+import k2net as dual_net
 from strategies import MCTSPlayer
 import sgf_wrapper
 import utils
+import myconf
 
 flags.DEFINE_string('eval_sgf_dir', None, 'Where to write evaluation results.')
 
