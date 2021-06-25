@@ -49,8 +49,8 @@ def play_match(black_model, white_model, games, sgf_dir):
 
     readouts = FLAGS.num_readouts
 
-    black = MCTSPlayer(black_net, two_player_mode=True)
-    white = MCTSPlayer(white_net, two_player_mode=True)
+    black = MCTSPlayer(black_net, two_player_mode=True, num_readouts=200)
+    white = MCTSPlayer(white_net, two_player_mode=True, num_readouts=200)
 
     black_name = os.path.basename(black_net.save_file)
     white_name = os.path.basename(white_net.save_file)
@@ -70,7 +70,7 @@ def play_match(black_model, white_model, games, sgf_dir):
             inactive = black if num_move % 2 else white
 
             current_readouts = active.root.N
-            while active.root.N < current_readouts + readouts:
+            while active.root.N < current_readouts + active.num_readouts:
                 active.tree_search()
 
             # print some stats on the search
@@ -87,13 +87,14 @@ def play_match(black_model, white_model, games, sgf_dir):
             if active.is_done():
                 fname = "{:d}-{:s}-vs-{:s}-{:d}.sgf".format(int(time.time()),
                                                             white_name, black_name, i)
-                active.set_result(active.root.position.result(), was_resign=False)
+                if active.result == 0:
+                    active.set_result(active.root.position.result(), was_resign=False)
                 with gfile.GFile(os.path.join(sgf_dir, fname), 'w') as _file:
                     sgfstr = sgf_wrapper.make_sgf(active.position.recent,
-                                                  active.result_string, black_name=black_name,
-                                                  white_name=white_name)
+                                                  active.result_string, komi=active.position.komi,
+                                                  black_name=black_name, white_name=white_name)
                     _file.write(sgfstr)
-                print("Finished game", i, active.result_string)
+                print(f'Finished game {i}: #moves={num_move} {black.num_readouts} {white.num_readouts} {active.result_string}')
                 break
 
             move = active.pick_move()
@@ -107,7 +108,7 @@ def play_match(black_model, white_model, games, sgf_dir):
                 timeper = (dur / readouts) * 100.0
                 print(active.root.position)
                 print("%d: %d readouts, %.3f s/100. (%.2f sec)" % (num_move,
-                                                                   readouts,
+                                                                   active.num_readouts,
                                                                    timeper,
                                                                    dur))
 
