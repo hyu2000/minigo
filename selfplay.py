@@ -160,7 +160,7 @@ def run_game(dnn, init_position: go.Position=None, game_id=None,
     return player
 
 
-def main(argv):
+def main9(argv):
     """Entry point for running one selfplay game."""
     del argv  # Unused
     flags.mark_flag_as_required('load_file')
@@ -169,7 +169,7 @@ def main(argv):
     init_sgf = '/Users/hyu/PycharmProjects/dlgo/9x9/games/Pro/9x9/Minigo/890826.sgf'
     # init_sgf = '/Users/hyu/PycharmProjects/dlgo/9x9/games/Pro/9x9/Minigo/001203.sgf'
     # W+3.5, KM6.5: well defined. only J9 up for grab, but black needs to protect G8 first. Also no need for B:D2
-    init_sgf = '/Users/hyu/PycharmProjects/dlgo/9x9/games/tmp/2.sgf'
+    # init_sgf = '/Users/hyu/PycharmProjects/dlgo/9x9/games/tmp/2.sgf'
     # B+9.5, KM5.5: finalized. two dead white stones
     # init_sgf = '/Users/hyu/PycharmProjects/dlgo/9x9/games/tmp/jrd-tromp-07-17-29.sgf'
 
@@ -184,6 +184,38 @@ def main(argv):
 
     create_dir_if_needed(selfplay_dir=FLAGS.selfplay_dir, holdout_dir=FLAGS.holdout_dir,
                          sgf_dir=FLAGS.sgf_dir)
+    run_game(
+        network,
+        init_position=init_position, game_id=init_sgf,
+        selfplay_dir=FLAGS.selfplay_dir,
+        holdout_dir=FLAGS.holdout_dir,
+        # selfplay_dir=f'{myconf.EXP_HOME}/selfplay/tfdata',
+        # holdout_dir= f'{myconf.EXP_HOME}/selfplay/tfdata',
+        holdout_pct=0.0,
+        sgf_dir=f'{myconf.SELFPLAY_DIR}'
+        # sgf_dir=FLAGS.sgf_dir
+    )
+
+
+def main(argv):
+    """Entry point for running one selfplay game."""
+    del argv  # Unused
+    flags.mark_flag_as_required('load_file')
+
+    init_sgf = None
+    # init_sgf = '/Users/hyu/PycharmProjects/dlgo/5x5/games/mcts-study0.sgf'
+
+    init_position = None
+    if init_sgf:
+        reader = SGFReader.from_file_compatible(init_sgf)
+        init_position = reader.last_pos(ignore_final_pass=True)
+
+    load_file = f'{myconf.MODELS_DIR}/dualnet.0.h5'
+    with utils.logged_timer("Loading weights from %s ... " % load_file):
+        network = dual_net.DualNetwork(load_file)
+
+    create_dir_if_needed(selfplay_dir=FLAGS.selfplay_dir, holdout_dir=FLAGS.holdout_dir,
+                         sgf_dir=myconf.SELFPLAY_DIR)
     run_game(
         network,
         init_position=init_position, game_id=init_sgf,

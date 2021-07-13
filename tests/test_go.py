@@ -49,6 +49,7 @@ class TestBasicFunctions(test_utils.MinigoUnitTest):
         self.assertEqual(len(side_neighbors), 3)
 
     def test_is_koish(self):
+        # see test_ko_move()
         self.assertEqual(go.is_koish(
             TEST_BOARD, coords.from_gtp('A9')), BLACK)
         self.assertEqual(go.is_koish(TEST_BOARD, coords.from_gtp('B8')), None)
@@ -507,6 +508,7 @@ class TestPosition(test_utils.MinigoUnitTest):
         self.assertEqualPositions(actual_position, expected_position)
 
         # Check that retaking ko is illegal until two intervening moves
+        # this ko rule is less strict than dlgo which checks for Zobrist hash
         with self.assertRaises(go.IllegalMove):
             actual_position.play_move(coords.from_gtp('B9'))
         pass_twice = actual_position.pass_move().pass_move()
@@ -546,6 +548,7 @@ class TestPosition(test_utils.MinigoUnitTest):
                 .O.O.OOXX
                 ......OOO
             ''')
+        test_utils.print_board(board)
         position = Position(
             board=board,
             n=54,
@@ -616,3 +619,7 @@ class TestPosition(test_utils.MinigoUnitTest):
         replayed_positions = list(go.replay_position(final, 1))
         for sgf_pos, replay_pos in zip(sgf_positions, replayed_positions):
             self.assertEqualPositions(sgf_pos.position, replay_pos.position)
+
+    def test_replay_from_existing_game(self):
+        # TODO
+        pass

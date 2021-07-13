@@ -11,13 +11,13 @@ from logging import getLogger
 logger = logging.getLogger()
 
 
-BOARD_SIZE = 9
+BOARD_SIZE = 5
 BOARD_SIZE_SQUARED = BOARD_SIZE * BOARD_SIZE
 # w/ pass, but no resign
 TOTAL_MOVES = BOARD_SIZE_SQUARED + 1
 
 # dirs
-EXP_HOME = '/Users/hyu/PycharmProjects/dlgo/9x9'
+EXP_HOME = '/Users/hyu/PycharmProjects/dlgo/5x5'
 DATA_DIR = f'{EXP_HOME}/games'
 FEATURES_DIR = f'{EXP_HOME}/features'
 MODELS_DIR = f'{EXP_HOME}/checkpoints'
