@@ -9,6 +9,7 @@ from absl import logging
 import coords
 import features as features_lib
 import go
+import myconf
 
 
 def get_features():
@@ -104,9 +105,34 @@ class DualNetwork(object):
         probs, values = self.run_many([position])
         return probs[0], values[0]
 
-    def run_many(self, positions) -> Tuple[np.ndarray, np.ndarray]:
+    def run_many(self, positions: List[go.Position]) -> Tuple[np.ndarray, np.ndarray]:
         f = get_features()
         processed = [features_lib.extract_features(p, f) for p in positions]
         # model.predict() doc suggests to use __call__ for small batch
         probs, values = self.model(tf.convert_to_tensor(processed), training=False)
         return probs.numpy(), values.numpy().squeeze(axis=-1)
+
+
+class DummyNetwork(object):
+    """ flat policy, Tromp score as value """
+    def __init__(self):
+        # this is more a model-id
+        self.save_file = 'dummy'
+
+    def run(self, position):
+        probs, values = self.run_many([position])
+        return probs[0], values[0]
+
+    def run_many(self, positions: List[go.Position]) -> Tuple[np.ndarray, np.ndarray]:
+        probs = np.ones((len(positions), myconf.TOTAL_MOVES)) / myconf.TOTAL_MOVES
+        values = np.array([p.score() + p.komi for p in positions])
+        return probs, values
+
+
+def bootstrap():
+    N = go.N
+    input_shape = (N, N, get_features_planes())
+    model = build_model(input_shape)
+
+    fname = '/tmp/k2net.0.h5'
+    model.save(fname)
