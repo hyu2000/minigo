@@ -18,6 +18,9 @@ N = go.N
 HOME_DIR = myconf.EXP_HOME
 FEATURES_DIR = myconf.FEATURES_DIR
 
+from tensorflow.python.compiler.mlcompute import mlcompute
+mlcompute.set_mlc_device(device_name='cpu')  # Available options are 'cpu', 'gpu', and ‘any'.
+
 
 bce = tf.keras.losses.BinaryCrossentropy()
 bca = tf.keras.metrics.BinaryAccuracy()
@@ -225,20 +228,20 @@ dataset = dataset.prefetch(buffer_size=batch_size)
 
 def train():
     model = compile_dual()
-    ds_train = load_dataset('train*')
-    ds_val = load_dataset('val*')
+    ds_train = load_selfplay_data(f'{myconf.SELFPLAY_DIR}/train')
+    ds_val = load_selfplay_data(f'{myconf.SELFPLAY_DIR}/val')
     callbacks = [
-        keras.callbacks.ModelCheckpoint(f'{HOME_DIR}/checkpoints/model_epoch_{{epoch}}.h5'),
+        keras.callbacks.ModelCheckpoint(f'{myconf.MODELS_DIR}/model_epoch_{{epoch}}.h5'),
         # keras.callbacks.EarlyStopping(monitor='val_loss', patience=2)
     ]
-    history = model.fit(ds_train.shuffle(1000).batch(64), validation_data=ds_val,
-                        epochs=1, callbacks=callbacks)
+    history = model.fit(ds_train.shuffle(1000).batch(64), validation_data=ds_val.batch(64),
+                        epochs=2, callbacks=callbacks)
     print(history.history)
 
 
 if __name__ == '__main__':
-    # train()
+    train()
     # test_save_model()
     # test_eval_model()
     # label_top50()
-    test_update_model()
+    # test_update_model()
