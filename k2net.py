@@ -114,7 +114,7 @@ class DualNetwork(object):
 
 
 class DummyNetwork(object):
-    """ flat policy, Tromp score as value """
+    """ same interface as DualNetwork. Flat policy, Tromp score as value """
     def __init__(self):
         # this is more a model-id
         self.save_file = 'dummy'
