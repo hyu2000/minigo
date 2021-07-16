@@ -76,7 +76,7 @@ def custom_value_accuracy(y_true, y_pred):
 def compile_dual():
     input_shape = (N, N, dual_net.get_features_planes())
     model = dual_net.build_model(input_shape)
-    opt = keras.optimizers.Adam()
+    opt = keras.optimizers.Adam(learning_rate=0.001)
     model.compile(optimizer=opt,
                   loss={
                       'policy': 'categorical_crossentropy',
@@ -235,7 +235,7 @@ def train():
         # keras.callbacks.EarlyStopping(monitor='val_loss', patience=2)
     ]
     history = model.fit(ds_train.shuffle(1000).batch(64), validation_data=ds_val.batch(64),
-                        epochs=2, callbacks=callbacks)
+                        epochs=10, callbacks=callbacks)
     print(history.history)
 
 

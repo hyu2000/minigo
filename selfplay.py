@@ -21,7 +21,7 @@ import os
 import socket
 import time
 
-from absl import app, flags
+from absl import app, flags, logging
 import numpy as np
 import tensorflow as tf
 
@@ -203,14 +203,14 @@ def main(argv):
     flags.mark_flag_as_required('load_file')
 
     init_sgf = None
-    # init_sgf = '/Users/hyu/PycharmProjects/dlgo/5x5/games/mcts-study0.sgf'
+    # init_sgf = '/Users/hyu/PycharmProjects/dlgo/5x5/games/mcts-study1.sgf'
 
     init_position = None
     if init_sgf:
         reader = SGFReader.from_file_compatible(init_sgf)
         init_position = reader.last_pos(ignore_final_pass=True)
 
-    load_file = f'{myconf.MODELS_DIR}/dualnet.0.h5'
+    load_file = f'{myconf.MODELS_DIR}/model1_epoch_3.h5'
     with utils.logged_timer("Loading weights from %s ... " % load_file):
         network = dual_net.DualNetwork(load_file)
 

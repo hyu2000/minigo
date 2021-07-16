@@ -1,4 +1,6 @@
 import numpy as np
+
+import coords
 import myconf
 from selfplay import run_game, create_dir_if_needed
 from tar_dataset import GameStore
@@ -31,7 +33,9 @@ def play_games(num_games=500):
                           sgf_dir=FLAGS.sgf_dir
                           )
         margin_est = player.black_margin_no_komi
-        logging.info(f'game {i}: %d moves, final margin %.1f', player.root.position.n, margin_est)
+        moves_history = player.root.position.recent
+        logging.info(f'game {i}: %d moves, final margin %.1f %s %s', player.root.position.n, margin_est,
+                     coords.to_gtp(moves_history[0].move), coords.to_gtp(moves_history[1].move))
 
 
 def main(argv):
