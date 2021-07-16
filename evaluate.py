@@ -104,7 +104,7 @@ def play_match(black_model, white_model, games, sgf_dir):
             dur = time.time() - start
             num_move += 1
 
-            if (FLAGS.verbose > 1) or (FLAGS.verbose == 1 and num_move % 10 == 9):
+            if (FLAGS.verbose > 1):  # or (FLAGS.verbose == 1 and num_move % 10 == 9):
                 timeper = (dur / readouts) * 100.0
                 print(active.root.position)
                 print("%d: %d readouts, %.3f s/100. (%.2f sec)" % (num_move,
