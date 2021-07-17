@@ -10,7 +10,7 @@ python3 run_selfplay.py \
   --sgf_dir="${DRIVE_HOME}/selfplay/sgf" \
   --num_readouts=200 \
   --parallel_readouts=16 \
-  --load_file="${DRIVE_HOME}/checkpoints/model2_epoch_2.h5" \
+  --load_file="${DRIVE_HOME}/checkpoints/model3_epoch_3.h5" \
   --num_games=2000 \
   2>&1 | tee -a "${DRIVE_HOME}/selfplay/run_selfplay.log"
 
