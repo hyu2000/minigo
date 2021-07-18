@@ -96,7 +96,7 @@ def play_match(black_model, white_model, games, sgf_dir):
                                                   active.result_string, komi=active.position.komi,
                                                   black_name=black_name, white_name=white_name)
                     _file.write(sgfstr)
-                move_history_head = [coords.to_gtp(game_history[i].move) for i in range(5)]
+                move_history_head = ' '.join([coords.to_gtp(game_history[i].move) for i in range(5)])
                 print(f'Finished game {i}: #moves={num_move} %d %d {active.result_string} %s' % (
                     black.num_readouts, white.num_readouts, move_history_head))
                 break
