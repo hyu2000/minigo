@@ -159,7 +159,7 @@ class MCTSNode(object):
             current = current.maybe_add_child(best_move)
         return current
 
-    def maybe_add_child(self, fcoord):
+    def maybe_add_child(self, fcoord) -> 'MCTSNode':
         """Adds child node for fcoord if it doesn't already exist, and returns it."""
         if fcoord not in self.children:
             new_position = self.position.play_move(

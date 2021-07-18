@@ -96,9 +96,9 @@ def play_match(black_model, white_model, games, sgf_dir):
                                                   active.result_string, komi=active.position.komi,
                                                   black_name=black_name, white_name=white_name)
                     _file.write(sgfstr)
-                print(f'Finished game {i}: #moves={num_move} %d %d {active.result_string} %s %s' % (
-                    black.num_readouts, white.num_readouts,
-                    coords.to_gtp(game_history[0].move), coords.to_gtp(game_history[1].move)))
+                move_history_head = [coords.to_gtp(game_history[i].move) for i in range(5)]
+                print(f'Finished game {i}: #moves={num_move} %d %d {active.result_string} %s' % (
+                    black.num_readouts, white.num_readouts, move_history_head))
                 break
 
             move = active.pick_move()
@@ -122,6 +122,8 @@ def main(argv):
     _, black_model, white_model = argv
     utils.ensure_dir_exists(FLAGS.eval_sgf_dir)
     play_match(black_model, white_model, FLAGS.num_evaluation_games, FLAGS.eval_sgf_dir)
+    # play_match(f'{myconf.MODELS_DIR}/endgame1_epoch_2.h5', f'{myconf.MODELS_DIR}/endgame1_epoch_2.h5',
+    #            FLAGS.num_evaluation_games, FLAGS.eval_sgf_dir)
 
 
 if __name__ == '__main__':
