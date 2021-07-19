@@ -13,6 +13,7 @@ import go
 import myconf
 import k2net as dual_net
 from sgf_wrapper import SGFReader
+from symmetries import apply_symmetry_dual
 
 N = go.N
 HOME_DIR = myconf.EXP_HOME
@@ -76,7 +77,7 @@ def custom_value_accuracy(y_true, y_pred):
 def compile_dual():
     input_shape = (N, N, dual_net.get_features_planes())
     model = dual_net.build_model(input_shape)
-    opt = keras.optimizers.Adam(learning_rate=0.001)
+    opt = keras.optimizers.Adam(learning_rate=0.0005)
     model.compile(optimizer=opt,
                   loss={
                       'policy': 'categorical_crossentropy',
@@ -180,6 +181,9 @@ def read_tfrecord(record):
     pi = tf.io.decode_raw(parsed['pi'], tf.float32)
     outcome = parsed['outcome']
     outcome = tf.reshape(outcome, [batch_size])
+
+    # apply symmetries: should be able to expand #samples?
+    # x, pi, outcome = apply_symmetry_dual(x, pi, outcome)
     return x, {'policy': pi, 'value': outcome}
 
 
@@ -227,15 +231,19 @@ dataset = dataset.prefetch(buffer_size=batch_size)
 
 
 def train():
-    model = compile_dual()
-    ds_train = load_selfplay_data(f'{myconf.SELFPLAY_DIR}/train')
-    ds_val = load_selfplay_data(f'{myconf.SELFPLAY_DIR}/val')
+    # model = compile_dual()
+    model = load_model(f'{myconf.MODELS_DIR}/model4_epoch_1.h5')
+
+    data_dir = myconf.SELFPLAY_DIR
+    data_dir = f'{myconf.EXP_HOME}/selfplay'
+    ds_train = load_selfplay_data(f'{data_dir}/train')
+    ds_val = load_selfplay_data(f'{data_dir}/val')
     callbacks = [
         keras.callbacks.ModelCheckpoint(f'{myconf.MODELS_DIR}/model_epoch_{{epoch}}.h5'),
         # keras.callbacks.EarlyStopping(monitor='val_loss', patience=2)
     ]
     history = model.fit(ds_train.shuffle(1000).batch(64), validation_data=ds_val.batch(64),
-                        epochs=10, callbacks=callbacks)
+                        epochs=5, callbacks=callbacks)
     print(history.history)
 
 
