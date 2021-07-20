@@ -53,7 +53,7 @@ dataset = dataset.prefetch(buffer_size=batch_size)
     """
     BATCH_READ_SIZE = 64
 
-    filenames = tf.data.Dataset.list_files(f'{selfplay_dir}/*.tfrecord.zz')
+    filenames = tf.data.Dataset.list_files(f'{selfplay_dir}/*.tfrecord.zz')  #.take(3)
     dataset = tf.data.TFRecordDataset(
         filenames,
         compression_type='ZLIB',
@@ -67,13 +67,14 @@ dataset = dataset.prefetch(buffer_size=batch_size)
 
 
 def sample_generator(ds):
+    i = 0
     for datum in ds:
         x_tensor, y_dict = datum
-        x_org  = x_tensor.numpy()
+        # feature needs to be uint8!
+        x_org  = tf.cast(x_tensor, tf.uint8).numpy()
         pi_org = y_dict['policy'].numpy()
         v_org  = y_dict['value'].numpy()
         x_new, pi_new, outcome_new = apply_symmetry_dual(x_org, pi_org, v_org)
-        # print(x_new.shape, pi_new.shape, outcome_new.shape)
         for x, pi, value in zip(x_new, pi_new, outcome_new):
             yield preprocessing.make_tf_example(x, pi, value)
 
@@ -97,7 +98,7 @@ def main():
         utils.ensure_dir_exists(output_data_dir)
 
         for i, tf_examples in enumerate(utils.iter_chunks(10000, sample_generator(ds))):
-            fname = f'{output_data_dir}/chunk-{i}-tfrecord.zz'
+            fname = f'{output_data_dir}/chunk-{i}.tfrecord.zz'
             print(f'{tag} chunk {i}: writing %d records' % len(tf_examples))
             preprocessing.write_tf_examples(fname, tf_examples)
 

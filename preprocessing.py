@@ -72,7 +72,7 @@ def write_tf_examples(filename, tf_examples: Iterable, serialize=True):
                 writer.write(ex.SerializeToString())
             else:
                 writer.write(ex)
-        logging.info('Wrote %d exmples to %s', i, filename)
+        logging.debug('Wrote %d exmples to %s', i, filename)
 
 
 def batch_parse_tf_example(batch_size, layout, example_batch):
