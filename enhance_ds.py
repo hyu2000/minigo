@@ -1,9 +1,14 @@
+import os
+import shutil
+
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 import go
 import myconf
 import k2net as dual_net
+import preprocessing
+import utils
 from symmetries import apply_symmetry_dual
 
 N = go.N
@@ -48,7 +53,7 @@ dataset = dataset.prefetch(buffer_size=batch_size)
     """
     BATCH_READ_SIZE = 64
 
-    filenames = tf.data.Dataset.list_files(f'{selfplay_dir}/*.tfrecord.zz').take(1)  # todo
+    filenames = tf.data.Dataset.list_files(f'{selfplay_dir}/*.tfrecord.zz')
     dataset = tf.data.TFRecordDataset(
         filenames,
         compression_type='ZLIB',
@@ -61,19 +66,42 @@ dataset = dataset.prefetch(buffer_size=batch_size)
     return dataset
 
 
+def sample_generator(ds):
+    for datum in ds:
+        x_tensor, y_dict = datum
+        x_org  = x_tensor.numpy()
+        pi_org = y_dict['policy'].numpy()
+        v_org  = y_dict['value'].numpy()
+        x_new, pi_new, outcome_new = apply_symmetry_dual(x_org, pi_org, v_org)
+        # print(x_new.shape, pi_new.shape, outcome_new.shape)
+        for x, pi, value in zip(x_new, pi_new, outcome_new):
+            yield preprocessing.make_tf_example(x, pi, value)
+
+
+def test_iter_chunks():
+    it = np.ones((32, 3))
+    for i, group in enumerate(utils.iter_chunks(10, it)):
+        print(i, len(group), sum(group))
+
+
 def main():
     data_dir = f'{myconf.EXP_HOME}/selfplay'
-    ds = load_selfplay_data(f'{data_dir}/train')
-    cnt = 0
-    for datum in ds:
-        cnt += 1
-    x_tensor, y_dict = datum
-    x = x_tensor.numpy()
-    pi = y_dict['policy'].numpy()
-    outcome = y_dict['value'].numpy()
-    x_new, pi_new, outcome_new = apply_symmetry_dual(x, pi, outcome)
-    print(x_new.shape, pi_new.shape, outcome_new.shape)
+    for tag in ['train', 'val']:
+        ds = load_selfplay_data(f'{data_dir}/{tag}')
+        output_data_dir = f'{data_dir}/{tag}-symmetries'
+
+        try:
+            shutil.rmtree(output_data_dir)
+        except FileNotFoundError:
+            pass
+        utils.ensure_dir_exists(output_data_dir)
+
+        for i, tf_examples in enumerate(utils.iter_chunks(10000, sample_generator(ds))):
+            fname = f'{output_data_dir}/chunk-{i}-tfrecord.zz'
+            print(f'{tag} chunk {i}: writing %d records' % len(tf_examples))
+            preprocessing.write_tf_examples(fname, tf_examples)
 
 
 if __name__ == '__main__':
     main()
+    # test_iter_chunks()
