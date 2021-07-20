@@ -31,47 +31,9 @@ flags.DEFINE_string('eval_sgf_dir', None, 'Where to write evaluation results.')
 flags.DEFINE_integer('num_evaluation_games', 16, 'How many games to play')
 
 # From strategies.py
-flags.declare_key_flag('num_readouts')
 flags.declare_key_flag('verbose')
 
 FLAGS = flags.FLAGS
-
-
-def play_tournament(black_model, white_model, num_games, sgf_dir):
-    """Plays matches between two neural nets.
-
-    Args:
-        black_model: Path to the model for black player
-        white_model: Path to the model for white player
-    """
-    with utils.logged_timer("Loading weights"):
-        black_net = dual_net.DualNetwork(black_model)
-        white_net = dual_net.DualNetwork(white_model)
-
-    readouts = FLAGS.num_readouts
-
-    black = MCTSPlayer(black_net, two_player_mode=True, num_readouts=200)
-    white = MCTSPlayer(white_net, two_player_mode=True, num_readouts=200)
-
-    black_name = os.path.basename(black_net.save_file)
-    white_name = os.path.basename(white_net.save_file)
-
-    for i in range(num_games):
-        active = play_game(black, white)
-
-        fname = "{:d}-{:s}-vs-{:s}-{:d}.sgf".format(int(time.time()),
-                                                    white_name, black_name, i)
-        if active.result == 0:
-            active.set_result(active.root.position.result(), was_resign=False)
-        game_history = active.position.recent
-        with gfile.GFile(os.path.join(sgf_dir, fname), 'w') as _file:
-            sgfstr = sgf_wrapper.make_sgf(game_history,
-                                          active.result_string, komi=active.position.komi,
-                                          black_name=black_name, white_name=white_name)
-            _file.write(sgfstr)
-        move_history_head = ' '.join([coords.to_gtp(game_history[i].move) for i in range(5)])
-        print(f'Finished game {i}: #moves=%d %d %d {active.result_string} %s' % (
-            len(game_history), black.num_readouts, white.num_readouts, move_history_head))
 
 
 def play_game(black, white) -> MCTSPlayer:
@@ -118,6 +80,41 @@ def play_game(black, white) -> MCTSPlayer:
                                                                active.num_readouts,
                                                                timeper,
                                                                dur))
+
+
+def play_tournament(black_model, white_model, num_games, sgf_dir):
+    """Plays matches between two neural nets.
+
+    Args:
+        black_model: Path to the model for black player
+        white_model: Path to the model for white player
+    """
+    with utils.logged_timer("Loading weights"):
+        black_net = dual_net.DualNetwork(black_model)
+        white_net = dual_net.DualNetwork(white_model)
+
+    black = MCTSPlayer(black_net, two_player_mode=True, num_readouts=200)
+    white = MCTSPlayer(white_net, two_player_mode=True, num_readouts=200)
+
+    black_name = os.path.basename(black_net.save_file)
+    white_name = os.path.basename(white_net.save_file)
+
+    for i in range(num_games):
+        active = play_game(black, white)
+
+        fname = "{:d}-{:s}-vs-{:s}-{:d}.sgf".format(int(time.time()),
+                                                    white_name, black_name, i)
+        if active.result == 0:
+            active.set_result(active.root.position.result(), was_resign=False)
+        game_history = active.position.recent
+        with gfile.GFile(os.path.join(sgf_dir, fname), 'w') as _file:
+            sgfstr = sgf_wrapper.make_sgf(game_history,
+                                          active.result_string, komi=active.position.komi,
+                                          black_name=black_name, white_name=white_name)
+            _file.write(sgfstr)
+        move_history_head = ' '.join([coords.to_gtp(game_history[i].move) for i in range(5)])
+        print(f'Finished game {i}: #moves=%d %d %d {active.result_string} %s' % (
+            len(game_history), black.num_readouts, white.num_readouts, move_history_head))
 
 
 def main(argv):
