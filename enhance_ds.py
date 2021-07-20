@@ -88,10 +88,12 @@ def test_iter_chunks():
 def main():
     data_dir = f'{myconf.EXP_HOME}/selfplay'
     for tag in ['train', 'val']:
-        ds = load_selfplay_data(f'{data_dir}/{tag}')
+        source_data_dir = f'{data_dir}/{tag}'
         output_data_dir = f'{data_dir}/{tag}-symmetries'
+        ds = load_selfplay_data(source_data_dir)
 
         try:
+            print(f'Removing {output_data_dir}')
             shutil.rmtree(output_data_dir)
         except FileNotFoundError:
             pass
@@ -101,6 +103,10 @@ def main():
             fname = f'{output_data_dir}/chunk-{i}.tfrecord.zz'
             print(f'{tag} chunk {i}: writing %d records' % len(tf_examples))
             preprocessing.write_tf_examples(fname, tf_examples)
+
+        print('swap in enhanced data dir')
+        shutil.move(source_data_dir, f'{source_data_dir}-org')
+        shutil.move(output_data_dir, source_data_dir)
 
 
 if __name__ == '__main__':
