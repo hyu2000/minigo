@@ -57,7 +57,11 @@ class RedundancyChecker(object):
     """
     def __init__(self, num_open_moves):
         self.num_open_moves = num_open_moves
-        self.result_map = dict()  # type: Dict[Tuple, Outcome]
+        self._result_map = dict()  # type: Dict[Tuple, Outcome]
+
+    @staticmethod
+    def _player_moves_to_gtp(moves: Sequence[go.PlayerMove]) -> Sequence[str]:
+        return tuple(coords.to_gtp(x.move) for x in moves)
 
     def should_continue(self, initial_moves: Sequence[go.PlayerMove]) -> bool:
         """ client calls this to check whether it should continue the current game
@@ -65,32 +69,41 @@ class RedundancyChecker(object):
         """
         if len(initial_moves) < self.num_open_moves:
             return True
-        key = initial_moves[:self.num_open_moves]
-        if key in self.result_map:
-            logging.info('dup found: %s', initial_moves)
+        
+        gtp_moves = self._player_moves_to_gtp(initial_moves)
+        key = gtp_moves[:self.num_open_moves]
+        if key in self._result_map:
+            logging.info('dup found: %s', gtp_moves)
             return False
         return True
 
     def record_game(self, move_history: Sequence[go.PlayerMove], result_str):
         """ client calls this to log a finished game """
+        move_history = self._player_moves_to_gtp(move_history)
+        
         key = move_history[:self.num_open_moves]
-        outcome = self.result_map.get(key)
+        outcome = self._result_map.get(key)
         if outcome is None:
-            self.result_map[key] = Outcome(move_history, result_str)
+            self._result_map[key] = Outcome(move_history, result_str)
             return
         if outcome.moves != move_history or outcome.result != result_str:
             logging.warning('Different results for same opening: %s %s Moves= %s',
                             outcome.result, result_str, move_history)
 
     def record_aborted_game(self, initial_moves: Sequence[go.PlayerMove]):
-        assert len(initial_moves) >= self.num_open_moves
-        key = initial_moves[:self.num_open_moves]
-        assert key in self.result_map
-        outcome = self.result_map[key]
+        """ client log a game that's considered dup """
+        gtp_moves = self._player_moves_to_gtp(initial_moves)
+        assert len(gtp_moves) >= self.num_open_moves
+
+        key = gtp_moves[:self.num_open_moves]
+        assert key in self._result_map
+        outcome = self._result_map[key]
         outcome.count += 1
 
     def report(self):
-        pass
+        print('Tournament Stats:')
+        for k, outcome in self._result_map.items():
+            print('%s \t%s\t %d' % (' '.join(k), outcome.result, outcome.count))
 
 
 def play_game(black: MCTSPlayer, white: MCTSPlayer, redundancy_checker: RedundancyChecker) -> MCTSPlayer:
@@ -188,6 +201,8 @@ def play_tournament(black_model: str, white_model: str, num_games, sgf_dir):
         print(f'Finished game {i}: #moves=%d %d %d {active.result_string} %s' % (
             len(game_history), black.num_readouts, white.num_readouts, move_history_head))
 
+    redundancy_checker.report()
+
 
 def main(argv):
     """Play matches between two neural nets."""
@@ -195,7 +210,7 @@ def main(argv):
     utils.ensure_dir_exists(FLAGS.eval_sgf_dir)
     # play_tournament(black_model, white_model, FLAGS.num_evaluation_games, FLAGS.eval_sgf_dir)
     play_tournament(f'{myconf.MODELS_DIR}/model5_epoch_3.h5', f'{myconf.MODELS_DIR}/model_epoch_2.h5',
-                    15, f'{myconf.EXP_HOME}/eval')
+                    12, f'{myconf.EXP_HOME}/eval')
 
 
 if __name__ == '__main__':
