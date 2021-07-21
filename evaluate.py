@@ -72,10 +72,15 @@ class RedundancyChecker(object):
         
         gtp_moves = self._player_moves_to_gtp(initial_moves)
         key = gtp_moves[:self.num_open_moves]
-        if key in self._result_map:
-            logging.info('dup found: %s', gtp_moves)
-            return False
-        return True
+        outcome = self._result_map.get(key)
+        if outcome is None:
+            return True
+
+        if outcome.count == 1:
+            logging.info('found opening %s, rerun', ' '.join(gtp_moves))
+            return True
+        logging.info('dup opening: %s, should skip', ' '.join(gtp_moves))
+        return False
 
     def record_game(self, move_history: Sequence[go.PlayerMove], result_str):
         """ client calls this to log a finished game """
@@ -87,8 +92,12 @@ class RedundancyChecker(object):
             self._result_map[key] = Outcome(move_history, result_str)
             return
         if outcome.moves != move_history or outcome.result != result_str:
-            logging.warning('Different results for same opening: %s %s Moves= %s',
-                            outcome.result, result_str, move_history)
+            logging.warning('Different results for same opening: %s %s Moves=\n%s\n%s',
+                            outcome.result, result_str,
+                            ' '.join(outcome.moves), ' '.join(move_history))
+        else:
+            # dup game with the same result
+            outcome.count += 1
 
     def record_aborted_game(self, initial_moves: Sequence[go.PlayerMove]):
         """ client log a game that's considered dup """
@@ -102,8 +111,9 @@ class RedundancyChecker(object):
 
     def report(self):
         print('Tournament Stats:')
+        print('open\tresult\tcount\t#moves')
         for k, outcome in self._result_map.items():
-            print('%s \t%s\t %d' % (' '.join(k), outcome.result, outcome.count))
+            print('%s \t%s\t %d\t %d' % (' '.join(k), outcome.result, outcome.count, len(outcome.moves)))
 
 
 def play_game(black: MCTSPlayer, white: MCTSPlayer, redundancy_checker: RedundancyChecker) -> MCTSPlayer:
