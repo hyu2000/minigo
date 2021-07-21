@@ -55,9 +55,11 @@ class RedundancyChecker(object):
 
     We can also allow to play a couple extra games, just to validate that this is indeed the case.
     """
-    def __init__(self, num_open_moves):
+    def __init__(self, num_open_moves, max_verify_games = 4):
         self.num_open_moves = num_open_moves
         self._result_map = dict()  # type: Dict[Tuple, Outcome]
+        self._num_verify_games = 0
+        self._max_verify_games = max_verify_games
 
     @staticmethod
     def _player_moves_to_gtp(moves: Sequence[go.PlayerMove]) -> Sequence[str]:
@@ -76,8 +78,9 @@ class RedundancyChecker(object):
         if outcome is None:
             return True
 
-        if outcome.count == 1:
+        if outcome.count == 1 and self._num_verify_games < self._max_verify_games:
             logging.info('found opening %s, rerun', ' '.join(gtp_moves))
+            self._num_verify_games += 1
             return True
         logging.info('dup opening: %s, should skip', ' '.join(gtp_moves))
         return False
@@ -218,9 +221,9 @@ def main(argv):
     """Play matches between two neural nets."""
     _, black_model, white_model = argv
     utils.ensure_dir_exists(FLAGS.eval_sgf_dir)
-    # play_tournament(black_model, white_model, FLAGS.num_evaluation_games, FLAGS.eval_sgf_dir)
-    play_tournament(f'{myconf.MODELS_DIR}/model5_epoch_3.h5', f'{myconf.MODELS_DIR}/model_epoch_2.h5',
-                    12, f'{myconf.EXP_HOME}/eval')
+    play_tournament(black_model, white_model, FLAGS.num_evaluation_games, FLAGS.eval_sgf_dir)
+    # play_tournament(f'{myconf.MODELS_DIR}/model5_epoch_3.h5', f'{myconf.MODELS_DIR}/model_epoch_2.h5',
+    #                 12, f'{myconf.EXP_HOME}/eval')
 
 
 if __name__ == '__main__':
