@@ -13,10 +13,12 @@
 # limitations under the License.
 
 """Evalation plays games between two neural nets."""
-
 import os
 import time
-from absl import app, flags
+from collections import namedtuple
+from typing import Tuple, Dict
+
+from absl import app, flags, logging
 from tensorflow.python import gfile
 
 import coords
@@ -36,7 +38,46 @@ flags.declare_key_flag('verbose')
 FLAGS = flags.FLAGS
 
 
-def play_game(black, white) -> MCTSPlayer:
+class Outcome(namedtuple('Outcome', ['moves', 'result'])):
+    pass
+
+
+class RedundancyChecker(object):
+    """ In evaluation mode, bot runs in a more-deterministic mode.
+    If the first two moves are the same, game will most likely end up the same.
+    Use this to avoid repetitive work.
+
+    We can also allow to play a couple extra games, just to validate that this is indeed the case.
+    """
+    def __init__(self, num_open_moves):
+        self.num_open_moves = num_open_moves
+        self.result_map = dict()  # type: Dict[Tuple, Outcome]
+
+    def should_continue(self, initial_moves: Tuple) -> bool:
+        """ client calls this to check whether it should continue the current game
+        Note client might call this multiple times in a game
+        """
+        if len(initial_moves) < self.num_open_moves:
+            return True
+        key = initial_moves[:self.num_open_moves]
+        if key in self.result_map:
+            return True
+        return False
+
+    def record_game(self, move_history: Tuple, result_str):
+        """ client calls this to log a finished game """
+        key = move_history[:self.num_open_moves]
+        outcome = self.result_map.get(key)
+        if outcome is None:
+            self.result_map[key] = Outcome(move_history, result_str)
+            return
+        if outcome.moves != move_history or outcome.result != result_str:
+            logging.warning('Different results for same opening: %s %s Moves= %s',
+                            outcome.result, result_str, move_history)
+
+
+def play_game(black: MCTSPlayer, white: MCTSPlayer, redundancy_checker: RedundancyChecker) -> MCTSPlayer:
+    """ return None if game is not played """
     num_move = 0  # The move number of the current game
     for player in [black, white]:
         player.initialize_game()
@@ -64,11 +105,18 @@ def play_game(black, white) -> MCTSPlayer:
                 active.root.position.to_play, was_resign=True)
 
         if active.is_done():
-            return active
+            break
 
         move = active.pick_move()
         active.play_move(move)
         inactive.play_move(move)
+
+        if num_move < 5:
+            history = active.root.position.recent
+            assert history[-1] == move
+            keep_play = redundancy_checker.should_continue(history)
+            if not keep_play:
+                return None
 
         dur = time.time() - start
         num_move += 1
@@ -80,6 +128,12 @@ def play_game(black, white) -> MCTSPlayer:
                                                                active.num_readouts,
                                                                timeper,
                                                                dur))
+
+    if active.result == 0:
+        active.set_result(active.root.position.result(), was_resign=False)
+
+    redundancy_checker.record_game(active.root.position.recent, active.result_string)
+    return active
 
 
 def play_tournament(black_model, white_model, num_games, sgf_dir):
@@ -95,17 +149,17 @@ def play_tournament(black_model, white_model, num_games, sgf_dir):
 
     black = MCTSPlayer(black_net, two_player_mode=True, num_readouts=200)
     white = MCTSPlayer(white_net, two_player_mode=True, num_readouts=200)
+    redundancy_checker = RedundancyChecker()
 
     black_name = os.path.basename(black_net.save_file)
     white_name = os.path.basename(white_net.save_file)
 
     for i in range(num_games):
-        active = play_game(black, white)
+        active = play_game(black, white, redundancy_checker)
+        if active is None:
+            continue
 
-        fname = "{:d}-{:s}-vs-{:s}-{:d}.sgf".format(int(time.time()),
-                                                    white_name, black_name, i)
-        if active.result == 0:
-            active.set_result(active.root.position.result(), was_resign=False)
+        fname = "{:d}-{:s}-vs-{:s}-{:d}.sgf".format(int(time.time()), white_name, black_name, i)
         game_history = active.position.recent
         with gfile.GFile(os.path.join(sgf_dir, fname), 'w') as _file:
             sgfstr = sgf_wrapper.make_sgf(game_history,

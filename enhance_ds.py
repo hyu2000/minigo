@@ -1,3 +1,7 @@
+"""
+apply symmetries to tfrecords. Ideally we can do this on-the-fly, but would need to ensure
+all np transforms are properly mapped to tensors w/ batching
+"""
 import os
 import shutil
 
