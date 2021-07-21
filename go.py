@@ -23,7 +23,7 @@ A PlayerMove is a (Color, Move) tuple
 from collections import namedtuple
 import copy
 import itertools
-from typing import Iterable
+from typing import Iterable, Sequence
 
 import numpy as np
 import os
@@ -313,7 +313,7 @@ class Position():
         self.caps = caps
         self.lib_tracker = lib_tracker or LibertyTracker.from_board(self.board)
         self.ko = ko
-        self.recent = recent  # type: Iterable[PlayerMove]
+        self.recent = recent  # type: Sequence[PlayerMove]
         self.board_deltas = board_deltas if board_deltas is not None else np.zeros([
                                                                                    0, N, N], dtype=np.int8)
         self.to_play = to_play
