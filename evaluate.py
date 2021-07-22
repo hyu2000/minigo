@@ -222,8 +222,8 @@ def play_tournament(black_model: str, white_model: str, num_games, sgf_dir):
                                           black_name=black_name, white_name=white_name)
             _file.write(sgfstr)
         move_history_head = ' '.join([coords.to_gtp(game_history[i].move) for i in range(5)])
-        print(f'Finished game {i}: #moves=%d %d %d {active.result_string} %s' % (
-            len(game_history), black.num_readouts, white.num_readouts, move_history_head))
+        logging.info(f'Finished game {i}: #moves=%d %d %d {active.result_string} %s',
+                     len(game_history), black.num_readouts, white.num_readouts, move_history_head)
 
     return redundancy_checker
 
@@ -238,13 +238,19 @@ def main(argv):
     """Play matches between two neural nets."""
     _, black_model, white_model = argv
     utils.ensure_dir_exists(FLAGS.eval_sgf_dir)
+    black_model_id, white_model_id = get_model_id(black_model), get_model_id(white_model)
+
+    logging.info('Tournament: %s vs %s', black_model_id, white_model_id)
     ledger1 = play_tournament(black_model, white_model, FLAGS.num_evaluation_games, FLAGS.eval_sgf_dir)
     df1 = ledger1.to_df()
+    print(df1)
+    logging.info('Tournament: %s vs %s', white_model_id, black_model_id)
     ledger2 = play_tournament(white_model, black_model, FLAGS.num_evaluation_games, FLAGS.eval_sgf_dir)
     df2 = ledger2.to_df()
-    df1.join(df2, how='outer')
+    print(df2)
 
-    df = join_and_format(df1, df2, get_model_id(black_model), get_model_id(white_model))
+    logging.info('Combining both runs')
+    df = join_and_format(df1, df2, black_model_id, white_model_id)
     print(df)
 
     # play_tournament(f'{myconf.MODELS_DIR}/model5_epoch_3.h5', f'{myconf.MODELS_DIR}/model_epoch_2.h5',
