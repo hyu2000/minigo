@@ -18,6 +18,7 @@ import time
 import attr
 from typing import Tuple, Dict, Sequence
 
+import pandas as pd
 from absl import app, flags, logging
 from tensorflow.python import gfile
 
@@ -112,11 +113,25 @@ class RedundancyChecker(object):
         outcome = self._result_map[key]
         outcome.count += 1
 
+    def to_df(self) -> pd.DataFrame:
+        """ format result_map as a DataFrame """
+        def format_outcome(outcome: Outcome) -> Dict:
+            d = attr.asdict(outcome)
+            d['moves'] = len(d['moves'])
+            return d
+
+        result_dict = {' '.join(k): format_outcome(v) for k, v in self._result_map.items()}
+        df = pd.DataFrame.from_dict(result_dict, orient='index')
+        return df
+
     def report(self):
         print('Tournament Stats:')
         print('open\tresult\tcount\t#moves')
         for k, outcome in self._result_map.items():
             print('%s \t%s\t %d\t %d' % (' '.join(k), outcome.result, outcome.count, len(outcome.moves)))
+
+        df = self.to_df()
+        print(df)
 
 
 def play_game(black: MCTSPlayer, white: MCTSPlayer, redundancy_checker: RedundancyChecker) -> MCTSPlayer:
@@ -214,18 +229,34 @@ def play_tournament(black_model: str, white_model: str, num_games, sgf_dir):
         print(f'Finished game {i}: #moves=%d %d %d {active.result_string} %s' % (
             len(game_history), black.num_readouts, white.num_readouts, move_history_head))
 
-    redundancy_checker.report()
+    return redundancy_checker
 
 
 def main(argv):
     """Play matches between two neural nets."""
     _, black_model, white_model = argv
     utils.ensure_dir_exists(FLAGS.eval_sgf_dir)
-    play_tournament(black_model, white_model, FLAGS.num_evaluation_games, FLAGS.eval_sgf_dir)
+    ledger1 = play_tournament(black_model, white_model, FLAGS.num_evaluation_games, FLAGS.eval_sgf_dir)
+    ledger1.report()
+    ledger2 = play_tournament(white_model, black_model, FLAGS.num_evaluation_games, FLAGS.eval_sgf_dir)
+    ledger2.report()
+
     # play_tournament(f'{myconf.MODELS_DIR}/model5_epoch_3.h5', f'{myconf.MODELS_DIR}/model_epoch_2.h5',
     #                 12, f'{myconf.EXP_HOME}/eval')
 
 
+def test_report(argv):
+    d = {
+        ('C3', 'D3'): Outcome(tuple('abcd'), 'B+7', 3),
+        ('C3', 'D2'): Outcome(tuple('abcdef'), 'W+2', 2),
+        ('B3', 'D2'): Outcome(tuple('abcdefg'), 'B+3', 1),
+    }
+    ledger = RedundancyChecker(2)
+    ledger._result_map = d
+    ledger.report()
+
+
 if __name__ == '__main__':
     flags.mark_flag_as_required('eval_sgf_dir')
-    app.run(main)
+    # app.run(main)
+    app.run(test_report)
