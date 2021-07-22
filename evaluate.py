@@ -29,6 +29,8 @@ from strategies import MCTSPlayer
 import sgf_wrapper
 import utils
 import myconf
+
+# None = unlimited, 0 = auto-detect
 pd.set_option('display.max_columns', None)
 
 flags.DEFINE_string('eval_sgf_dir', None, 'Where to write evaluation results.')
@@ -284,7 +286,7 @@ def test_report(argv):
     df2 = ledger2.to_df()
 
     df = join_and_format(df1, df2, get_model_id('/models/m1.h5'), get_model_id('m2.h5'))
-    print(df)
+    print(df.fillna('-'))
 
 
 if __name__ == '__main__':
