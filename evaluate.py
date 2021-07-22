@@ -126,12 +126,8 @@ class RedundancyChecker(object):
 
     def report(self):
         print('Tournament Stats:')
-        print('open\tresult\tcount\t#moves')
-        for k, outcome in self._result_map.items():
-            print('%s \t%s\t %d\t %d' % (' '.join(k), outcome.result, outcome.count, len(outcome.moves)))
-
         df = self.to_df()
-        print(df)
+        print(df.sort_values('count', ascending=False))
 
 
 def play_game(black: MCTSPlayer, white: MCTSPlayer, redundancy_checker: RedundancyChecker) -> MCTSPlayer:
@@ -237,23 +233,40 @@ def main(argv):
     _, black_model, white_model = argv
     utils.ensure_dir_exists(FLAGS.eval_sgf_dir)
     ledger1 = play_tournament(black_model, white_model, FLAGS.num_evaluation_games, FLAGS.eval_sgf_dir)
-    ledger1.report()
+    df1 = ledger1.to_df()
     ledger2 = play_tournament(white_model, black_model, FLAGS.num_evaluation_games, FLAGS.eval_sgf_dir)
-    ledger2.report()
+    df2 = ledger2.to_df()
+    df1.join(df2, how='outer')
 
     # play_tournament(f'{myconf.MODELS_DIR}/model5_epoch_3.h5', f'{myconf.MODELS_DIR}/model_epoch_2.h5',
     #                 12, f'{myconf.EXP_HOME}/eval')
 
 
 def test_report(argv):
-    d = {
+    d1 = {
         ('C3', 'D3'): Outcome(tuple('abcd'), 'B+7', 3),
-        ('C3', 'D2'): Outcome(tuple('abcdef'), 'W+2', 2),
-        ('B3', 'D2'): Outcome(tuple('abcdefg'), 'B+3', 1),
+        ('C3', 'D2'): Outcome(tuple('abcdef'), 'W+2', 1),  # common
+        ('B3', 'D2'): Outcome(tuple('abcdefg'), 'B+3', 2),
     }
-    ledger = RedundancyChecker(2)
-    ledger._result_map = d
-    ledger.report()
+    ledger1 = RedundancyChecker(2)
+    ledger1._result_map = d1
+    df1 = ledger1.to_df()
+    d2 = {
+        ('C3', 'D3'): Outcome(tuple('abcde'), 'B+5', 4),
+        ('C3', 'C4'): Outcome(tuple('abcdef'), 'B+2', 2),
+        ('C3', 'D2'): Outcome(tuple('abcdeg'), 'W+1', 1),  # common
+    }
+    ledger2 = RedundancyChecker(2)
+    ledger2._result_map = d2
+    df2 = ledger2.to_df()
+
+    df1.columns = pd.MultiIndex.from_product([['as White'], df1.columns])
+    df2.columns = pd.MultiIndex.from_product([['as Black'], df2.columns])
+    df = df1.join(df2, how='outer')
+    print(df)
+    df['count_max'] = df.xs('count', axis=1, level=1).max(axis=1)
+    df = df.sort_values('count_max', ascending=False).drop('count_max', axis=1)
+    print(df)
 
 
 if __name__ == '__main__':
