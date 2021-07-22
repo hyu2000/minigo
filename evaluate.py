@@ -29,11 +29,10 @@ from strategies import MCTSPlayer
 import sgf_wrapper
 import utils
 import myconf
+pd.set_option('display.max_columns', None)
 
 flags.DEFINE_string('eval_sgf_dir', None, 'Where to write evaluation results.')
-
 flags.DEFINE_integer('num_evaluation_games', 16, 'How many games to play')
-
 # From strategies.py
 flags.declare_key_flag('verbose')
 
@@ -56,7 +55,7 @@ class RedundancyChecker(object):
 
     We can also allow to play a couple extra games, just to validate that this is indeed the case.
     """
-    def __init__(self, num_open_moves, max_verify_games = 4):
+    def __init__(self, num_open_moves, max_verify_games=4):
         self.num_open_moves = num_open_moves
         self._result_map = dict()  # type: Dict[Tuple, Outcome]
         self._num_verify_games = 0
