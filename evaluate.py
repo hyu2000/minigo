@@ -252,7 +252,7 @@ def main(argv):
 
     logging.info('Combining both runs')
     df = join_and_format(df1, df2, black_model_id, white_model_id)
-    print(df)
+    print(df.fillna('-'))
 
     # play_tournament(f'{myconf.MODELS_DIR}/model5_epoch_3.h5', f'{myconf.MODELS_DIR}/model_epoch_2.h5',
     #                 12, f'{myconf.EXP_HOME}/eval')
