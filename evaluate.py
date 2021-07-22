@@ -228,6 +228,12 @@ def play_tournament(black_model: str, white_model: str, num_games, sgf_dir):
     return redundancy_checker
 
 
+def get_model_id(model_path: str) -> str:
+    basename = os.path.basename(model_path)
+    model_id, _ = os.path.splitext(basename)
+    return model_id
+
+
 def main(argv):
     """Play matches between two neural nets."""
     _, black_model, white_model = argv
@@ -238,8 +244,20 @@ def main(argv):
     df2 = ledger2.to_df()
     df1.join(df2, how='outer')
 
+    df = join_and_format(df1, df2, get_model_id(black_model), get_model_id(white_model))
+    print(df)
+
     # play_tournament(f'{myconf.MODELS_DIR}/model5_epoch_3.h5', f'{myconf.MODELS_DIR}/model_epoch_2.h5',
     #                 12, f'{myconf.EXP_HOME}/eval')
+
+
+def join_and_format(df1: pd.DataFrame, df2: pd.DataFrame, black_id: str, white_id: str) -> pd.DataFrame:
+    df1.columns = pd.MultiIndex.from_product([[black_id], df1.columns])
+    df2.columns = pd.MultiIndex.from_product([[white_id], df2.columns])
+    df = df1.join(df2, how='outer')
+    df['count_max'] = df.xs('count', axis=1, level=1).max(axis=1)
+    df = df.sort_values('count_max', ascending=False).drop('count_max', axis=1)
+    return df
 
 
 def test_report(argv):
@@ -260,16 +278,11 @@ def test_report(argv):
     ledger2._result_map = d2
     df2 = ledger2.to_df()
 
-    df1.columns = pd.MultiIndex.from_product([['as White'], df1.columns])
-    df2.columns = pd.MultiIndex.from_product([['as Black'], df2.columns])
-    df = df1.join(df2, how='outer')
-    print(df)
-    df['count_max'] = df.xs('count', axis=1, level=1).max(axis=1)
-    df = df.sort_values('count_max', ascending=False).drop('count_max', axis=1)
+    df = join_and_format(df1, df2, get_model_id('/models/m1.h5'), get_model_id('m2.h5'))
     print(df)
 
 
 if __name__ == '__main__':
     flags.mark_flag_as_required('eval_sgf_dir')
-    # app.run(main)
-    app.run(test_report)
+    app.run(main)
+    # app.run(test_report)
