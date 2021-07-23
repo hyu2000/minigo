@@ -20,7 +20,7 @@ class WebPlayer(object):
         return np.random.choice(len(probs), 1, p=probs)[0]
 
     def select_move_no_mcts(self, moves_history):
-        # entry point
+        """ """
         pos = self.construct_game_state(moves_history)
         probs, value = self.dnn.run(pos)
 

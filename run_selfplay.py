@@ -34,7 +34,7 @@ def play_games(num_games=500):
                           )
         margin_est = player.black_margin_no_komi
         moves_history = player.root.position.recent
-        history_str = ' '.join([coords.to_gtp(moves_history[i].move) for i in range(5)])
+        history_str = ' '.join([coords.to_gtp(moves_history[i].move) for i in range(10)])
         logging.info(f'game {i}: %d moves, final margin %.1f \t%s', player.root.position.n, margin_est, history_str)
 
 
