@@ -32,6 +32,7 @@ import myconf
 
 # None = unlimited, 0 = auto-detect
 pd.set_option('display.max_columns', None)
+pd.set_option('display.width', 120)
 
 flags.DEFINE_string('eval_sgf_dir', None, 'Where to write evaluation results.')
 flags.DEFINE_integer('num_evaluation_games', 16, 'How many games to play')

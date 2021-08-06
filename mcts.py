@@ -36,7 +36,7 @@ flags.DEFINE_float('c_puct_base', 19652,
 
 flags.DEFINE_float('c_puct_init', 1.25,
                    'Exploration constants balancing priors vs. value net output.')
-
+# 0.43 for 5x5: the higher alpha is, the closer it is to uniform dist.
 flags.DEFINE_float('dirichlet_noise_alpha', 0.03 * 361 / (go.N ** 2),
                    'Concentrated-ness of the noise being injected into priors.')
 flags.register_validator('dirichlet_noise_alpha', lambda x: 0 <= x < 1)
@@ -310,7 +310,7 @@ class MCTSNode(object):
     def describe(self):
         ranked_children = self.rank_children()
         soft_n = self.child_N / max(1, sum(self.child_N))
-        prior = self.child_prior
+        prior = self.original_prior
         p_delta = soft_n - prior
         p_rel = np.divide(p_delta, prior, out=np.zeros_like(
             p_delta), where=prior != 0)

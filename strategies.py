@@ -27,6 +27,7 @@ from utils import dbg
 from player_interface import MCTSPlayerInterface
 
 
+# this affects pick_move() and searches_pi
 flags.DEFINE_integer('softpick_move_cutoff', (go.N * go.N // 12) // 2 * 2,
                      'The move number (<) up to which moves are softpicked from MCTS visits.')
 # Ensure that both white and black have an equal number of softpicked moves.
@@ -160,7 +161,7 @@ class MCTSPlayer(MCTSPlayerInterface):
         """
         if not self.two_player_mode:
             self.searches_pi.append(self.root.children_as_pi(
-                self.root.position.n < self.temp_threshold))
+                squash=self.root.position.n < self.temp_threshold))
         self.comments.append(self.root.describe())
         try:
             self.root = self.root.maybe_add_child(coords.to_flat(c))
