@@ -10,7 +10,7 @@ python3 run_selfplay.py \
   --selfplay_dir="${DRIVE_HOME}/selfplay/train" \
   --holdout_dir="${DRIVE_HOME}/selfplay/val" \
   --sgf_dir="${DRIVE_HOME}/selfplay/sgf" \
-  --load_file="${DRIVE_HOME}/checkpoints/model1_epoch_3.h5" \
+  --load_file="${DRIVE_HOME}/checkpoints/model2_epoch_2.h5" \
   --num_readouts=200 \
   --parallel_readouts=16 \
   --num_games=2000 \
