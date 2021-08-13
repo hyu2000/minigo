@@ -31,6 +31,19 @@ I0525 17:00:48.143833 4747976192 eval_vnet.py:73] By turns:
 	Count [' 500', ' 500', ' 495', ' 460', ' 369', ' 231', ' 130', '  50', '  18', '   7', '   3', '   3', '   2', '   1', '   1', '   1']
 	Tromp ['0.60', '0.60', '0.59', '0.56', '0.57', '0.60', '0.65', '0.72', '0.83', '0.57', '0.67', '0.67', '1.00', '1.00', '1.00', '1.00']
 	vnet  ['0.41', '0.59', '0.69', '0.73', '0.79', '0.81', '0.80', '0.72', '0.89', '0.71', '0.67', '0.67', '1.00', '1.00', '1.00', '1.00']
+NNGS (first 500):
+I0602 14:42:21.079003 4412198400 eval_vnet.py:91] Total 500 games, final acc: Tromp 0.53, vnet 0.79, mcts 0.00
+I0602 14:42:21.079193 4412198400 eval_vnet.py:96] By turns:
+	Count [' 500', ' 500', ' 499', ' 472', ' 364', ' 220', '  95', '  19', '   3', '   1']
+	Tromp ['0.58', '0.57', '0.54', '0.56', '0.55', '0.50', '0.60', '0.63', '1.00', '1.00']
+	vnet  ['0.43', '0.64', '0.69', '0.76', '0.79', '0.79', '0.82', '0.63', '1.00', '1.00']
+
+epoch2
+I0602 14:40:39.793861 4696673792 eval_vnet.py:83] Total 500 games, final acc: Tromp 0.53, vnet 0.78, mcts 0.00
+I0602 14:40:39.794044 4696673792 eval_vnet.py:88] By turns:
+	Count [' 500', ' 500', ' 499', ' 472', ' 364', ' 220', '  95', '  19', '   3', '   1']
+	Tromp ['0.58', '0.57', '0.54', '0.56', '0.55', '0.50', '0.60', '0.63', '1.00', '1.00']
+	vnet  ['0.43', '0.51', '0.65', '0.73', '0.80', '0.77', '0.80', '0.63', '1.00', '1.00']	
 """
 from typing import List
 
@@ -41,7 +54,6 @@ from sgf_wrapper import SGFReader
 from tar_dataset import GameStore
 import k2net as dual_net
 from absl import logging, app, flags
-
 
 flags.DEFINE_string('tar_dir', None, 'Where to find TarDataSets.')
 
@@ -54,8 +66,8 @@ class ScoreStats(object):
     def __init__(self):
         self.num_games = 0
         self.tromp_final = 0
-        self.vnet_final  = 0
-        self.mcts_final  = 0
+        self.vnet_final = 0
+        self.mcts_final = 0
         self.tromp_counters = np.zeros(NUM_TURNS_COUNTED)
         self.vnet_counters  = np.zeros(NUM_TURNS_COUNTED)
         self.total_counters = np.zeros(NUM_TURNS_COUNTED)
@@ -126,7 +138,7 @@ def run_game(network, game_id, reader: SGFReader, stats: ScoreStats):
     position = pwc.position
     # position = pos_to_eval[2]
     pos_to_eval.append(position)
-    mcts_binary = run_tree_search(network, position)
+    mcts_binary = 0  # run_tree_search(network, position)
 
     tromp_scores = [p.score() for p in pos_to_eval]
     tromp_binary = [np.sign(s) for s in tromp_scores]
@@ -144,10 +156,10 @@ def run_games(start_idx=0):
     """
     # store = GameStore(data_dir=FLAGS.tar_dir)
     store = GameStore(data_dir=f'{myconf.DATA_DIR}')
-    game_iter = store.game_iter([store.ds_nngs], filter_game=True, shuffle=True)
+    game_iter = store.game_iter([store.ds_nngs], filter_game=True, shuffle=False)
 
     # model_file = FLAGS.load_file
-    model_file = f'{myconf.MODELS_DIR}/model3_epoch_5.h5'
+    model_file = f'{myconf.MODELS_DIR}/endgame_epoch_2.h5'
     network = dual_net.DualNetwork(model_file)
     stats = ScoreStats()
     for game_idx, (game_id, reader) in enumerate(game_iter):
@@ -155,8 +167,8 @@ def run_games(start_idx=0):
             continue
 
         run_game(network, game_id, reader, stats)
-        if stats.num_games >= 200: break
-        if stats.num_games % 10 == 0:
+        if stats.num_games >= 500: break
+        if stats.num_games % 50 == 0:
             print('.', end='')
     print()
     stats.report()

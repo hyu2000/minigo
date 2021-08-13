@@ -24,6 +24,7 @@ class GameStats(object):
     def __init__(self):
         self.winner_count = Counter()
         self.komi_counter = Counter()
+        self.raw_margin_counter = Counter()
         self.dur_counter = Counter()
         self.total_moves = 0
 
@@ -40,6 +41,13 @@ class GameStats(object):
             self.winner_count['R|T'] += 1
         komi = reader.komi()
         self.komi_counter[komi] += 1
+
+        if black_margin is not None:
+            raw_margin = black_margin + komi
+            if raw_margin != int(raw_margin):
+                self.raw_margin_counter['non-int'] += 1
+            elif raw_margin % 2 == 0:
+                self.raw_margin_counter['even'] += 1
 
         self.dur_counter[reader.num_nodes()] += 1
 
@@ -61,9 +69,9 @@ def summarize():
 
 def preprocess(train_val_split=0.9, games_in_batch=2000):
     store = GameStore()
-    game_iter = store.game_iter([store.ds_pro, store.ds_top], filter_game=True)
+    game_iter = store.game_iter([store.ds_nngs], filter_game=True)
 
-    num_batch = 0
+    num_batch = 10
     batch_train = []
     games_val = []  # all val data goes here
     for game_id, reader in game_iter:
@@ -81,7 +89,7 @@ def preprocess(train_val_split=0.9, games_in_batch=2000):
         num_batch += 1
 
     write_batch(f'{myconf.FEATURES_DIR}/train-{num_batch}.tfexamples', batch_train)
-    write_batch(f'{myconf.FEATURES_DIR}/val.tfexamples', games_val)
+    write_batch(f'{myconf.FEATURES_DIR}/val-nngs.tfexamples', games_val)
 
 
 def preprocess_by_stage(sample_rate=0.1, games_in_batch=2000):

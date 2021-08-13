@@ -83,10 +83,10 @@ def sample_generator(ds):
             yield preprocessing.make_tf_example(x, pi, value)
 
 
-def test_iter_chunks():
-    it = np.ones((32, 3))
-    for i, group in enumerate(utils.iter_chunks(10, it)):
-        print(i, len(group), sum(group))
+# def test_iter_chunks():
+#     it = np.ones((32, 3))
+#     for i, group in enumerate(utils.iter_chunks(10, it)):
+#         print(i, len(group), sum(group))
 
 
 def main():

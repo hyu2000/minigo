@@ -13,7 +13,6 @@ import go
 import myconf
 import k2net as dual_net
 from sgf_wrapper import SGFReader
-from symmetries import apply_symmetry_dual
 
 N = go.N
 HOME_DIR = myconf.EXP_HOME
