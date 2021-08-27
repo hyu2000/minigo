@@ -82,8 +82,8 @@ def compile_dual():
                       'policy': 'categorical_crossentropy',
                       'value': custom_MSE_loss},
                   loss_weights={
-                      'policy': 0.98,
-                      'value':  0.02},
+                      'policy': 0.90,
+                      'value':  0.10},
                   metrics={
                       'policy': keras.metrics.CategoricalAccuracy(name="move_acc"),
                       # 'value': custom_value_accuracy,
@@ -234,7 +234,7 @@ def train():
     model = load_model(f'{myconf.MODELS_DIR}/model4_epoch_1.h5')
 
     data_dir = myconf.SELFPLAY_DIR
-    data_dir = f'{myconf.EXP_HOME}/selfplay'
+    # data_dir = f'{myconf.EXP_HOME}/selfplay'
     ds_train = load_selfplay_data(f'{data_dir}/train')
     ds_val = load_selfplay_data(f'{data_dir}/val')
     callbacks = [
