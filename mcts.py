@@ -197,7 +197,7 @@ class MCTSNode(object):
         assert move_probabilities.shape == (go.N * go.N + 1,)
         # A finished game should not be going through this code path - should
         # directly call backup_value() on the result of the game.
-        # assert not self.position.is_game_over()
+        assert not self.position.is_game_over()
 
         # raw_value can be margin. normalize it to (-1, 1)
         self.raw_margin = raw_value
