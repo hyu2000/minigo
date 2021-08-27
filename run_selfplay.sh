@@ -10,10 +10,11 @@ python3 run_selfplay.py \
   --selfplay_dir="${DRIVE_HOME}/selfplay/train" \
   --holdout_dir="${DRIVE_HOME}/selfplay/val" \
   --sgf_dir="${DRIVE_HOME}/selfplay/sgf" \
-  --load_file="${DRIVE_HOME}/checkpoints/model5_epoch_2.h5" \
-  --dirichlet_noise_weight=0.50 \
   --num_readouts=200 \
   --parallel_readouts=16 \
   --num_games=2000 \
   2>&1 | tee "${DRIVE_HOME}/selfplay/run_selfplay.log"
+
+#  --dirichlet_noise_weight=0.025 \
+#  --load_file="${DRIVE_HOME}/checkpoints/model5_epoch_2.h5" \
 
