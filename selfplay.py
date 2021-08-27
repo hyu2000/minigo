@@ -93,9 +93,9 @@ def play(network, init_position=None):
         player.play_move(move)
         if player.root.is_done():
             pos = player.root.position
-            raw_margin = player.root.raw_margin
-            assert not np.isnan(raw_margin)
-            player.set_result(np.sign(raw_margin - pos.komi), was_resign=False, black_margin_no_komi=raw_margin)
+            tromp_margin = pos.score() + pos.komi
+            assert not np.isnan(tromp_margin)
+            player.set_result(np.sign(tromp_margin - pos.komi), was_resign=False, black_margin_no_komi=tromp_margin)
             break
 
         if (FLAGS.verbose >= 2) or (FLAGS.verbose >= 1 and player.root.position.n % 10 == 9):
