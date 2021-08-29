@@ -10,7 +10,7 @@ python3 run_selfplay.py \
   --selfplay_dir="${DRIVE_HOME}/selfplay/train" \
   --holdout_dir="${DRIVE_HOME}/selfplay/val" \
   --sgf_dir="${DRIVE_HOME}/selfplay/sgf" \
-  --load_file="${DRIVE_HOME}/checkpoints/model3_epoch_3.h5" \
+  --load_file="${DRIVE_HOME}/checkpoints/model4_epoch_1.h5" \
   --softpick_move_cutoff=6 \
   --num_readouts=200 \
   --parallel_readouts=16 \
