@@ -94,6 +94,7 @@ def compile_dual():
 
 
 def load_model(fname):
+    logging.info('load_model %s', fname)
     model = compile_dual()
     model.load_weights(fname)
     return model
