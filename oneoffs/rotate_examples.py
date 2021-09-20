@@ -14,6 +14,9 @@
 """Randomly rotate the examples in a tfrecords.zz file."""
 
 import sys
+
+from utils import grouper
+
 sys.path.insert(0, '.')
 
 import itertools
@@ -38,14 +41,6 @@ flags.DEFINE_integer("batch_size", 100, "batch_size for rotating.")
 
 FLAGS = flags.FLAGS
 OPTS = tf.python_io.TFRecordOptions(tf.python_io.TFRecordCompressionType.ZLIB)
-
-
-def grouper(n, iterable):
-    """Itertools recipe
-    >>> list(grouper(3, iter('ABCDEFG')))
-    [['A', 'B', 'C'], ['D', 'E', 'F'], ['G']]
-    """
-    return iter(lambda: list(itertools.islice(iterable, n)), [])
 
 
 def batched_reader(file_path):

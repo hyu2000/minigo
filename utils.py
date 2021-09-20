@@ -22,6 +22,7 @@ import os
 import re
 import sys
 import time
+from typing import Iterator
 
 
 def dbg(*objects, file=sys.stderr, flush=True, **kwargs):
@@ -66,6 +67,15 @@ def iter_chunks(chunk_size, iterator):
             yield next_chunk
         else:
             break
+
+
+def grouper(n, iterable: Iterator):
+    """Itertools recipe
+    >>> list(grouper(3, iter('ABCDEFG')))
+    [['A', 'B', 'C'], ['D', 'E', 'F'], ['G']]
+    >>> list(grouper(iter(range(10)), 3))  # iter() important!
+    """
+    return iter(lambda: list(itertools.islice(iterable, n)), [])
 
 
 @contextmanager
