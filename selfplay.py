@@ -28,6 +28,7 @@ import tensorflow as tf
 import coords
 import go
 import k2net as dual_net
+import mcts
 import preprocessing
 from sgf_wrapper import SGFReader
 from strategies import MCTSPlayer
@@ -50,7 +51,7 @@ flags.declare_key_flag('num_readouts')
 FLAGS = flags.FLAGS
 
 
-def play(network, init_position=None):
+def play(network, init_position=None, init_root=None):
     """Plays out a self-play match, returning a MCTSPlayer object containing:
         - the final position
         - the n x 362 tensor of floats representing the mcts search probabilities
@@ -65,8 +66,7 @@ def play(network, init_position=None):
         resign_threshold = None
 
     player = MCTSPlayer(network, resign_threshold=resign_threshold)
-
-    player.initialize_game(position=init_position)
+    player.initialize_game(position=init_position, root=init_root)
 
     # Must run this once at the start to expand the root node.
     first_node = player.root.select_leaf()
@@ -126,12 +126,13 @@ def create_dir_if_needed(selfplay_dir=None, holdout_dir=None, sgf_dir=None):
         utils.ensure_dir_exists(holdout_dir)
 
 
-def run_game(dnn, init_position: go.Position=None, game_id=None,
+def run_game(dnn, init_position: go.Position=None, init_root: mcts.MCTSNode=None,
+             game_id=None,
              selfplay_dir=None, holdout_dir=None,
              sgf_dir=None, holdout_pct=0.05) -> MCTSPlayer:
     """Takes a played game and record results and game data."""
     with utils.logged_timer("Playing game"):
-        player = play(dnn, init_position=init_position)
+        player = play(dnn, init_position=init_position, init_root=init_root)
 
     output_name = '{}-{}'.format(int(time.time()), socket.gethostname())
     game_data = player.extract_data()
@@ -206,19 +207,23 @@ def main(argv):
     # init_sgf = '/Users/hyu/PycharmProjects/dlgo/5x5/games/mcts-study1.sgf'
 
     init_position = None
+    init_position = go.Position().play_move(coords.from_gtp('C2'))
     if init_sgf:
         reader = SGFReader.from_file_compatible(init_sgf)
         init_position = reader.last_pos(ignore_final_pass=True)
 
-    load_file = f'{myconf.MODELS_DIR}/model1_epoch_3.h5'
+    load_file = f'{myconf.MODELS_DIR}/model8_epoch_5.h5'
     with utils.logged_timer("Loading weights from %s ... " % load_file):
         network = dual_net.DualNetwork(load_file)
 
     create_dir_if_needed(selfplay_dir=FLAGS.selfplay_dir, holdout_dir=FLAGS.holdout_dir,
                          sgf_dir=myconf.SELFPLAY_DIR)
-    run_game(
+
+    shared_tree = mcts.MCTSNode(init_position)
+    player = run_game(
         network,
         init_position=init_position, game_id=init_sgf,
+        init_root=shared_tree,
         selfplay_dir=FLAGS.selfplay_dir,
         holdout_dir=FLAGS.holdout_dir,
         # selfplay_dir=f'{myconf.EXP_HOME}/selfplay/tfdata',
@@ -227,6 +232,7 @@ def main(argv):
         sgf_dir=f'{myconf.SELFPLAY_DIR}'
         # sgf_dir=FLAGS.sgf_dir
     )
+    print(len(shared_tree.children))
 
 
 if __name__ == '__main__':

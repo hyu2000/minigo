@@ -113,16 +113,23 @@ class MCTSPlayer(MCTSPlayerInterface):
     def get_result_string(self):
         return self.result_string
 
-    def initialize_game(self, position: go.Position = None):
+    def initialize_game(self, position: go.Position = None, root: mcts.MCTSNode = None):
+        """
+        root: allows tree reuse
+        """
         if position is None:
             position = go.Position()
-        self.root = mcts.MCTSNode(position)
+        if root is None:
+            self.root = mcts.MCTSNode(position)
+        else:
+            assert root.position == position
+            self.root = root
         self.result = 0
         self.result_string = None
         self.comments = []
         self.searches_pi = []
         # keep track of where in the game MCTS gets involved
-        self.init_position = position
+        self.init_root = self.root
 
     def suggest_move(self, position):
         """Used for playing a single game.
@@ -173,7 +180,7 @@ class MCTSPlayer(MCTSPlayerInterface):
             raise
 
         self.position = self.root.position  # for showboard
-        del self.root.parent.children
+        # del self.root.parent.children
         return True  # GTP requires positive result.
 
     def pick_move(self):
@@ -273,11 +280,12 @@ class MCTSPlayer(MCTSPlayerInterface):
                                     comments=comments)
 
     def extract_data(self):
-        assert len(self.searches_pi) == self.root.position.n - self.init_position.n
+        init_position = self.init_root.position
+        assert len(self.searches_pi) == self.root.position.n - init_position.n
         # assert self.result != 0
         result = self.black_margin_no_komi
         assert result is not None
-        for pwc, pi in zip(go.replay_position(self.root.position, result, initial_position=self.init_position),
+        for pwc, pi in zip(go.replay_position(self.root.position, result, initial_position=init_position),
                            self.searches_pi):
             yield pwc.position, pi, pwc.result
 

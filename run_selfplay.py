@@ -1,16 +1,18 @@
+import resource
 import numpy as np
 
 import coords
 import go
+import mcts
 import myconf
 from selfplay import run_game, create_dir_if_needed
-from tar_dataset import GameStore
 import k2net as dual_net
 from absl import logging, app, flags
 
+from utils import grouper
 
 flags.DEFINE_integer('num_games', 5, '#games to play')
-
+NUM_GAMES_SHARE_TREE = 40
 
 FLAGS = flags.FLAGS
 
@@ -19,30 +21,43 @@ def play_games(num_games=500):
     """ """
     model_file = FLAGS.load_file
     if model_file:
+        logging.info('loading %s', model_file)
         network = dual_net.DualNetwork(model_file)
     else:
+        logging.info('use DummyNetwork')
         network = dual_net.DummyNetwork()
 
     create_dir_if_needed(selfplay_dir=FLAGS.selfplay_dir, holdout_dir=FLAGS.holdout_dir,
                          sgf_dir=FLAGS.sgf_dir)
 
     open_moves, open_probs = ['C2', 'B2'], [.5, .5]
-    for i in range(num_games):
+    for i_batch in grouper(NUM_GAMES_SHARE_TREE, iter(range(num_games))):
+        logging.info(f'\nStarting new batch : %d games', len(i_batch))
         open_move = np.random.choice(open_moves, p=open_probs)
         init_position = go.Position().play_move(
             coords.from_gtp(open_move)
         )
-        player = run_game(network,
-                          init_position=init_position,
-                          selfplay_dir=FLAGS.selfplay_dir,
-                          holdout_dir=FLAGS.holdout_dir,
-                          holdout_pct=FLAGS.holdout_pct,
-                          sgf_dir=FLAGS.sgf_dir
-                          )
-        margin_est = player.black_margin_no_komi
-        moves_history = player.root.position.recent
-        history_str = ' '.join([coords.to_gtp(x.move) for x in moves_history[:8]])
-        logging.info(f'game {i}: %d moves, final margin %.1f \t%s', player.root.position.n, margin_est, history_str)
+        shared_tree = mcts.MCTSNode(init_position)
+        for i in i_batch:
+            player = run_game(network,
+                              init_position=init_position,
+                              init_root=shared_tree,
+                              selfplay_dir=FLAGS.selfplay_dir,
+                              holdout_dir=FLAGS.holdout_dir,
+                              holdout_pct=FLAGS.holdout_pct,
+                              sgf_dir=FLAGS.sgf_dir
+                              )
+            margin_est = player.black_margin_no_komi
+            moves_history = player.root.position.recent
+            history_str = ' '.join([coords.to_gtp(x.move) for x in moves_history[:8]])
+
+            ru_rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+
+            logging.info(f'game {i}: %d moves, final margin %.1f lvl1_nodes=%d rss=%.0f\t%s', player.root.position.n,
+                         margin_est, len(shared_tree.children), ru_rss / 1e6,
+                         history_str)
+
+        del shared_tree
 
 
 def main(argv):
