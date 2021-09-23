@@ -4,6 +4,8 @@ all np transforms are properly mapped to tensors w/ batching
 """
 import os
 import shutil
+import sys
+from typing import List
 
 import numpy as np
 import tensorflow as tf
@@ -89,8 +91,12 @@ def sample_generator(ds):
 #         print(i, len(group), sum(group))
 
 
-def main():
+def main(argv: List):
     data_dir = f'{myconf.EXP_HOME}/selfplay'
+    if len(argv) > 1:
+        data_dir = argv[1]
+
+    print(f'Applying symmetries to {data_dir}')
     for tag in ['train', 'val']:
         source_data_dir = f'{data_dir}/{tag}'
         output_data_dir = f'{data_dir}/{tag}-symmetries'
@@ -114,5 +120,5 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv)
     # test_iter_chunks()

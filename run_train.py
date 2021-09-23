@@ -4,6 +4,8 @@
 """
 import collections
 import os.path
+import sys
+from typing import List
 
 import numpy as np
 import tensorflow as tf
@@ -230,7 +232,7 @@ dataset = dataset.prefetch(buffer_size=batch_size)
     return dataset
 
 
-def train():
+def train_local():
     # model = compile_dual()
     model = load_model(f'{myconf.MODELS_DIR}/model4_epoch_1.h5')
 
@@ -243,12 +245,35 @@ def train():
         # keras.callbacks.EarlyStopping(monitor='val_loss', patience=2)
     ]
     history = model.fit(ds_train.shuffle(1000).batch(64), validation_data=ds_val.batch(64),
-                        epochs=5, callbacks=callbacks)
+                        epochs=4, callbacks=callbacks)
+    print(history.history)
+
+
+def train(argv: List):
+    assert len(argv) == 4
+    train_dir  = argv[1]
+    model_dir  = argv[2]
+    start_iter = int(argv[3])
+
+    new_iter = start_iter + 1
+    START_EPOCH = 2
+    print(f'train on {train_dir}: {start_iter} -> {new_iter}')
+
+    # model = compile_dual()
+    model_file = f'{model_dir}/model{start_iter}_epoch{START_EPOCH}.h5'
+    model = load_model(model_file)
+    ds_train = load_selfplay_data(train_dir)
+
+    callbacks = [
+        keras.callbacks.ModelCheckpoint(f'{model_dir}/model{new_iter}_epoch{{epoch}}.h5'),
+        # keras.callbacks.EarlyStopping(monitor='val_loss', patience=2)
+    ]
+    history = model.fit(ds_train.shuffle(1000).batch(64), epochs=4, callbacks=callbacks)
     print(history.history)
 
 
 if __name__ == '__main__':
-    train()
+    train(sys.argv)
     # test_save_model()
     # test_eval_model()
     # label_top50()
