@@ -75,6 +75,7 @@ def play(network, init_position=None, init_root=None):
 
     while True:
         start = time.time()
+
         player.root.inject_noise()
         current_readouts = player.root.N
         # we want to do "X additional readouts", rather than "up to X readouts".
@@ -84,6 +85,8 @@ def play(network, init_position=None, init_root=None):
         if FLAGS.verbose >= 3:
             print(player.root.position)
             print(player.root.describe())
+
+        player.root.uninject_noise()  # for shared tree
 
         if player.should_resign():
             pos = player.root.position

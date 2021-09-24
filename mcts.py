@@ -255,6 +255,9 @@ class MCTSNode(object):
         self.child_prior = (self.child_prior * (1 - FLAGS.dirichlet_noise_weight) +
                             dirichlet * FLAGS.dirichlet_noise_weight)
 
+    def uninject_noise(self):
+        self.child_prior = self.original_prior
+
     def children_as_pi(self, squash=False):
         """Returns the child visit counts as a probability distribution, pi
         If squash is true, exponentiate the probabilities by a temperature
