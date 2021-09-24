@@ -8,7 +8,7 @@ MODEL_DIR="${DRIVE_HOME}/checkpoints"
 LOG_DIR="${DRIVE_HOME}/logs"
 
 # bash 3 supports range
-for i in {0..5}
+for i in {1..3}
 do
   SELFPLAY_DIR="${LOCAL_HOME}/selfplay${i}"
   echo "selfplay: ${SELFPLAY_DIR}"
@@ -21,11 +21,11 @@ do
   --holdout_dir="${SELFPLAY_DIR}/val" \
   --sgf_dir="${SELFPLAY_DIR}/sgf" \
   --holdout_pct=0 \
-  --load_file="${MODEL_DIR}/model8_epoch2.h5" \
+  --load_file="${MODEL_DIR}/model${i}_epoch2.h5" \
   --softpick_move_cutoff=6 \
   --num_readouts=200 \
   --parallel_readouts=16 \
-  --num_games=100 \
+  --num_games=20 \
   2>&1 | tee "${LOG_DIR}/selfplay${i}.log"
 
   python3 enhance_ds.py ${SELFPLAY_DIR} 2>&1 > "${LOG_DIR}/enhance${i}.log"

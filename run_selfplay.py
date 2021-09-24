@@ -12,7 +12,7 @@ from absl import logging, app, flags
 from utils import grouper
 
 flags.DEFINE_integer('num_games', 5, '#games to play')
-NUM_GAMES_SHARE_TREE = 40
+flags.DEFINE_integer('num_games_share_tree', 1, '#games that shares a tree')
 
 FLAGS = flags.FLAGS
 
@@ -31,8 +31,9 @@ def play_games(num_games=500):
                          sgf_dir=FLAGS.sgf_dir)
 
     open_moves, open_probs = ['C2', 'B2'], [.5, .5]
-    for i_batch in grouper(NUM_GAMES_SHARE_TREE, iter(range(num_games))):
-        logging.info(f'\nStarting new batch : %d games', len(i_batch))
+    for i_batch in grouper(FLAGS.num_games_share_tree, iter(range(num_games))):
+        if FLAGS.num_games_share_tree > 1:
+            logging.info(f'\nStarting new batch : %d games', len(i_batch))
         open_move = np.random.choice(open_moves, p=open_probs)
         init_position = go.Position().play_move(
             coords.from_gtp(open_move)
