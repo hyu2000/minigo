@@ -25,12 +25,24 @@ do
   --softpick_move_cutoff=6 \
   --num_readouts=200 \
   --parallel_readouts=16 \
-  --num_games=10 \
+  --num_games=2000 \
   2>&1 | tee "${LOG_DIR}/selfplay${i}.log"
 
-  python3 enhance_ds.py ${SELFPLAY_DIR} 2>&1 > "${LOG_DIR}/enhance${i}.log"
+  if [ $? -ne 0 ]; then
+      break
+  fi
 
-  python3 run_train.py "${SELFPLAY_DIR}/train" ${MODEL_DIR} $i 2>&1 > "${LOG_DIR}/train${i}.log"
+  python3 enhance_ds.py ${SELFPLAY_DIR} > "${LOG_DIR}/enhance${i}.log" 2>&1
+
+  if [ $? -ne 0 ]; then
+      break
+  fi
+
+  python3 run_train.py "${SELFPLAY_DIR}/train" ${MODEL_DIR} $i > "${LOG_DIR}/train${i}.log" 2>&1
+
+  if [ $? -ne 0 ]; then
+      break
+  fi
 
 done
 
