@@ -8,7 +8,7 @@ MODEL_DIR="${DRIVE_HOME}/checkpoints"
 LOG_DIR="${DRIVE_HOME}/logs"
 
 # bash 3 supports range
-for i in {1..3}
+for i in {8..9}
 do
   SELFPLAY_DIR="${LOCAL_HOME}/selfplay${i}"
   echo "selfplay: ${SELFPLAY_DIR}"
