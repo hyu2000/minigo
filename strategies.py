@@ -192,10 +192,13 @@ class MCTSPlayer(MCTSPlayerInterface):
             fcoord = self.root.best_child()
         else:
             cdf = self.root.children_as_pi(squash=True).cumsum()
-            cdf /= cdf[-2]  # Prevents passing via softpick.
-            selection = random.random()
-            fcoord = cdf.searchsorted(selection)
-            assert self.root.child_N[fcoord] != 0
+            if cdf[-2] <= 1e-6:
+                fcoord = self.root.best_child()
+            else:
+                cdf /= cdf[-2]  # Prevents passing via softpick.
+                selection = random.random()
+                fcoord = cdf.searchsorted(selection)
+                assert self.root.child_N[fcoord] != 0
         return coords.from_flat(fcoord)
 
     def tree_search(self, parallel_readouts=None):
