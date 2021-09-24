@@ -22,7 +22,8 @@ do
   --sgf_dir="${SELFPLAY_DIR}/sgf" \
   --holdout_pct=0 \
   --load_file="${MODEL_DIR}/model${i}_epoch2.h5" \
-  --softpick_move_cutoff=6 \
+  --softpick_move_cutoff=100 \
+  --dirichlet_noise_weight=0 \
   --num_readouts=200 \
   --parallel_readouts=16 \
   --num_games=2000 \
@@ -34,6 +35,7 @@ do
 
   python3 enhance_ds.py ${SELFPLAY_DIR} > "${LOG_DIR}/enhance${i}.log" 2>&1
 
+  # save data to drive?
   if [ $? -ne 0 ]; then
       break
   fi
