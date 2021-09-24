@@ -20,8 +20,8 @@ N = go.N
 HOME_DIR = myconf.EXP_HOME
 FEATURES_DIR = myconf.FEATURES_DIR
 
-from tensorflow.python.compiler.mlcompute import mlcompute
-mlcompute.set_mlc_device(device_name='cpu')  # Available options are 'cpu', 'gpu', and ‘any'.
+# from tensorflow.python.compiler.mlcompute import mlcompute
+# mlcompute.set_mlc_device(device_name='cpu')  # Available options are 'cpu', 'gpu', and ‘any'.
 
 
 bce = tf.keras.losses.BinaryCrossentropy()

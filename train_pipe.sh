@@ -1,5 +1,5 @@
 DRIVE_HOME=/content/drive/MyDrive/dlgo
-DRIVE_HOME=/Users/hyu/PycharmProjects/dlgo/5x5
+#DRIVE_HOME=/Users/hyu/PycharmProjects/dlgo/5x5
 
 export BOARD_SIZE=5
 
@@ -25,7 +25,7 @@ do
   --softpick_move_cutoff=6 \
   --num_readouts=200 \
   --parallel_readouts=16 \
-  --num_games=20 \
+  --num_games=10 \
   2>&1 | tee "${LOG_DIR}/selfplay${i}.log"
 
   python3 enhance_ds.py ${SELFPLAY_DIR} 2>&1 > "${LOG_DIR}/enhance${i}.log"

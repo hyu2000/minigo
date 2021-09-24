@@ -100,6 +100,10 @@ def main(argv: List):
     for tag in ['train', 'val']:
         source_data_dir = f'{data_dir}/{tag}'
         output_data_dir = f'{data_dir}/{tag}-symmetries'
+        if len(os.listdir(source_data_dir)) == 0:
+            print(f'empty source dir, skip: {source_data_dir}')
+            continue
+
         ds = load_selfplay_data(source_data_dir)
 
         try:
