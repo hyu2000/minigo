@@ -8,7 +8,7 @@ MODEL_DIR="${DRIVE_HOME}/checkpoints"
 LOG_DIR="${DRIVE_HOME}/logs"
 
 # bash 3 supports range
-for i in {1..4}
+for i in {8..9}
 do
   SELFPLAY_DIR="${LOCAL_HOME}/selfplay${i}"
   echo "selfplay: ${SELFPLAY_DIR}"
@@ -24,11 +24,11 @@ do
   --holdout_pct=0 \
   --load_file="${MODEL_DIR}/model${i}_epoch2.h5" \
   --softpick_move_cutoff=20 \
-  --dirichlet_noise_weight=0.25 \
-  --num_games_share_tree=1 \
+  --dirichlet_noise_weight=0.125 \
+  --num_games_share_tree=50 \
   --num_readouts=200 \
   --parallel_readouts=16 \
-  --num_games=1000 \
+  --num_games=2000 \
   2>&1 | tee "${LOG_DIR}/selfplay${i}.log"
 
   if [ $? -ne 0 ]; then
