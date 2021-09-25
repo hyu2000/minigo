@@ -14,6 +14,7 @@ do
   echo "selfplay: ${SELFPLAY_DIR}"
 
   mkdir -p "${SELFPLAY_DIR}"
+  rm -rf "${SELFPLAY_DIR}/*"
 
   python3 run_selfplay.py \
   --verbose=0 \
@@ -22,25 +23,26 @@ do
   --sgf_dir="${SELFPLAY_DIR}/sgf" \
   --holdout_pct=0 \
   --load_file="${MODEL_DIR}/model${i}_epoch2.h5" \
-  --softpick_move_cutoff=100 \
-  --dirichlet_noise_weight=0 \
+  --softpick_move_cutoff=16 \
+  --dirichlet_noise_weight=0.125 \
+  --num_games_share_tree=40 \
   --num_readouts=200 \
   --parallel_readouts=16 \
   --num_games=2000 \
-  2>&1 | tee "${LOG_DIR}/selfplay${i}.log"
+  | tee "${LOG_DIR}/selfplay${i}.log" 2>&1
 
   if [ $? -ne 0 ]; then
       break
   fi
 
-  python3 enhance_ds.py ${SELFPLAY_DIR} > "${LOG_DIR}/enhance${i}.log" 2>&1
+  python3 enhance_ds.py ${SELFPLAY_DIR} | tee "${LOG_DIR}/enhance${i}.log" 2>&1
 
   # save data to drive?
   if [ $? -ne 0 ]; then
       break
   fi
 
-  python3 run_train.py "${SELFPLAY_DIR}/train" ${MODEL_DIR} $i > "${LOG_DIR}/train${i}.log" 2>&1
+  python3 run_train.py "${SELFPLAY_DIR}/train" ${MODEL_DIR} $i | tee "${LOG_DIR}/train${i}.log" 2>&1
 
   if [ $? -ne 0 ]; then
       break
