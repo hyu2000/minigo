@@ -202,6 +202,7 @@ class MCTSPlayer(MCTSPlayerInterface):
         return coords.from_flat(fcoord)
 
     def tree_search(self, parallel_readouts=None):
+        """ select, expand, backup """
         if parallel_readouts is None:
             parallel_readouts = min(FLAGS.parallel_readouts, self.num_readouts)
         leaves = []

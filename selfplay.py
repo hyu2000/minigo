@@ -69,9 +69,10 @@ def play(network, init_position=None, init_root=None):
     player.initialize_game(position=init_position, root=init_root)
 
     # Must run this once at the start to expand the root node.
-    first_node = player.root.select_leaf()
-    prob, val = network.run(first_node.position)
-    first_node.incorporate_results(prob, val, first_node)
+    if not player.root.is_expanded:
+        first_node = player.root.select_leaf()
+        prob, val = network.run(first_node.position)
+        first_node.incorporate_results(prob, val, first_node)
 
     while True:
         start = time.time()
