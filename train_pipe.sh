@@ -22,7 +22,7 @@ do
   --holdout_dir="${SELFPLAY_DIR}/val" \
   --sgf_dir="${SELFPLAY_DIR}/sgf" \
   --holdout_pct=0 \
-  --load_file="${MODEL_DIR}/model${i}_epoch1.h5" \
+  --load_file="${MODEL_DIR}/model${i}_epoch2.h5" \
   --softpick_move_cutoff=20 \
   --dirichlet_noise_weight=0.125 \
   --num_games_share_tree=100 \
