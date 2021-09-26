@@ -93,7 +93,8 @@ def play(network, init_position=None, init_root=None):
             pos = player.root.position
             player.set_result(-1 * pos.to_play, was_resign=True, black_margin_no_komi=-1000 * pos.to_play)
             break
-        move = player.pick_move()
+
+        move, best_move = player.pick_move(player.root.position.n < FLAGS.softpick_move_cutoff)
         player.play_move(move)
         if player.root.is_done():
             pos = player.root.position

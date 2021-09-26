@@ -15,6 +15,8 @@
 import os
 import random
 import time
+from typing import Tuple, Any
+
 import numpy as np
 
 from absl import flags
@@ -183,23 +185,21 @@ class MCTSPlayer(MCTSPlayerInterface):
         # del self.root.parent.children
         return True  # GTP requires positive result.
 
-    def pick_move(self):
+    def pick_move(self, soft_pick=False) -> Tuple[Any, Any]:
         """Picks a move to play, based on MCTS readout statistics.
 
         Highest N is most robust indicator. In the early stage of the game, pick
-        a move weighted by visit count; later on, pick the absolute max."""
-        if self.root.position.n >= self.temp_threshold:
-            fcoord = self.root.best_child()
-        else:
+        a move weighted by visit count (soft-pick); later on, pick the absolute max."""
+        best_child = self.root.best_child()
+        fcoord = best_child
+        if soft_pick:
             cdf = self.root.children_as_pi(squash=True).cumsum()
-            if cdf[-2] <= 1e-6:
-                fcoord = self.root.best_child()
-            else:
+            if cdf[-2] > 1e-6:
                 cdf /= cdf[-2]  # Prevents passing via softpick.
                 selection = random.random()
                 fcoord = cdf.searchsorted(selection)
                 assert self.root.child_N[fcoord] != 0
-        return coords.from_flat(fcoord)
+        return coords.from_flat(fcoord), best_child
 
     def tree_search(self, parallel_readouts=None):
         """ select, expand, backup """

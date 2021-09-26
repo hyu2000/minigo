@@ -46,7 +46,8 @@ def play_games(num_games=500):
                               selfplay_dir=FLAGS.selfplay_dir,
                               holdout_dir=FLAGS.holdout_dir,
                               holdout_pct=FLAGS.holdout_pct,
-                              sgf_dir=FLAGS.sgf_dir
+                              sgf_dir=FLAGS.sgf_dir,
+                              game_id=i
                               )
             margin_est = player.black_margin_no_komi
             moves_history = player.root.position.recent
