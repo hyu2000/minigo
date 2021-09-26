@@ -51,6 +51,13 @@ flags.declare_key_flag('num_readouts')
 FLAGS = flags.FLAGS
 
 
+def _format_move_info(move, best_move):
+    move_info = coords.to_gtp(move)
+    if move == best_move:
+        return move_info
+    return '%s(%s)' % (move_info, coords.to_gtp(best_move))
+
+
 def play(network, init_position=None, init_root=None):
     """Plays out a self-play match, returning a MCTSPlayer object containing:
         - the final position
@@ -96,6 +103,7 @@ def play(network, init_position=None, init_root=None):
 
         move, best_move = player.pick_move(player.root.position.n < FLAGS.softpick_move_cutoff)
         player.play_move(move)
+        player.add_move_info(_format_move_info(move, best_move))
         if player.root.is_done():
             pos = player.root.position
             tromp_margin = pos.score() + pos.komi

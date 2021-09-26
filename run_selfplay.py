@@ -47,11 +47,12 @@ def play_games(num_games=500):
                               holdout_dir=FLAGS.holdout_dir,
                               holdout_pct=FLAGS.holdout_pct,
                               sgf_dir=FLAGS.sgf_dir,
-                              game_id=i
+                              game_id=str(i)
                               )
             margin_est = player.black_margin_no_komi
-            moves_history = player.root.position.recent
-            history_str = ' '.join([coords.to_gtp(x.move) for x in moves_history[:8]])
+            # moves_history = player.root.position.recent
+            # history_str = ' '.join([coords.to_gtp(x.move) for x in moves_history[:8]])
+            history_str = ' '.join(player.move_infos[:8])
 
             ru_rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
 

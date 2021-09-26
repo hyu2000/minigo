@@ -132,6 +132,7 @@ class MCTSPlayer(MCTSPlayerInterface):
         self.searches_pi = []
         # keep track of where in the game MCTS gets involved
         self.init_root = self.root
+        self.move_infos = [coords.to_gtp(x.move) for x in self.root.position.recent]
 
     def suggest_move(self, position):
         """Used for playing a single game.
@@ -185,6 +186,9 @@ class MCTSPlayer(MCTSPlayerInterface):
         # del self.root.parent.children
         return True  # GTP requires positive result.
 
+    def add_move_info(self, s: str):
+        self.move_infos.append(s)
+
     def pick_move(self, soft_pick=False) -> Tuple[Any, Any]:
         """Picks a move to play, based on MCTS readout statistics.
 
@@ -199,7 +203,7 @@ class MCTSPlayer(MCTSPlayerInterface):
                 selection = random.random()
                 fcoord = cdf.searchsorted(selection)
                 assert self.root.child_N[fcoord] != 0
-        return coords.from_flat(fcoord), best_child
+        return coords.from_flat(fcoord), coords.from_flat(best_child)
 
     def tree_search(self, parallel_readouts=None):
         """ select, expand, backup """
