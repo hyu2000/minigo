@@ -94,16 +94,16 @@ def play(network, init_position=None, init_root=None):
             print(player.root.position)
             print(player.root.describe())
 
-        player.root.uninject_noise()  # for shared tree
-
         if player.should_resign():
             pos = player.root.position
             player.set_result(-1 * pos.to_play, was_resign=True, black_margin_no_komi=-1000 * pos.to_play)
             break
 
         move, best_move = player.pick_move(player.root.position.n < FLAGS.softpick_move_cutoff)
+        orig_root = player.root  # play_move() dumps info, and it changes root
         player.play_move(move)
         player.add_move_info(_format_move_info(move, best_move))
+        orig_root.uninject_noise()
         if player.root.is_done():
             pos = player.root.position
             tromp_margin = pos.score() + pos.komi
