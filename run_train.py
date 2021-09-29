@@ -37,6 +37,14 @@ def custom_value_loss(y_true, y_pred):
     return bce(y_true, y_pred, sample_weight=not_nan)
 
 
+def custom_BCE_loss(y_true, y_pred):
+    """ basically BinaryCrossEntropy, just that label is 1/-1, and y_pred with tanh activation (rather than sigmoid)
+    """
+    y_true = tf.where(y_true > 0, 1, 0)
+    y_pred = (y_pred + 1) * 0.5
+    return bce(y_true, y_pred)
+
+
 def custom_MSE_loss(y_true, y_pred):
     """ based on keras.losses.MeanSquaredError, but w/ special handling for
     - missing value: 0-loss
@@ -82,7 +90,7 @@ def compile_dual():
     model.compile(optimizer=opt,
                   loss={
                       'policy': 'categorical_crossentropy',
-                      'value': custom_MSE_loss},
+                      'value':  custom_BCE_loss},
                   loss_weights={
                       'policy': 0.90,
                       'value':  0.10},

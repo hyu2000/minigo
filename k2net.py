@@ -70,7 +70,7 @@ def build_model(input_shape):
     x = keras.layers.Flatten()(x)
     x = keras.layers.Dense(64, activation='relu', kernel_regularizer=keras.regularizers.l2(0.01))(x)
     # predicting black_margin now
-    output_value = keras.layers.Dense(1, activation=None, kernel_regularizer=keras.regularizers.l2(0.01),
+    output_value = keras.layers.Dense(1, activation='tanh', kernel_regularizer=keras.regularizers.l2(0.01),
                                       name='value')(x)
 
     # policy head
@@ -125,8 +125,8 @@ class DummyNetwork(object):
 
     def run_many(self, positions: List[go.Position]) -> Tuple[np.ndarray, np.ndarray]:
         probs = np.ones((len(positions), myconf.TOTAL_MOVES)) / myconf.TOTAL_MOVES
-        values = np.array([p.score() + p.komi for p in positions])
-        return probs, values
+        values = np.array([p.score() for p in positions])
+        return probs, np.sign(values)
 
 
 def bootstrap():

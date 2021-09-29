@@ -105,10 +105,11 @@ def play(network, init_position=None, init_root=None):
         player.add_move_info(_format_move_info(move, best_move))
         orig_root.uninject_noise()
         if player.root.is_done():
-            pos = player.root.position
-            tromp_margin = pos.score() + pos.komi
-            assert not np.isnan(tromp_margin)
-            player.set_result(np.sign(tromp_margin - pos.komi), was_resign=False, black_margin_no_komi=tromp_margin)
+            player.set_result(player.root.position.result(), was_resign=False)
+            # pos = player.root.position
+            # tromp_margin = pos.score() + pos.komi
+            # assert not np.isnan(tromp_margin)
+            # player.set_result(np.sign(tromp_margin - pos.komi), was_resign=False, black_margin_no_komi=tromp_margin)
             break
 
         if (FLAGS.verbose >= 2) or (FLAGS.verbose >= 1 and player.root.position.n % 10 == 9):

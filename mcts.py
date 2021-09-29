@@ -202,7 +202,8 @@ class MCTSNode(object):
         # raw_value can be margin. normalize it to (-1, 1)
         self.raw_margin = raw_value
         # value = np.tanh((raw_value - self.position.komi) / 7.)
-        value = np.sign(raw_value - self.position.komi)
+        # value = np.sign(raw_value - self.position.komi)
+        value = raw_value
 
         # If a node was picked multiple times (despite vlosses), we shouldn't
         # expand it more than once.
