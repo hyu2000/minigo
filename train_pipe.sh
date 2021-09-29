@@ -1,5 +1,5 @@
 DRIVE_HOME=/content/drive/MyDrive/dlgo
-DRIVE_HOME=/Users/hyu/PycharmProjects/dlgo/5x5
+#DRIVE_HOME=/Users/hyu/PycharmProjects/dlgo/5x5
 
 export BOARD_SIZE=5
 
