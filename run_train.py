@@ -253,7 +253,7 @@ def train_local():
         # keras.callbacks.EarlyStopping(monitor='val_loss', patience=2)
     ]
     history = model.fit(ds_train.shuffle(1000).batch(64), validation_data=ds_val.batch(64),
-                        epochs=3, callbacks=callbacks)
+                        epochs=4, callbacks=callbacks)
     print(history.history)
 
 
@@ -267,9 +267,12 @@ def train(argv: List):
     START_EPOCH = 2
     print(f'train on {train_dir}: {start_iter} -> {new_iter}')
 
-    # model = compile_dual()
     model_file = f'{model_dir}/model{start_iter}_epoch{START_EPOCH}.h5'
-    model = load_model(model_file)
+    if start_iter == 0 and not os.path.exists(model_file):
+        logging.info('Using DummyNet')
+        model = compile_dual()
+    else:
+        model = load_model(model_file)
     ds_train = load_selfplay_data(train_dir)
 
     callbacks = [
