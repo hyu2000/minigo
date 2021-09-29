@@ -259,7 +259,7 @@ class MCTSPlayer(MCTSPlayerInterface):
 
     def set_result(self, winner, was_resign, black_margin_no_komi=None):
         self.result = winner
-        self.black_margin_no_komi = black_margin_no_komi
+        self.black_margin_no_komi = black_margin_no_komi if black_margin_no_komi is not None else winner
         if was_resign:
             string = "B+R" if winner == go.BLACK else "W+R"
         else:

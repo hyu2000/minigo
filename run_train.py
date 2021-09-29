@@ -92,8 +92,8 @@ def compile_dual():
                       'policy': 'categorical_crossentropy',
                       'value':  custom_BCE_loss},
                   loss_weights={
-                      'policy': 0.90,
-                      'value':  0.10},
+                      'policy': 0.50,
+                      'value':  0.50},
                   metrics={
                       'policy': keras.metrics.CategoricalAccuracy(name="move_acc"),
                       # 'value': custom_value_accuracy,
@@ -253,7 +253,7 @@ def train_local():
         # keras.callbacks.EarlyStopping(monitor='val_loss', patience=2)
     ]
     history = model.fit(ds_train.shuffle(1000).batch(64), validation_data=ds_val.batch(64),
-                        epochs=4, callbacks=callbacks)
+                        epochs=3, callbacks=callbacks)
     print(history.history)
 
 
