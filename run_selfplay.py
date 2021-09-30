@@ -56,7 +56,7 @@ def play_games(num_games=500):
 
             ru_rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
 
-            logging.info(f'game {i}: %d moves, final margin %.1f lvl1_nodes=%d rss=%.0f\t%s', player.root.position.n,
+            logging.info(f'game {i}: %d moves, score %.1f l1n=%d rss=%.1f\t%s', player.root.position.n,
                          margin_est, len(shared_tree.children), ru_rss / 1e6,
                          history_str)
 
