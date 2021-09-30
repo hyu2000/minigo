@@ -99,7 +99,7 @@ class DualNetwork(object):
     def __init__(self, save_file):
         self.save_file = save_file
         self.model = keras.models.load_model(save_file,
-                                             custom_objects={'custom_MSE_loss': None})
+                                             custom_objects={'custom_BCE_loss': None})
 
     def run(self, position):
         probs, values = self.run_many([position])
