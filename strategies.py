@@ -160,7 +160,8 @@ class MCTSPlayer(MCTSPlayerInterface):
         if self.verbosity > 3:
             dbg(self.root.position)
 
-        return self.pick_move()
+        move, best_move = self.pick_move()
+        return move
 
     def play_move(self, c):
         """Notable side effects:

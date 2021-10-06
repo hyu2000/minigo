@@ -46,7 +46,7 @@ class WebPlayer(object):
         first_node.incorporate_results(prob, val, first_node)
 
         move = player.suggest_move(pos)
-        logging.info('mcts chose: %s', move)
+        logging.info('mcts chose: %s', coords.to_gtp(move))
         return coords.to_gtp(move)
 
     def construct_game_state(self, moves_history: List[str]):
