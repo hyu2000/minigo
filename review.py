@@ -41,7 +41,7 @@ class BotAnalyzer(object):
                      coords.from_flat(np.argmax(probs)), np.max(probs), coords.from_flat(move), probs[move])
         return coords.flat_to_gtp(move)
 
-    def evaluate_move(self, pos: go.Position, move):
+    def evaluate_move(self, pos: go.Position, move, outcome: float):
         """ we typically evaluate a sequence, better to reuse tree
         """
         player = self.player
@@ -53,8 +53,19 @@ class BotAnalyzer(object):
         first_node.incorporate_results(prob, val, first_node)
 
         move_bot = player.suggest_move(pos)
-        logging.info('move #%d, mcts chose: %s, got %s', pos.n, coords.to_gtp(move_bot), coords.to_gtp(move))
-        print(player.root.describe(max_children=5))
+
+        root = player.root
+        idx_move = coords.to_flat(move)
+        q_move = root.child_Q[idx_move]
+        s = '' if np.sign(q_move) == np.sign(outcome) else ' *'
+        if move_bot == move:
+            print('move #%d: %s %.1f%s' % (pos.n, coords.to_gtp(move), root.child_Q[idx_move], s))
+        else:
+            idx_bot_move = coords.to_flat(move_bot)
+            q_bot = root.child_Q[idx_bot_move]
+            print('move #%d: mcts best: %s %.1f, \tactual: %s %.1f%s' % (pos.n,
+                  coords.to_gtp(move_bot), q_bot, coords.to_gtp(move), q_move, s))
+            # print(root.describe(max_children=5))
         return
 
     def construct_game_state(self, moves_history: List[str]) -> go.Position:
@@ -81,7 +92,7 @@ def probe_along_game(bot: BotAnalyzer, sgf_moves_str):
         color, sgf_coords = sgf_move[0], sgf_move[2:4]
         assert color == COLOR_ARRAY[cur_pos.to_play]
         move = coords.from_sgf(sgf_coords)
-        bot.evaluate_move(cur_pos, move)
+        bot.evaluate_move(cur_pos, move, 1.0)
 
         cur_pos = cur_pos.play_move(move)
     print(cur_pos.n)
@@ -89,7 +100,9 @@ def probe_along_game(bot: BotAnalyzer, sgf_moves_str):
 
 
 def run_game():
-    dnn = DualNetwork(f'{myconf.EXP_HOME}/checkpoints/model13_epoch2.h5')
+    model_id = 'model8_epoch2'
+    logging.info('loading %s', model_id)
+    dnn = DualNetwork(f'{myconf.EXP_HOME}/checkpoints/{model_id}.h5')
     player = BotAnalyzer(dnn)
     probe_along_game(player, BEST_C2_GAME)
 
