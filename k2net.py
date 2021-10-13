@@ -69,7 +69,7 @@ def build_model(input_shape):
     x = keras.layers.Activation('relu')(x)
     x = keras.layers.Flatten()(x)
     x = keras.layers.Dense(64, activation='relu', kernel_regularizer=keras.regularizers.l2(0.01))(x)
-    # predicting black_margin now
+    # predicting win/loss now
     output_value = keras.layers.Dense(1, activation='tanh', kernel_regularizer=keras.regularizers.l2(0.01),
                                       name='value')(x)
 

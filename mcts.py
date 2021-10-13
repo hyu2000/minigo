@@ -311,7 +311,7 @@ class MCTSNode(object):
             self.child_N[i], self.child_action_score[i]), reverse=True)
         return ranked_children
 
-    def describe(self):
+    def describe(self, max_children=15):
         ranked_children = self.rank_children()
         soft_n = self.child_N / max(1, sum(self.child_N))
         prior = self.original_prior
@@ -325,7 +325,7 @@ class MCTSNode(object):
         output.append(self.most_visited_path())
         output.append(
             "move : action    Q     U     P   P-Dir    N  soft-N  p-delta  p-rel")
-        for i in ranked_children[:15]:
+        for i in ranked_children[:max_children]:
             if self.child_N[i] == 0:
                 break
             output.append("\n{!s:4} : {: .3f} {: .3f} {:.3f} {:.3f} {:.3f} {:5d} {:.4f} {: .5f} {: .2f} {:s}".format(

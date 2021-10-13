@@ -149,7 +149,7 @@ class MCTSPlayer(MCTSPlayerInterface):
             current_readouts = self.root.N
             while self.root.N < current_readouts + self.num_readouts:
                 self.tree_search()
-            if self.verbosity > 0:
+            if self.verbosity > 1:
                 dbg("%d: Searched %d times in %.2f seconds\n\n" % (
                     position.n, self.num_readouts, time.time() - start))
 
