@@ -11,7 +11,7 @@ from logging import getLogger
 logger = logging.getLogger()
 
 
-BOARD_SIZE = 5
+BOARD_SIZE = 9
 BOARD_SIZE_SQUARED = BOARD_SIZE * BOARD_SIZE
 # w/ pass, but no resign
 TOTAL_MOVES = BOARD_SIZE_SQUARED + 1

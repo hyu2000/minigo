@@ -1,7 +1,7 @@
 DRIVE_HOME=/content/drive/MyDrive/dlgo
 #DRIVE_HOME=/Users/hyu/PycharmProjects/dlgo/5x5
 
-export BOARD_SIZE=5
+export BOARD_SIZE=9
 
 mkdir ${DRIVE_HOME}/selfplay
 
