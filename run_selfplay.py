@@ -30,7 +30,8 @@ def play_games(num_games=500):
     create_dir_if_needed(selfplay_dir=FLAGS.selfplay_dir, holdout_dir=FLAGS.holdout_dir,
                          sgf_dir=FLAGS.sgf_dir)
 
-    open_moves, open_probs = ['C2', 'B2'], [.5, .5]
+    # limit to lower-left-down-center triangle: C3, D3, E3, D4, E4, E5
+    open_moves, open_probs = ['C3', 'D3', 'E3', 'D4', 'E4', 'E5'], np.ones(6) / 6
     for i_batch in grouper(FLAGS.num_games_share_tree, iter(range(num_games))):
         if FLAGS.num_games_share_tree > 1:
             logging.info(f'\nStarting new batch : %d games', len(i_batch))
