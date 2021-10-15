@@ -1,14 +1,15 @@
 DRIVE_HOME=/content/drive/MyDrive/dlgo
-#DRIVE_HOME=/Users/hyu/PycharmProjects/dlgo/5x5
+#DRIVE_HOME=/Users/hyu/PycharmProjects/dlgo/9x9
 
-export BOARD_SIZE=5
+export BOARD_SIZE=9
 
 LOCAL_HOME=/tmp
 MODEL_DIR="${DRIVE_HOME}/checkpoints"
 LOG_DIR="${DRIVE_HOME}/logs"
+SGF_DIR="${DRIVE_HOME}/sgfs"
 
 # bash 3 supports range
-for i in {1..3}
+for i in {1..2}
 do
   SELFPLAY_DIR="${LOCAL_HOME}/selfplay${i}"
   echo "selfplay: ${SELFPLAY_DIR}"
@@ -21,7 +22,7 @@ do
   --load_file="${MODEL_DIR}/model${i}_epoch2.h5" \
   --selfplay_dir="${SELFPLAY_DIR}/train" \
   --holdout_dir="${SELFPLAY_DIR}/val" \
-  --sgf_dir="${SELFPLAY_DIR}/sgf" \
+  --sgf_dir="${SGF_DIR}/sgf${i}" \
   --holdout_pct=0 \
   --softpick_move_cutoff=20 \
   --dirichlet_noise_weight=0.25 \
