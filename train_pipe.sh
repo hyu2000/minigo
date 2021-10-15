@@ -9,7 +9,7 @@ LOG_DIR="${DRIVE_HOME}/logs"
 SGF_DIR="${DRIVE_HOME}/sgfs"
 
 # bash 3 supports range
-for i in {1..2}
+for i in {3..4}
 do
   SELFPLAY_DIR="${LOCAL_HOME}/selfplay${i}"
   echo "selfplay: ${SELFPLAY_DIR}"
@@ -24,7 +24,7 @@ do
   --holdout_dir="${SELFPLAY_DIR}/val" \
   --sgf_dir="${SGF_DIR}/sgf${i}" \
   --holdout_pct=0 \
-  --softpick_move_cutoff=20 \
+  --softpick_move_cutoff=6 \
   --dirichlet_noise_weight=0.25 \
   --num_games_share_tree=1 \
   --num_readouts=200 \
