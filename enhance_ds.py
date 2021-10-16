@@ -92,14 +92,22 @@ def sample_generator(ds):
 
 
 def main(argv: List):
-    data_dir = f'{myconf.EXP_HOME}/selfplay'
+    """
+    - when output_dir is not specified, final output will be swapped into source_dir;
+    - when output_dir is different, write enhanced ds in subdir: train/val
+    Source data will be renamed to *-org, in both cases.
+    """
+    source_dir = f'{myconf.EXP_HOME}/selfplay'
     if len(argv) > 1:
-        data_dir = argv[1]
+        source_dir = argv[1]
+    output_dir = source_dir
+    if len(argv) > 2:
+        output_dir = argv[2]
 
-    print(f'Applying symmetries to {data_dir}')
+    print(f'Applying symmetries to {source_dir} -> {output_dir}')
     for tag in ['train', 'val']:
-        source_data_dir = f'{data_dir}/{tag}'
-        output_data_dir = f'{data_dir}/{tag}-symmetries'
+        source_data_dir = f'{source_dir}/{tag}'
+        output_work_dir = f'{output_dir}/{tag}-symmetries'
         if len(os.listdir(source_data_dir)) == 0:
             print(f'empty source dir, skip: {source_data_dir}')
             continue
@@ -107,20 +115,24 @@ def main(argv: List):
         ds = load_selfplay_data(source_data_dir)
 
         try:
-            print(f'Removing {output_data_dir}')
-            shutil.rmtree(output_data_dir)
+            print(f'Removing {output_work_dir}')
+            shutil.rmtree(output_work_dir)
         except FileNotFoundError:
             pass
-        utils.ensure_dir_exists(output_data_dir)
+        utils.ensure_dir_exists(output_work_dir)
 
         for i, tf_examples in enumerate(utils.iter_chunks(10000, sample_generator(ds))):
-            fname = f'{output_data_dir}/chunk-{i}.tfrecord.zz'
+            fname = f'{output_work_dir}/chunk-{i}.tfrecord.zz'
             print(f'{tag} chunk {i}: writing %d records' % len(tf_examples))
             preprocessing.write_tf_examples(fname, tf_examples)
 
-        print('swap in enhanced data dir')
         shutil.move(source_data_dir, f'{source_data_dir}-org')
-        shutil.move(output_data_dir, source_data_dir)
+        if output_dir == source_dir:
+            print('swap in enhanced data dir')
+            shutil.move(output_work_dir, source_data_dir)
+        else:
+            print('rename enhanced data dir')
+            shutil.move(output_work_dir, f'{output_dir}/{tag}')
 
 
 if __name__ == '__main__':

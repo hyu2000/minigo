@@ -7,6 +7,7 @@ LOCAL_HOME=/tmp
 MODEL_DIR="${DRIVE_HOME}/checkpoints"
 LOG_DIR="${DRIVE_HOME}/logs"
 SGF_DIR="${DRIVE_HOME}/sgfs"
+TFRECORDS_DIR="${DRIVE_HOME}/tfrecords"
 
 # bash 3 supports range
 for i in {3..4}
@@ -38,7 +39,8 @@ do
       break
   fi
 
-  python3 enhance_ds.py ${SELFPLAY_DIR} 2>&1 | tee "${LOG_DIR}/enhance${i}.log"
+  SAMPLES_DIR="${TFRECORDS_DIR}/enhance${i}"
+  python3 enhance_ds.py ${SELFPLAY_DIR} ${SAMPLES_DIR} 2>&1 | tee "${LOG_DIR}/enhance${i}.log"
 
   # save data to drive?
   if [ $? -ne 0 ]; then
@@ -46,7 +48,7 @@ do
       break
   fi
 
-  python3 run_train.py "${SELFPLAY_DIR}/train" ${MODEL_DIR} $i 2>&1 | tee "${LOG_DIR}/train${i}.log"
+  python3 run_train.py "${SAMPLES_DIR}/train" ${MODEL_DIR} $i 2>&1 | tee "${LOG_DIR}/train${i}.log"
 
   if [ $? -ne 0 ]; then
       echo "run_train ${i} failed"
