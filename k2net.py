@@ -58,8 +58,9 @@ def build_model(input_shape):
     # block 1
     x = residual_module(x, 32, (5, 5))
     # +2 more blocks: #params = 72k
-    x = residual_module(x, 64, (3, 3))
-    x = residual_module(x, 32, (3, 3))
+    for i in range(5):
+        x = residual_module(x, 64, (3, 3))
+    # x = residual_module(x, 32, (3, 3))
 
     features_common = x
 
