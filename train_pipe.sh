@@ -10,7 +10,7 @@ SGF_DIR="${DRIVE_HOME}/sgfs"
 TFRECORDS_DIR="${DRIVE_HOME}/tfrecords"
 
 # bash 3 supports range
-for i in {3..4}
+for i in {5..5}
 do
   SELFPLAY_DIR="${LOCAL_HOME}/selfplay${i}"
   echo "selfplay: ${SELFPLAY_DIR}"
