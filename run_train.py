@@ -259,7 +259,7 @@ def train_local():
 
 def train(argv: List):
     assert len(argv) == 4
-    train_dir  = argv[1]
+    train_dir  = argv[1]  # can be a dir pattern, e.g. "tfrecords/enhance*/train"
     model_dir  = argv[2]
     start_iter = int(argv[3])
 
@@ -269,7 +269,7 @@ def train(argv: List):
 
     model_file = f'{model_dir}/model{start_iter}_epoch{START_EPOCH}.h5'
     if start_iter == 0 and not os.path.exists(model_file):
-        logging.info('Using DummyNet')
+        logging.info('Using random initialization')
         model = compile_dual()
     else:
         model = load_model(model_file)
