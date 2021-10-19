@@ -12,7 +12,7 @@ SGF_DIR="${DRIVE_HOME}/sgfs"
 for i in {2..2}
 do
   SELFPLAY_DIR="${DRIVE_HOME}/selfplay/selfplay${i}"
-  TFRECORD_DIR="${DRIVE_HOME}/selfplay/tfrecords${i}"
+  TFRECORD_DIR="${DRIVE_HOME}/selfplay/enhance${i}"
   echo "selfplay: ${SELFPLAY_DIR}"
 
   rm -rf ${SELFPLAY_DIR}
