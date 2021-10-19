@@ -9,7 +9,7 @@ LOG_DIR="${DRIVE_HOME}/logs"
 SGF_DIR="${DRIVE_HOME}/sgfs"
 
 # bash 3 supports range
-for i in {2..2}
+for i in {4..4}
 do
   SELFPLAY_DIR="${DRIVE_HOME}/selfplay/selfplay${i}"
   TFRECORD_DIR="${DRIVE_HOME}/selfplay/enhance${i}"
