@@ -25,10 +25,6 @@ POS_STEP = 5
 MAX_NUM_STEPS = 40
 
 
-BEST_C2_GAME = "B[cd];W[cc];B[dc];W[dd];B[de];W[bd];B[ed];W[cb];B[be];W[ad];B[db];W[ca];B[ab];W[bb];B[ce];W[ac];B[da];W[aa];B[ae]"
-COLOR_ARRAY = ' BW'
-
-
 class ScoreStats(object):
     def __init__(self):
         self.num_games = np.zeros(MAX_NUM_STEPS)
@@ -50,7 +46,7 @@ class ScoreStats(object):
                 'accu': self.num_correct[:self.max_steps] / self.num_games[:self.max_steps]
                })
         df = df.set_index('move')
-        print(df)
+        return df
 
 
 class BotAnalyzer(object):
@@ -88,18 +84,27 @@ def run_game(dnn: DualNetwork, game_id, reader: SGFReader, stats: ScoreStats):
 def run_games():
     """ """
     store = GameStore(data_dir=f'{myconf.DATA_DIR}')
-    game_iter = store.game_iter([store.ds_pro], filter_game=True, shuffle=False)
 
-    model_file = f'{myconf.MODELS_DIR}/model6_epoch2.h5'
-    dnn = dual_net.DualNetwork(model_file)
+    dfdict = {}
+    for model_id in [f'model{i}_epoch2' for i in range(8)]:
+        model_file = f'{myconf.MODELS_DIR}/{model_id}.h5'
+        dnn = dual_net.DualNetwork(model_file)
 
-    stats = ScoreStats()
-    for game_idx, (game_id, reader) in enumerate(game_iter):
-        run_game(dnn, game_id, reader, stats)
-        if game_idx > 5:
-            break
+        stats = ScoreStats()
 
-    stats.summary()
+        game_iter = store.game_iter([store.ds_pro], filter_game=True, shuffle=False)
+        for game_idx, (game_id, reader) in enumerate(game_iter):
+            run_game(dnn, game_id, reader, stats)
+
+        df = stats.summary()
+        dfdict[model_id] = df
+
+    df0 = df
+    df = pd.DataFrame({k: df['accu'] for k, df in dfdict.items()})
+    # df.index = df0.index
+    df['count'] = df0['count']
+    df.reset_index().to_csv('/tmp/eval_vnet.csv')
+    print(df)
 
 
 def main(argv):
