@@ -39,7 +39,6 @@ class ScoreStats(object):
         self.max_steps = max(self.max_steps, len(scores))
 
     def summary(self):
-        print('ScoreStats:')
         df = pd.DataFrame({
                 'move': range(START_POS, 200, POS_STEP)[:self.max_steps],
                 'count': self.num_games[:self.max_steps].astype(int),
@@ -86,8 +85,8 @@ def run_games():
     store = GameStore(data_dir=f'{myconf.DATA_DIR}')
 
     dfdict = {}
-    for model_id in [f'model{i}_epoch2' for i in range(8)]:
-        model_file = f'{myconf.MODELS_DIR}/{model_id}.h5'
+    for model_id in [f'epoch{i}' for i in range(1, 5)]:
+        model_file = f'{myconf.MODELS_DIR}/model4_{model_id}.h5'
         dnn = dual_net.DualNetwork(model_file)
 
         stats = ScoreStats()
@@ -103,7 +102,7 @@ def run_games():
     df = pd.DataFrame({k: df['accu'] for k, df in dfdict.items()})
     # df.index = df0.index
     df['count'] = df0['count']
-    df.reset_index().to_csv('/tmp/eval_vnet.csv')
+    df.to_csv('/tmp/eval_model4.csv')
     print(df)
 
 
