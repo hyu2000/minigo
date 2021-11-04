@@ -31,7 +31,8 @@ def play_games(num_games=500):
                          sgf_dir=FLAGS.sgf_dir)
 
     # limit to lower-left-down-center triangle: C3, D3, E3, D4, E4, E5
-    open_moves, open_probs = ['C3', 'D3', 'E3', 'D4', 'E4', 'E5'], np.ones(6) / 6
+    # open_moves, open_probs = ['C3', 'D3', 'E3', 'D4', 'E4', 'E5'], np.ones(6) / 6
+    open_moves, open_probs = ['D4', 'E4'], np.ones(2) / 2
     for i_batch in grouper(FLAGS.num_games_share_tree, iter(range(num_games))):
         if FLAGS.num_games_share_tree > 1:
             logging.info(f'\nStarting new batch : %d games', len(i_batch))
@@ -64,8 +65,28 @@ def play_games(num_games=500):
         del shared_tree
 
 
+def _examine_tree(root: mcts.MCTSNode, thresh: int):
+    """ see how many nodes have enough visits """
+    n = 0
+    for child in root.children.values():
+        if child.N >= thresh:
+            n += 1
+            n += _examine_tree(child, thresh)
+    return n
+
+
 def main(argv):
     play_games(num_games=FLAGS.num_games)
+
+
+def main_local(argv):
+    FLAGS.load_file = f'{myconf.MODELS_DIR}/model8_epoch4.h5'
+    FLAGS.sgf_dir = f'{myconf.SELFPLAY_DIR}/sgf'
+    FLAGS.num_readouts = 400
+    FLAGS.parallel_readouts = 16
+    FLAGS.softpick_move_cutoff = 6
+    FLAGS.dirichlet_noise_weight = 0  # 0.05
+    play_games(num_games=2)
 
 
 if __name__ == '__main__':
