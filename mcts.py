@@ -17,7 +17,7 @@
 All terminology here (Q, U, N, p_UCT) uses the same notation as in the
 AlphaGo (AG) paper.
 """
-
+from typing import Dict
 import collections
 import math
 
@@ -89,7 +89,7 @@ class MCTSNode(object):
         # save a copy of the original prior before it gets mutated by d-noise.
         self.original_prior = np.zeros([go.N * go.N + 1], dtype=np.float32)
         self.child_prior = np.zeros([go.N * go.N + 1], dtype=np.float32)
-        self.children = {}  # map of flattened moves to resulting MCTSNode
+        self.children = {}  # type: Dict[int, 'MCTSNode']
 
         self.raw_margin = np.nan
 
