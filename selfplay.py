@@ -40,7 +40,7 @@ flags.DEFINE_string('selfplay_dir', None, 'Where to write game data.')
 flags.DEFINE_string('holdout_dir', None, 'Where to write held-out game data.')
 flags.DEFINE_string('sgf_dir', None, 'Where to write human-readable SGFs.')
 flags.DEFINE_float('holdout_pct', 0.05, 'What percent of games to hold out.')
-flags.DEFINE_float('resign_disable_pct', 1.0,  # was 0.05
+flags.DEFINE_float('resign_disable_pct', 0.05,
                    'What percent of games to disable resign for.')
 
 # From strategies.py
