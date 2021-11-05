@@ -20,9 +20,6 @@ N = go.N
 HOME_DIR = myconf.EXP_HOME
 FEATURES_DIR = myconf.FEATURES_DIR
 
-# from tensorflow.python.compiler.mlcompute import mlcompute
-# mlcompute.set_mlc_device(device_name='cpu')  # Available options are 'cpu', 'gpu', and ‘any'.
-
 
 bce = tf.keras.losses.BinaryCrossentropy()
 bca = tf.keras.metrics.BinaryAccuracy()
@@ -86,6 +83,8 @@ def custom_value_accuracy(y_true, y_pred):
 def compile_dual():
     input_shape = (N, N, dual_net.get_features_planes())
     model = dual_net.build_model(input_shape)
+    # SAI: 1e-4
+    # KataGo: per-sample learning rate of 6e-5, except 2e-5 for the first 5mm samples
     opt = keras.optimizers.Adam(learning_rate=0.0005)
     model.compile(optimizer=opt,
                   loss={
@@ -279,7 +278,7 @@ def train(argv: List):
         keras.callbacks.ModelCheckpoint(f'{model_dir}/model{new_iter}_epoch{{epoch}}.h5'),
         # keras.callbacks.EarlyStopping(monitor='val_loss', patience=2)
     ]
-    history = model.fit(ds_train.shuffle(1000).batch(64), epochs=4, callbacks=callbacks)
+    history = model.fit(ds_train.shuffle(2000).batch(64), epochs=4, callbacks=callbacks)
     print(history.history)
 
 
