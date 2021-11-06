@@ -215,6 +215,7 @@ class RunTournament:
             black_model: Path to the model for black player
             white_model: Path to the model for white player
         """
+        logging.info('Tournament: %s vs %s, %d games', self.black_model_id, self.white_model_id, num_games)
         redundancy_checker = RedundancyChecker(num_open_moves=NUM_OPEN_MOVES)
 
         for i in range(num_games):
@@ -253,19 +254,16 @@ def main(argv):
     utils.ensure_dir_exists(FLAGS.eval_sgf_dir)
 
     runner = RunTournament(black_model, white_model)
-    black_model_id, white_model_id = runner.black_model_id, runner.white_model_id
-
-    logging.info('Tournament: %s vs %s', black_model_id, white_model_id)
     ledger1 = runner.play_tournament(FLAGS.num_evaluation_games, FLAGS.eval_sgf_dir)
     df1 = ledger1.to_df()
     print(df1)
-    logging.info('Tournament: %s vs %s', white_model_id, black_model_id)
+    runner = RunTournament(white_model, black_model)
     ledger2 = runner.play_tournament(FLAGS.num_evaluation_games, FLAGS.eval_sgf_dir)
     df2 = ledger2.to_df()
     print(df2)
 
     logging.info('Combining both runs')
-    df = join_and_format(df1, df2, black_model_id, white_model_id)
+    df = join_and_format(df1, df2, runner.black_model_id, runner.white_model_id)
     print(df.fillna('-'))
 
 
