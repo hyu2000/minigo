@@ -254,13 +254,13 @@ def main(argv):
     utils.ensure_dir_exists(FLAGS.eval_sgf_dir)
 
     runner = RunTournament(black_model, white_model)
-    ledger1 = runner.play_tournament(FLAGS.num_evaluation_games, FLAGS.eval_sgf_dir)
+    ledger1 = runner.play_tournament(FLAGS.num_eval_games, FLAGS.eval_sgf_dir)
     df1 = ledger1.to_df()
-    print(df1)
+    print(df1.sort_index())
     runner = RunTournament(white_model, black_model)
-    ledger2 = runner.play_tournament(FLAGS.num_evaluation_games, FLAGS.eval_sgf_dir)
+    ledger2 = runner.play_tournament(FLAGS.num_eval_games, FLAGS.eval_sgf_dir)
     df2 = ledger2.to_df()
-    print(df2)
+    print(df2.sort_index())
 
     logging.info('Combining both runs')
     df = join_and_format(df1, df2, runner.black_model_id, runner.white_model_id)
