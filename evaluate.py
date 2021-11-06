@@ -25,6 +25,7 @@ from tensorflow.python import gfile
 import coords
 import k2net as dual_net
 import go
+from run_selfplay import InitPositions
 from strategies import MCTSPlayer
 import sgf_wrapper
 import utils
@@ -41,7 +42,7 @@ flags.declare_key_flag('verbose')
 
 FLAGS = flags.FLAGS
 
-NUM_OPEN_MOVES = 2
+NUM_OPEN_MOVES = 6
 
 
 @attr.s
@@ -132,102 +133,108 @@ class RedundancyChecker(object):
         print(df.sort_values('count', ascending=False))
 
 
-def play_game(black: MCTSPlayer, white: MCTSPlayer, redundancy_checker: RedundancyChecker) -> MCTSPlayer:
-    """ return None if game is not played """
-    num_move = 0  # The move number of the current game
-    for player in [black, white]:
-        player.initialize_game()
-        first_node = player.root.select_leaf()
-        prob, val = player.network.run(first_node.position)
-        first_node.incorporate_results(prob, val, first_node)
-    while True:
-        start = time.time()
-        active = white if num_move % 2 else black
-        inactive = black if num_move % 2 else white
+class RunTournament:
+    def __init__(self, black_model: str, white_model: str):
+        self.black_model = black_model
+        self.white_model = white_model
+        self.black_model_id, self.white_model_id = get_model_id(black_model), get_model_id(white_model)
 
-        current_readouts = active.root.N
-        while active.root.N < current_readouts + active.num_readouts:
-            active.tree_search()
+        with utils.logged_timer("Loading weights"):
+            self.black_net = dual_net.DualNetwork(black_model)
+            self.white_net = dual_net.DualNetwork(white_model)
+        self.black_player = MCTSPlayer(self.black_net, two_player_mode=True, num_readouts=400)
+        self.white_player = MCTSPlayer(self.white_net, two_player_mode=True, num_readouts=400)
 
-        # print some stats on the search
-        if FLAGS.verbose >= 3:
-            print(active.root.position)
+        self.init_positions = InitPositions(None, None)
 
-        # First, check the roots for hopeless games.
-        if active.should_resign():  # Force resign
-            active.set_result(-1 *
-                              active.root.position.to_play, was_resign=True)
-            inactive.set_result(
-                active.root.position.to_play, was_resign=True)
+    def play_game(self, init_position: go.Position, redundancy_checker: RedundancyChecker) -> MCTSPlayer:
+        """ return None if game is not played """
+        black, white = self.black_player, self.white_player
+        num_move = 0  # The move number of the current game
+        for player in [black, white]:
+            player.initialize_game(init_position)
+            first_node = player.root.select_leaf()
+            prob, val = player.network.run(first_node.position)
+            first_node.incorporate_results(prob, val, first_node)
+        while True:
+            start = time.time()
+            active = white if num_move % 2 else black
+            inactive = black if num_move % 2 else white
 
-        if active.is_done():
-            break
+            current_readouts = active.root.N
+            while active.root.N < current_readouts + active.num_readouts:
+                active.tree_search()
 
-        move = active.pick_move()
-        active.play_move(move)
-        inactive.play_move(move)
+            # print some stats on the search
+            if FLAGS.verbose >= 3:
+                print(active.root.position)
 
-        if num_move < NUM_OPEN_MOVES:
-            history = active.root.position.recent
-            assert history[-1].move == move
-            keep_play = redundancy_checker.should_continue(history)
-            if not keep_play:
-                redundancy_checker.record_aborted_game(history)
-                return None
+            # First, check the roots for hopeless games.
+            if active.should_resign():  # Force resign
+                active.set_result(-1 *
+                                  active.root.position.to_play, was_resign=True)
+                inactive.set_result(
+                    active.root.position.to_play, was_resign=True)
 
-        dur = time.time() - start
-        num_move += 1
+            if active.is_done():
+                break
 
-        if (FLAGS.verbose > 1):  # or (FLAGS.verbose == 1 and num_move % 10 == 9):
-            timeper = (dur / active.num_readouts) * 100.0
-            print(active.root.position)
-            print("%d: %d readouts, %.3f s/100. (%.2f sec)" % (num_move,
-                                                               active.num_readouts,
-                                                               timeper,
-                                                               dur))
+            move, best_move = active.pick_move(active.root.position.n < FLAGS.softpick_move_cutoff)
+            active.play_move(move)
+            inactive.play_move(move)
 
-    if active.result == 0:
-        active.set_result(active.root.position.result(), was_resign=False)
+            if num_move < NUM_OPEN_MOVES:
+                history = active.root.position.recent
+                assert history[-1].move == move
+                keep_play = redundancy_checker.should_continue(history)
+                if not keep_play:
+                    redundancy_checker.record_aborted_game(history)
+                    return None
 
-    redundancy_checker.record_game(active.root.position.recent, active.result_string)
-    return active
+            dur = time.time() - start
+            num_move += 1
 
+            if (FLAGS.verbose > 1):  # or (FLAGS.verbose == 1 and num_move % 10 == 9):
+                timeper = (dur / active.num_readouts) * 100.0
+                print(active.root.position)
+                print("%d: %d readouts, %.3f s/100. (%.2f sec)" % (num_move,
+                                                                   active.num_readouts,
+                                                                   timeper,
+                                                                   dur))
 
-def play_tournament(black_model: str, white_model: str, num_games, sgf_dir):
-    """Plays matches between two neural nets.
+        if active.result == 0:
+            active.set_result(active.root.position.result(), was_resign=False)
 
-    Args:
-        black_model: Path to the model for black player
-        white_model: Path to the model for white player
-    """
-    with utils.logged_timer("Loading weights"):
-        black_net = dual_net.DualNetwork(black_model)
-        white_net = dual_net.DualNetwork(white_model)
+        redundancy_checker.record_game(active.root.position.recent, active.result_string)
+        return active
 
-    black = MCTSPlayer(black_net, two_player_mode=True, num_readouts=200)
-    white = MCTSPlayer(white_net, two_player_mode=True, num_readouts=200)
-    redundancy_checker = RedundancyChecker(num_open_moves=NUM_OPEN_MOVES)
+    def play_tournament(self, num_games, sgf_dir):
+        """Plays matches between two neural nets.
 
-    black_name = os.path.basename(black_net.save_file)
-    white_name = os.path.basename(white_net.save_file)
+        Args:
+            black_model: Path to the model for black player
+            white_model: Path to the model for white player
+        """
+        redundancy_checker = RedundancyChecker(num_open_moves=NUM_OPEN_MOVES)
 
-    for i in range(num_games):
-        active = play_game(black, white, redundancy_checker)
-        if active is None:
-            continue
+        for i in range(num_games):
+            init_position = self.init_positions.sample()
+            active = self.play_game(init_position, redundancy_checker)
+            if active is None:
+                continue
 
-        fname = "{:d}-{:s}-vs-{:s}-{:d}.sgf".format(int(time.time()), white_name, black_name, i)
-        game_history = active.position.recent
-        with gfile.GFile(os.path.join(sgf_dir, fname), 'w') as _file:
-            sgfstr = sgf_wrapper.make_sgf(game_history,
-                                          active.result_string, komi=active.position.komi,
-                                          black_name=black_name, white_name=white_name)
-            _file.write(sgfstr)
-        move_history_head = ' '.join([coords.to_gtp(game_history[i].move) for i in range(5)])
-        logging.info(f'Finished game {i}: #moves=%d %d %d {active.result_string} %s',
-                     len(game_history), black.num_readouts, white.num_readouts, move_history_head)
+            fname = "{:d}-{:s}-vs-{:s}-{:d}.sgf".format(int(time.time()), self.white_model_id, self.black_model_id, i)
+            game_history = active.position.recent
+            with gfile.GFile(os.path.join(sgf_dir, fname), 'w') as _file:
+                sgfstr = sgf_wrapper.make_sgf(game_history,
+                                              active.result_string, komi=active.position.komi,
+                                              black_name=self.black_model_id, white_name=self.white_model_id)
+                _file.write(sgfstr)
+            move_history_head = ' '.join([coords.to_gtp(game_history[i].move) for i in range(5)])
+            logging.info(f'Finished game {i}: #moves=%d %d %d {active.result_string} %s',
+                         len(game_history), self.black_player.num_readouts, self.white_player.num_readouts, move_history_head)
 
-    return redundancy_checker
+        return redundancy_checker
 
 
 def get_model_id(model_path: str) -> str:
@@ -239,24 +246,27 @@ def get_model_id(model_path: str) -> str:
 def main(argv):
     """Play matches between two neural nets."""
     _, black_model, white_model = argv
+    if not black_model.startswith('/'):
+        black_model = f'{myconf.MODELS_DIR}/{black_model}'
+    if not white_model.startswith('/'):
+        white_model = f'{myconf.MODELS_DIR}/{white_model}'
     utils.ensure_dir_exists(FLAGS.eval_sgf_dir)
-    black_model_id, white_model_id = get_model_id(black_model), get_model_id(white_model)
+
+    runner = RunTournament(black_model, white_model)
+    black_model_id, white_model_id = runner.black_model_id, runner.white_model_id
 
     logging.info('Tournament: %s vs %s', black_model_id, white_model_id)
-    ledger1 = play_tournament(black_model, white_model, FLAGS.num_evaluation_games, FLAGS.eval_sgf_dir)
+    ledger1 = runner.play_tournament(FLAGS.num_evaluation_games, FLAGS.eval_sgf_dir)
     df1 = ledger1.to_df()
     print(df1)
     logging.info('Tournament: %s vs %s', white_model_id, black_model_id)
-    ledger2 = play_tournament(white_model, black_model, FLAGS.num_evaluation_games, FLAGS.eval_sgf_dir)
+    ledger2 = runner.play_tournament(FLAGS.num_evaluation_games, FLAGS.eval_sgf_dir)
     df2 = ledger2.to_df()
     print(df2)
 
     logging.info('Combining both runs')
     df = join_and_format(df1, df2, black_model_id, white_model_id)
     print(df.fillna('-'))
-
-    # play_tournament(f'{myconf.MODELS_DIR}/model5_epoch_3.h5', f'{myconf.MODELS_DIR}/model_epoch_2.h5',
-    #                 12, f'{myconf.EXP_HOME}/eval')
 
 
 def join_and_format(df1: pd.DataFrame, df2: pd.DataFrame, black_id: str, white_id: str) -> pd.DataFrame:

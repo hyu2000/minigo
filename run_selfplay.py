@@ -1,4 +1,6 @@
 import resource
+from typing import List, Optional
+
 import numpy as np
 
 import coords
@@ -17,6 +19,23 @@ flags.DEFINE_integer('num_games_share_tree', 1, '#games that shares a tree')
 FLAGS = flags.FLAGS
 
 
+class InitPositions:
+    """
+        limit to lower-left-down-center triangle: C3, D3, E3, D4, E4, E5
+        open_moves, open_probs = ['C3', 'D3', 'E3', 'D4', 'E4', 'E5'], np.ones(6) / 6
+    """
+    def __init__(self, open_moves: Optional[List], open_probs: Optional[List]):
+        if not open_moves:
+            open_moves, open_probs = ['D4', 'E4'], np.ones(2) / 2
+        assert len(open_moves) == len(open_probs)
+
+        self.init_positions = [go.Position().play_move(coords.from_gtp(move)) for move in open_moves]
+        self.open_probs = open_probs
+
+    def sample(self) -> go.Position:
+        return np.random.choice(self.init_positions, p=self.open_probs)
+
+
 def play_games(num_games=500):
     """ """
     model_file = FLAGS.load_file
@@ -30,16 +49,11 @@ def play_games(num_games=500):
     create_dir_if_needed(selfplay_dir=FLAGS.selfplay_dir, holdout_dir=FLAGS.holdout_dir,
                          sgf_dir=FLAGS.sgf_dir)
 
-    # limit to lower-left-down-center triangle: C3, D3, E3, D4, E4, E5
-    # open_moves, open_probs = ['C3', 'D3', 'E3', 'D4', 'E4', 'E5'], np.ones(6) / 6
-    open_moves, open_probs = ['D4', 'E4'], np.ones(2) / 2
+    init_position_sampler = InitPositions(None, None)
     for i_batch in grouper(FLAGS.num_games_share_tree, iter(range(num_games))):
         if FLAGS.num_games_share_tree > 1:
             logging.info(f'\nStarting new batch : %d games', len(i_batch))
-        open_move = np.random.choice(open_moves, p=open_probs)
-        init_position = go.Position().play_move(
-            coords.from_gtp(open_move)
-        )
+        init_position = init_position_sampler.sample()
         shared_tree = mcts.MCTSNode(init_position)
         for i in i_batch:
             player = run_game(network,
