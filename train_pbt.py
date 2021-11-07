@@ -44,8 +44,8 @@ def compile_pbt(lr: float = 5e-3, value_weight: float = 0.5):
 
 
 class Population:
-    def __init__(self):
-        pass
+    def __init__(self, models_dir: str):
+        self.models_dir = models_dir
 
     def bootstrap(self, init_model_file: str, features_dir: str):
         init_hyper_params = [(lr, vw) for lr in (2e-3, 5e-3, 1e-2, 2e-2) for vw in (0.25, 0.5, 1, 2)]
@@ -55,9 +55,11 @@ class Population:
             model = compile_pbt(lr, value_weight)
             model.load_weights(init_model_file)
             # train
+            print('training lr=%s vw=%s ...', lr, value_weight)
             history = model.fit(ds_train.shuffle(2000).batch(64), epochs=1)
             # save to disk
-            model.save(self._model_fname(0, lr, value_weight))
+            model_path = f'{self.models_dir}/%s' % self._model_fname(0, lr, value_weight)
+            model.save(model_path)
 
     def _model_fname(self, i, lr, vw):
         return f'model{i}.lr={lr};vw={vw}.h5'
@@ -74,10 +76,12 @@ class Population:
         """
 
 
-def main():
-    p = Population()
-    p.bootstrap(f'{myconf.MODELS_DIR}/model10_epoch4.h5', f'{myconf.EXP_HOME}/enhance_test/train')
+def main(argv):
+    assert len(argv) == 3
+    models_dir, features_dir = argv[1], argv[2]
+    p = Population(models_dir)
+    p.bootstrap(f'{models_dir}/model10_epoch4.h5', f'{features_dir}')
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv)
