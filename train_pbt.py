@@ -55,7 +55,7 @@ class Population:
             model = compile_pbt(lr, value_weight)
             model.load_weights(init_model_file)
             # train
-            print('training lr=%s vw=%s ...', lr, value_weight)
+            print(f'training lr={lr} vw={value_weight} ...')
             history = model.fit(ds_train.shuffle(2000).batch(64), epochs=1)
             # save to disk
             model_path = f'{self.models_dir}/%s' % self._model_fname(0, lr, value_weight)
