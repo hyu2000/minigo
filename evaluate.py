@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Evalation plays games between two neural nets."""
+"""Evaluation plays games between two neural nets."""
 import os
 import time
 import attr
@@ -36,7 +36,7 @@ pd.set_option('display.max_columns', None)
 pd.set_option('display.width', 120)
 
 flags.DEFINE_string('eval_sgf_dir', None, 'Where to write evaluation results.')
-flags.DEFINE_integer('num_evaluation_games', 16, 'How many games to play')
+flags.DEFINE_integer('num_eval_games', 16, 'How many games to play')
 # From strategies.py
 flags.declare_key_flag('verbose')
 
@@ -120,7 +120,8 @@ class RedundancyChecker(object):
         """ format result_map as a DataFrame """
         def format_outcome(outcome: Outcome) -> Dict:
             d = attr.asdict(outcome)
-            d['moves'] = len(d['moves'])
+            d['moves'] = len(outcome.moves)
+            d['winner'] = outcome.result[0]
             return d
 
         result_dict = {' '.join(k): format_outcome(v) for k, v in self._result_map.items()}
@@ -130,7 +131,8 @@ class RedundancyChecker(object):
     def report(self):
         print('Tournament Stats:')
         df = self.to_df()
-        print(df.sort_values('count', ascending=False))
+        print(df.sort_index())  # sort_values('count', ascending=False))
+        print('Summary:\n', df['winner'].value_counts())
 
 
 class RunTournament:
@@ -142,8 +144,8 @@ class RunTournament:
         with utils.logged_timer("Loading weights"):
             self.black_net = dual_net.DualNetwork(black_model)
             self.white_net = dual_net.DualNetwork(white_model)
-        self.black_player = MCTSPlayer(self.black_net, two_player_mode=True, num_readouts=400)
-        self.white_player = MCTSPlayer(self.white_net, two_player_mode=True, num_readouts=400)
+        self.black_player = MCTSPlayer(self.black_net, two_player_mode=True, num_readouts=400, resign_threshold=FLAGS.resign_threshold)
+        self.white_player = MCTSPlayer(self.white_net, two_player_mode=True, num_readouts=400, resign_threshold=FLAGS.resign_threshold)
 
         self.init_positions = InitPositions(None, None)
 
@@ -171,10 +173,8 @@ class RunTournament:
 
             # First, check the roots for hopeless games.
             if active.should_resign():  # Force resign
-                active.set_result(-1 *
-                                  active.root.position.to_play, was_resign=True)
-                inactive.set_result(
-                    active.root.position.to_play, was_resign=True)
+                active.set_result(-1 * active.root.position.to_play, was_resign=True)
+                inactive.set_result(active.root.position.to_play, was_resign=True)
 
             if active.is_done():
                 break
@@ -247,20 +247,21 @@ def get_model_id(model_path: str) -> str:
 def main(argv):
     """Play matches between two neural nets."""
     _, black_model, white_model = argv
+    models_dir = f'{myconf.EXP_HOME}/pbt'
     if not black_model.startswith('/'):
-        black_model = f'{myconf.MODELS_DIR}/{black_model}'
+        black_model = f'{models_dir}/{black_model}'
     if not white_model.startswith('/'):
-        white_model = f'{myconf.MODELS_DIR}/{white_model}'
+        white_model = f'{models_dir}/{white_model}'
     utils.ensure_dir_exists(FLAGS.eval_sgf_dir)
 
     runner = RunTournament(black_model, white_model)
     ledger1 = runner.play_tournament(FLAGS.num_eval_games, FLAGS.eval_sgf_dir)
     df1 = ledger1.to_df()
-    print(df1.sort_index())
+    ledger1.report()
     runner = RunTournament(white_model, black_model)
     ledger2 = runner.play_tournament(FLAGS.num_eval_games, FLAGS.eval_sgf_dir)
     df2 = ledger2.to_df()
-    print(df2.sort_index())
+    ledger2.report()
 
     logging.info('Combining both runs')
     df = join_and_format(df1, df2, runner.black_model_id, runner.white_model_id)
