@@ -64,7 +64,8 @@ class Ledger:
 
     def record_game(self, black_model_id: str, white_model_id: str, result_str):
         winner = self._parse_winner_side(result_str)
-        self._wins_by_black[black_model_id] += winner
+        if winner == 1:
+            self._wins_by_black[black_model_id] += 1
         self._games_by_black[black_model_id] += 1
 
         self._model_ids.add(black_model_id)
@@ -81,6 +82,7 @@ class Ledger:
                  'Total': (self._wins_by_black[model] + wins_as_white)}
             results_dict[model] = pd.Series(d)
         df = pd.DataFrame(results_dict).sort_index(axis=1)
+        # df.index.name = '#wins'
         print(df)
         return df
 
@@ -93,9 +95,10 @@ def test_ledger(argv):
         result = random.choice(results)
         print(f'A as black: {result}')
         ledger.record_game('A', 'B', result)
-        result = random.choice(results)
-        print(f'B as black: {result}')
-        ledger.record_game('B', 'A', result)
+        if i < 3:
+            result = random.choice(results)
+            print(f'B as black: {result}')
+            ledger.record_game('B', 'A', result)
     ledger.report()
 
 
