@@ -150,8 +150,11 @@ class RunTournament:
         self.white_player = MCTSPlayer(self.white_net, two_player_mode=True, num_readouts=400)
 
         self.init_positions = InitPositions(None, None)
+        self.redundancy_checker = RedundancyChecker(num_open_moves=NUM_OPEN_MOVES)
 
-    def play_game(self, init_position: go.Position, redundancy_checker: RedundancyChecker) -> MCTSPlayer:
+        self._num_games_so_far = 0
+
+    def play(self, init_position: go.Position, redundancy_checker: RedundancyChecker) -> MCTSPlayer:
         """ return None if game is not played """
         black, white = self.black_player, self.white_player
         for player in [black, white]:
@@ -233,6 +236,21 @@ class RunTournament:
                                           black_name=self.black_model_id, white_name=self.white_model_id)
             _file.write(sgfstr)
 
+    def play_a_game(self):
+        game_idx = self._num_games_so_far
+        self._num_games_so_far += 1
+
+        init_position = self.init_positions.sample()
+        active = self.play(init_position, self.redundancy_checker)
+        if active is None:
+            return
+
+        self._create_sgf(game_idx, init_position.n)
+        game_history = active.position.recent
+        move_history_head = ' '.join([coords.to_gtp(game_history[i].move) for i in range(5)])
+        logging.info(f'Finished game {game_idx}: %d moves, {active.result_string} \t\t%s',
+                     len(game_history), move_history_head)
+
     def play_tournament(self, num_games):
         """Plays matches between two neural nets.
 
@@ -241,21 +259,8 @@ class RunTournament:
             white_model: Path to the model for white player
         """
         logging.info('Tournament: %s vs %s, %d games', self.black_model_id, self.white_model_id, num_games)
-        redundancy_checker = RedundancyChecker(num_open_moves=NUM_OPEN_MOVES)
 
-        for i in range(num_games):
-            init_position = self.init_positions.sample()
-            active = self.play_game(init_position, redundancy_checker)
-            if active is None:
-                continue
-
-            self._create_sgf(i, init_position.n)
-            game_history = active.position.recent
-            move_history_head = ' '.join([coords.to_gtp(game_history[i].move) for i in range(5)])
-            logging.info(f'Finished game {i}: #moves=%d %d %d {active.result_string} %s',
-                         len(game_history), self.black_player.num_readouts, self.white_player.num_readouts, move_history_head)
-
-        return redundancy_checker
+        return self.redundancy_checker
 
 
 def get_model_id(model_path: str) -> str:
@@ -274,17 +279,22 @@ def main(argv):
         white_model = f'{models_dir}/{white_model}'
     utils.ensure_dir_exists(FLAGS.eval_sgf_dir)
 
-    runner = RunTournament(black_model, white_model, FLAGS.eval_sgf_dir)
-    ledger1 = runner.play_tournament(FLAGS.num_eval_games)
+    runner1 = RunTournament(black_model, white_model, FLAGS.eval_sgf_dir)
+    runner2 = RunTournament(white_model, black_model, FLAGS.eval_sgf_dir)
+    logging.info('Tournament: %s vs %s, %d games', runner1.black_model_id, runner1.white_model_id, FLAGS.num_eval_games)
+    for i in range(FLAGS.num_eval_games):
+        runner1.play_a_game()
+        runner2.play_a_game()
+
+    ledger1 = runner1.redundancy_checker
     df1 = ledger1.to_df()
     ledger1.report()
-    runner = RunTournament(white_model, black_model, FLAGS.eval_sgf_dir)
-    ledger2 = runner.play_tournament(FLAGS.num_eval_games)
+    ledger2 = runner2.redundancy_checker
     df2 = ledger2.to_df()
     ledger2.report()
 
     logging.info('Combining both runs')
-    df = join_and_format(df1, df2, runner.black_model_id, runner.white_model_id)
+    df = join_and_format(df1, df2, runner1.black_model_id, runner1.white_model_id)
     print(df.fillna('-'))
 
 
