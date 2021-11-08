@@ -136,32 +136,36 @@ class RedundancyChecker(object):
 
 
 class RunTournament:
-    def __init__(self, black_model: str, white_model: str):
+    def __init__(self, black_model: str, white_model: str, sgf_dir: str):
         self.black_model = black_model
         self.white_model = white_model
+        self.sgf_dir = sgf_dir
+
         self.black_model_id, self.white_model_id = get_model_id(black_model), get_model_id(white_model)
 
         with utils.logged_timer("Loading weights"):
             self.black_net = dual_net.DualNetwork(black_model)
             self.white_net = dual_net.DualNetwork(white_model)
-        self.black_player = MCTSPlayer(self.black_net, two_player_mode=True, num_readouts=400, resign_threshold=FLAGS.resign_threshold)
-        self.white_player = MCTSPlayer(self.white_net, two_player_mode=True, num_readouts=400, resign_threshold=FLAGS.resign_threshold)
+        self.black_player = MCTSPlayer(self.black_net, two_player_mode=True, num_readouts=400)
+        self.white_player = MCTSPlayer(self.white_net, two_player_mode=True, num_readouts=400)
 
         self.init_positions = InitPositions(None, None)
 
     def play_game(self, init_position: go.Position, redundancy_checker: RedundancyChecker) -> MCTSPlayer:
         """ return None if game is not played """
         black, white = self.black_player, self.white_player
-        num_move = 0  # The move number of the current game
         for player in [black, white]:
             player.initialize_game(init_position)
             first_node = player.root.select_leaf()
             prob, val = player.network.run(first_node.position)
             first_node.incorporate_results(prob, val, first_node)
-        while True:
+
+        for num_move in range(500):
             start = time.time()
-            active = white if num_move % 2 else black
-            inactive = black if num_move % 2 else white
+            if num_move % 2:
+                active, inactive = white, black
+            else:
+                active, inactive = black, white
 
             current_readouts = active.root.N
             while active.root.N < current_readouts + active.num_readouts:
@@ -175,6 +179,7 @@ class RunTournament:
             if active.should_resign():  # Force resign
                 active.set_result(-1 * active.root.position.to_play, was_resign=True)
                 inactive.set_result(active.root.position.to_play, was_resign=True)
+                break
 
             if active.is_done():
                 break
@@ -204,11 +209,31 @@ class RunTournament:
 
         if active.result == 0:
             active.set_result(active.root.position.result(), was_resign=False)
+            inactive.set_result(active.root.position.result(), was_resign=False)
 
         redundancy_checker.record_game(active.root.position.recent, active.result_string)
         return active
 
-    def play_tournament(self, num_games, sgf_dir):
+    def _create_sgf(self, ith_game: int, init_position_n: int):
+        """ merge comments from black and white """
+        fname = "{:d}-{:s}-vs-{:s}-{:d}.sgf".format(int(time.time()), self.white_model_id, self.black_model_id, ith_game)
+        game_history = self.black_player.position.recent
+        if len(game_history) < len(self.white_player.position.recent):
+            game_history = self.white_player.position.recent
+        black_comments = self.black_player.comments
+        white_comments = self.white_player.comments
+        assert len(black_comments) == len(white_comments) and len(black_comments) + init_position_n == len(game_history)
+        comments = ['' for i in range(init_position_n)]
+        comments.extend([black_comments[i] if i % 2 == 0 else white_comments[i] for i in range(len(black_comments))])
+
+        with gfile.GFile(os.path.join(self.sgf_dir, fname), 'w') as _file:
+            sgfstr = sgf_wrapper.make_sgf(game_history,
+                                          self.black_player.result_string, komi=self.black_player.position.komi,
+                                          comments=comments,
+                                          black_name=self.black_model_id, white_name=self.white_model_id)
+            _file.write(sgfstr)
+
+    def play_tournament(self, num_games):
         """Plays matches between two neural nets.
 
         Args:
@@ -224,13 +249,8 @@ class RunTournament:
             if active is None:
                 continue
 
-            fname = "{:d}-{:s}-vs-{:s}-{:d}.sgf".format(int(time.time()), self.white_model_id, self.black_model_id, i)
+            self._create_sgf(i, init_position.n)
             game_history = active.position.recent
-            with gfile.GFile(os.path.join(sgf_dir, fname), 'w') as _file:
-                sgfstr = sgf_wrapper.make_sgf(game_history,
-                                              active.result_string, komi=active.position.komi,
-                                              black_name=self.black_model_id, white_name=self.white_model_id)
-                _file.write(sgfstr)
             move_history_head = ' '.join([coords.to_gtp(game_history[i].move) for i in range(5)])
             logging.info(f'Finished game {i}: #moves=%d %d %d {active.result_string} %s',
                          len(game_history), self.black_player.num_readouts, self.white_player.num_readouts, move_history_head)
@@ -254,12 +274,12 @@ def main(argv):
         white_model = f'{models_dir}/{white_model}'
     utils.ensure_dir_exists(FLAGS.eval_sgf_dir)
 
-    runner = RunTournament(black_model, white_model)
-    ledger1 = runner.play_tournament(FLAGS.num_eval_games, FLAGS.eval_sgf_dir)
+    runner = RunTournament(black_model, white_model, FLAGS.eval_sgf_dir)
+    ledger1 = runner.play_tournament(FLAGS.num_eval_games)
     df1 = ledger1.to_df()
     ledger1.report()
-    runner = RunTournament(white_model, black_model)
-    ledger2 = runner.play_tournament(FLAGS.num_eval_games, FLAGS.eval_sgf_dir)
+    runner = RunTournament(white_model, black_model, FLAGS.eval_sgf_dir)
+    ledger2 = runner.play_tournament(FLAGS.num_eval_games)
     df2 = ledger2.to_df()
     ledger2.report()
 
