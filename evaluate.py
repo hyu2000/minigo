@@ -14,9 +14,12 @@
 
 """Evaluation plays games between two neural nets."""
 import os
+import random
 import time
+from collections import defaultdict
+
 import attr
-from typing import Tuple, Dict, Sequence
+from typing import Tuple, Dict, Sequence, List
 
 import pandas as pd
 from absl import app, flags, logging
@@ -45,94 +48,55 @@ FLAGS = flags.FLAGS
 NUM_OPEN_MOVES = 6
 
 
-@attr.s
-class Outcome(object):
-    moves = attr.ib()
-    result = attr.ib()
-    count = attr.ib(default=1)
+class Ledger:
+    """ keep tab on win/loss records of two players where they take equal black/white role
 
-
-class RedundancyChecker(object):
-    """ In evaluation mode, bot runs in a more-deterministic mode.
-    If the first two moves are the same, game will most likely end up the same.
-    Use this to avoid repetitive work.
-
-    We can also allow to play a couple extra games, just to validate that this is indeed the case.
+    No longer check for redundancy, as 9x9 games with soft-pick rarely repeats
     """
-    def __init__(self, num_open_moves, max_verify_games=4):
-        self.num_open_moves = num_open_moves
-        self._result_map = dict()  # type: Dict[Tuple, Outcome]
-        self._num_verify_games = 0
-        self._max_verify_games = max_verify_games
+    def __init__(self):
+        self._wins_by_black = defaultdict(int)
+        self._games_by_black = defaultdict(int)
+        self._model_ids = set()
 
-    @staticmethod
-    def _player_moves_to_gtp(moves: Sequence[go.PlayerMove]) -> Sequence[str]:
-        return tuple(coords.to_gtp(x.move) for x in moves)
+    def _parse_winner_side(self, result_str: str) -> int:
+        winner = result_str.upper()[0]
+        return 1 if winner == 'B' else -1
 
-    def should_continue(self, initial_moves: Sequence[go.PlayerMove]) -> bool:
-        """ client calls this to check whether it should continue the current game
-        Note client might call this multiple times in a game
-        """
-        if len(initial_moves) < self.num_open_moves:
-            return True
-        
-        gtp_moves = self._player_moves_to_gtp(initial_moves)
-        key = gtp_moves[:self.num_open_moves]
-        outcome = self._result_map.get(key)
-        if outcome is None:
-            return True
+    def record_game(self, black_model_id: str, white_model_id: str, result_str):
+        winner = self._parse_winner_side(result_str)
+        self._wins_by_black[black_model_id] += winner
+        self._games_by_black[black_model_id] += 1
 
-        if outcome.count == 1 and self._num_verify_games < self._max_verify_games:
-            logging.info('found opening %s, rerun', ' '.join(gtp_moves))
-            self._num_verify_games += 1
-            return True
-        logging.info('dup opening: %s, should skip', ' '.join(gtp_moves))
-        return False
-
-    def record_game(self, move_history: Sequence[go.PlayerMove], result_str):
-        """ client calls this to log a finished game """
-        move_history = self._player_moves_to_gtp(move_history)
-        
-        key = move_history[:self.num_open_moves]
-        outcome = self._result_map.get(key)
-        if outcome is None:
-            self._result_map[key] = Outcome(move_history, result_str)
-            return
-        if outcome.moves != move_history or outcome.result != result_str:
-            logging.warning('Different results for same opening: %s %s Moves=\n%s\n%s',
-                            outcome.result, result_str,
-                            ' '.join(outcome.moves), ' '.join(move_history))
-        else:
-            # dup game with the same result
-            outcome.count += 1
-
-    def record_aborted_game(self, initial_moves: Sequence[go.PlayerMove]):
-        """ client log a game that's considered dup """
-        gtp_moves = self._player_moves_to_gtp(initial_moves)
-        assert len(gtp_moves) >= self.num_open_moves
-
-        key = gtp_moves[:self.num_open_moves]
-        assert key in self._result_map
-        outcome = self._result_map[key]
-        outcome.count += 1
-
-    def to_df(self) -> pd.DataFrame:
-        """ format result_map as a DataFrame """
-        def format_outcome(outcome: Outcome) -> Dict:
-            d = attr.asdict(outcome)
-            d['moves'] = len(outcome.moves)
-            d['winner'] = outcome.result[0]
-            return d
-
-        result_dict = {' '.join(k): format_outcome(v) for k, v in self._result_map.items()}
-        df = pd.DataFrame.from_dict(result_dict, orient='index')
-        return df
+        self._model_ids.add(black_model_id)
+        self._model_ids.add(white_model_id)
+        assert len(self._model_ids) == 2
 
     def report(self):
-        print('Tournament Stats:')
-        df = self.to_df()
-        print(df.sort_index())  # sort_values('count', ascending=False))
-        print('Summary:\n', df['winner'].value_counts())
+        results_dict = {}
+        for model in self._model_ids:
+            opponent = (self._model_ids - {model}).pop()
+            wins_as_white = self._games_by_black[opponent] - self._wins_by_black[opponent]
+            d = {'Black': self._wins_by_black[model],
+                 'White': wins_as_white,
+                 'Total': (self._wins_by_black[model] + wins_as_white)}
+            results_dict[model] = pd.Series(d)
+        df = pd.DataFrame(results_dict).sort_index(axis=1)
+        print(df)
+        return df
+
+
+def test_ledger(argv):
+    ledger = Ledger()
+    models = list('AB')
+    results = ['B+R', 'W+R']
+    for i in range(5):
+        result = random.choice(results)
+        print(f'A as black: {result}')
+        ledger.record_game('A', 'B', result)
+        result = random.choice(results)
+        print(f'B as black: {result}')
+        ledger.record_game('B', 'A', result)
+    ledger.report()
 
 
 class RunTournament:
@@ -150,11 +114,11 @@ class RunTournament:
         self.white_player = MCTSPlayer(self.white_net, two_player_mode=True, num_readouts=400)
 
         self.init_positions = InitPositions(None, None)
-        self.redundancy_checker = RedundancyChecker(num_open_moves=NUM_OPEN_MOVES)
+        self.redundancy_checker = Ledger()
 
         self._num_games_so_far = 0
 
-    def play(self, init_position: go.Position, redundancy_checker: RedundancyChecker) -> MCTSPlayer:
+    def play(self, init_position: go.Position, redundancy_checker: Ledger) -> MCTSPlayer:
         """ return None if game is not played """
         black, white = self.black_player, self.white_player
         for player in [black, white]:
@@ -307,29 +271,7 @@ def join_and_format(df1: pd.DataFrame, df2: pd.DataFrame, black_id: str, white_i
     return df
 
 
-def test_report(argv):
-    d1 = {
-        ('C3', 'D3'): Outcome(tuple('abcd'), 'B+7', 3),
-        ('C3', 'D2'): Outcome(tuple('abcdef'), 'W+2', 1),  # common
-        ('B3', 'D2'): Outcome(tuple('abcdefg'), 'B+3', 2),
-    }
-    ledger1 = RedundancyChecker(2)
-    ledger1._result_map = d1
-    df1 = ledger1.to_df()
-    d2 = {
-        ('C3', 'D3'): Outcome(tuple('abcde'), 'B+5', 4),
-        ('C3', 'C4'): Outcome(tuple('abcdef'), 'B+2', 2),
-        ('C3', 'D2'): Outcome(tuple('abcdeg'), 'W+1', 1),  # common
-    }
-    ledger2 = RedundancyChecker(2)
-    ledger2._result_map = d2
-    df2 = ledger2.to_df()
-
-    df = join_and_format(df1, df2, get_model_id('/models/m1.h5'), get_model_id('m2.h5'))
-    print(df.fillna('-'))
-
-
 if __name__ == '__main__':
     flags.mark_flag_as_required('eval_sgf_dir')
-    app.run(main)
-    # app.run(test_report)
+    # app.run(main)
+    app.run(test_ledger)
