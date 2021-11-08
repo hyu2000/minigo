@@ -1,5 +1,6 @@
 from typing import Tuple, Dict, Sequence, List
 import attr
+import pandas as pd
 
 
 @attr.s
@@ -90,6 +91,15 @@ class RedundancyChecker(object):
         df = self.to_df()
         print(df.sort_index())  # sort_values('count', ascending=False))
         print('Summary:\n', df['winner'].value_counts())
+
+
+def join_and_format(df1: pd.DataFrame, df2: pd.DataFrame, black_id: str, white_id: str) -> pd.DataFrame:
+    df1.columns = pd.MultiIndex.from_product([[black_id], df1.columns])
+    df2.columns = pd.MultiIndex.from_product([[white_id], df2.columns])
+    df = df1.join(df2, how='outer')
+    df['count_max'] = df.xs('count', axis=1, level=1).max(axis=1)
+    df = df.sort_values('count_max', ascending=False).drop('count_max', axis=1)
+    return df
 
 
 def test_report(argv):

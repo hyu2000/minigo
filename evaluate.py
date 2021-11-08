@@ -102,7 +102,7 @@ def test_ledger(argv):
     ledger.report()
 
 
-class RunTournament:
+class RunOneSided:
     def __init__(self, black_model: str, white_model: str, sgf_dir: str):
         self.black_model = black_model
         self.white_model = white_model
@@ -230,8 +230,8 @@ def main(argv):
     utils.ensure_dir_exists(FLAGS.eval_sgf_dir)
 
     ledger = Ledger()
-    runner1 = RunTournament(black_model, white_model, FLAGS.eval_sgf_dir)
-    runner2 = RunTournament(white_model, black_model, FLAGS.eval_sgf_dir)
+    runner1 = RunOneSided(black_model, white_model, FLAGS.eval_sgf_dir)
+    runner2 = RunOneSided(white_model, black_model, FLAGS.eval_sgf_dir)
     logging.info('Tournament: %s vs %s, %d games', runner1.black_model_id, runner1.white_model_id, FLAGS.num_eval_games)
     for i in range(FLAGS.num_eval_games):
         result_str = runner1.play_a_game()
