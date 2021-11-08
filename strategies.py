@@ -88,6 +88,7 @@ class MCTSPlayer(MCTSPlayerInterface):
     def __init__(self, network, seconds_per_move=5, num_readouts=0,
                  resign_threshold=None, two_player_mode=False,
                  timed_match=False):
+        """ two_player_mode: evaluation mode, if True, not collecting pi """
         self.network = network
         self.seconds_per_move = seconds_per_move
         self.num_readouts = num_readouts or FLAGS.num_readouts
@@ -97,10 +98,7 @@ class MCTSPlayer(MCTSPlayerInterface):
 
         self.initialize_game()
         self.root = None  # type: mcts.MCTSNode
-        if self.two_player_mode and not resign_threshold:
-            self.resign_threshold = -1
-        else:
-            self.resign_threshold = resign_threshold or FLAGS.resign_threshold
+        self.resign_threshold = resign_threshold or FLAGS.resign_threshold
         self.timed_match = timed_match
         assert (self.timed_match and self.seconds_per_move >
                 0) or self.num_readouts > 0
