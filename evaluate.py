@@ -117,11 +117,10 @@ class RunTournament:
         self.white_player = MCTSPlayer(self.white_net, two_player_mode=True, num_readouts=400)
 
         self.init_positions = InitPositions(None, None)
-        self.redundancy_checker = Ledger()
 
         self._num_games_so_far = 0
 
-    def play(self, init_position: go.Position, redundancy_checker: Ledger) -> MCTSPlayer:
+    def play(self, init_position: go.Position) -> MCTSPlayer:
         """ return None if game is not played """
         black, white = self.black_player, self.white_player
         for player in [black, white]:
@@ -161,10 +160,6 @@ class RunTournament:
             if num_move < NUM_OPEN_MOVES:
                 history = active.root.position.recent
                 assert history[-1].move == move
-                keep_play = redundancy_checker.should_continue(history)
-                if not keep_play:
-                    redundancy_checker.record_aborted_game(history)
-                    return None
 
             dur = time.time() - start
             num_move += 1
@@ -181,7 +176,6 @@ class RunTournament:
             active.set_result(active.root.position.result(), was_resign=False)
             inactive.set_result(active.root.position.result(), was_resign=False)
 
-        redundancy_checker.record_game(active.root.position.recent, active.result_string)
         return active
 
     def _create_sgf(self, ith_game: int, init_position_n: int):
@@ -208,26 +202,15 @@ class RunTournament:
         self._num_games_so_far += 1
 
         init_position = self.init_positions.sample()
-        active = self.play(init_position, self.redundancy_checker)
-        if active is None:
-            return
+        active = self.play(init_position)
+        assert active is not None
+        result_str = active.result_string
 
         self._create_sgf(game_idx, init_position.n)
         game_history = active.position.recent
         move_history_head = ' '.join([coords.to_gtp(game_history[i].move) for i in range(5)])
-        logging.info(f'Finished game {game_idx}: %d moves, {active.result_string} \t\t%s',
-                     len(game_history), move_history_head)
-
-    def play_tournament(self, num_games):
-        """Plays matches between two neural nets.
-
-        Args:
-            black_model: Path to the model for black player
-            white_model: Path to the model for white player
-        """
-        logging.info('Tournament: %s vs %s, %d games', self.black_model_id, self.white_model_id, num_games)
-
-        return self.redundancy_checker
+        logging.info(f'Finished game {game_idx}: %d moves, {result_str} \t%s', len(game_history), move_history_head)
+        return result_str
 
 
 def get_model_id(model_path: str) -> str:
@@ -246,35 +229,22 @@ def main(argv):
         white_model = f'{models_dir}/{white_model}'
     utils.ensure_dir_exists(FLAGS.eval_sgf_dir)
 
+    ledger = Ledger()
     runner1 = RunTournament(black_model, white_model, FLAGS.eval_sgf_dir)
     runner2 = RunTournament(white_model, black_model, FLAGS.eval_sgf_dir)
     logging.info('Tournament: %s vs %s, %d games', runner1.black_model_id, runner1.white_model_id, FLAGS.num_eval_games)
     for i in range(FLAGS.num_eval_games):
-        runner1.play_a_game()
-        runner2.play_a_game()
+        result_str = runner1.play_a_game()
+        ledger.record_game(runner1.black_model_id, runner1.white_model_id, result_str)
+        result_str = runner2.play_a_game()
+        ledger.record_game(runner2.black_model_id, runner2.white_model_id, result_str)
+        if i % 2 == 1:
+            ledger.report()
 
-    ledger1 = runner1.redundancy_checker
-    df1 = ledger1.to_df()
-    ledger1.report()
-    ledger2 = runner2.redundancy_checker
-    df2 = ledger2.to_df()
-    ledger2.report()
-
-    logging.info('Combining both runs')
-    df = join_and_format(df1, df2, runner1.black_model_id, runner1.white_model_id)
-    print(df.fillna('-'))
-
-
-def join_and_format(df1: pd.DataFrame, df2: pd.DataFrame, black_id: str, white_id: str) -> pd.DataFrame:
-    df1.columns = pd.MultiIndex.from_product([[black_id], df1.columns])
-    df2.columns = pd.MultiIndex.from_product([[white_id], df2.columns])
-    df = df1.join(df2, how='outer')
-    df['count_max'] = df.xs('count', axis=1, level=1).max(axis=1)
-    df = df.sort_values('count_max', ascending=False).drop('count_max', axis=1)
-    return df
+    ledger.report()
 
 
 if __name__ == '__main__':
     flags.mark_flag_as_required('eval_sgf_dir')
-    # app.run(main)
-    app.run(test_ledger)
+    app.run(main)
+    # app.run(test_ledger)
