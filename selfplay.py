@@ -148,15 +148,16 @@ def run_game(dnn, init_position: go.Position=None, init_root: mcts.MCTSNode=None
     with utils.logged_timer("Playing game"):
         player = play(dnn, init_position=init_position, init_root=init_root)
 
-    output_name = '{}-{}'.format(int(time.time()), socket.gethostname())
+    if game_id:
+        output_name = '{}-{}'.format(os.path.splitext(os.path.basename(game_id))[0], int(time.time()))
+    else:
+        output_name = '{}-{}'.format(int(time.time()), socket.gethostname())
     game_data = player.extract_data()
     if sgf_dir is not None:
         sgf_name = output_name
-        if game_id:
-            sgf_name = '{}-{}'.format(os.path.splitext(os.path.basename(game_id))[0], int(time.time()))
         # with tf.io.gfile.GFile(os.path.join(minimal_sgf_dir, '{}.sgf'.format(sgf_name)), 'w') as f:
         #     f.write(player.to_sgf(use_comments=False))
-        with tf.io.gfile.GFile(os.path.join(sgf_dir, 'full', '{}.sgf'.format(sgf_name)), 'w') as f:
+        with tf.io.gfile.GFile(os.path.join(sgf_dir, 'full', f'{sgf_name}.sgf'), 'w') as f:
             f.write(player.to_sgf())
 
     tf_examples = preprocessing.make_dataset_from_selfplay(game_data)
@@ -164,11 +165,9 @@ def run_game(dnn, init_position: go.Position=None, init_root: mcts.MCTSNode=None
     if selfplay_dir is not None:
         # Hold out 5% of games for validation.
         if random.random() < holdout_pct:
-            fname = os.path.join(holdout_dir,
-                                 "{}.tfrecord.zz".format(output_name))
+            fname = os.path.join(holdout_dir, f'{output_name}.tfrecord.zz')
         else:
-            fname = os.path.join(selfplay_dir,
-                                 "{}.tfrecord.zz".format(output_name))
+            fname = os.path.join(selfplay_dir, f'{output_name}.tfrecord.zz')
 
         preprocessing.write_tf_examples(fname, tf_examples)
 
