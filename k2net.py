@@ -4,7 +4,6 @@ from typing import List, Tuple
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
-from absl import logging
 
 import coords
 import features as features_lib
@@ -124,8 +123,21 @@ class DummyNetwork(object):
         probs, values = self.run_many([position])
         return probs[0], values[0]
 
+    @staticmethod
+    def zeroout_edges(probs: np.ndarray):
+        prototype = probs
+        for irow in (0, go.N - 1):
+            prototype[irow * go.N: (irow+1) * go.N] = 0
+        # disallow pass as well
+        prototype[0:: go.N] = 0
+        prototype[go.N - 1: go.N * go.N: go.N] = 0
+        return probs / probs.sum().sum()
+
     def run_many(self, positions: List[go.Position]) -> Tuple[np.ndarray, np.ndarray]:
         probs = np.ones((len(positions), myconf.TOTAL_MOVES)) / myconf.TOTAL_MOVES
+        # not allow edge plays when position.n < 10
+        if positions[0].n < 10:
+            probs = self.zeroout_edges(probs)
         values = np.array([p.score() for p in positions])
         return probs, np.sign(values)
 
@@ -137,3 +149,10 @@ def bootstrap():
 
     fname = '/tmp/k2net.0.h5'
     model.save(fname)
+
+
+def test_filter_np():
+    probs = np.ones(myconf.TOTAL_MOVES) / myconf.TOTAL_MOVES
+    probs_filtered = DummyNetwork.zeroout_edges(probs)
+    print(np.reshape(probs_filtered[:go.N * go.N], (go.N, go.N)))
+    print(probs_filtered[-1-go.N:])
