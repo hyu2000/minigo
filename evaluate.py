@@ -73,6 +73,13 @@ class Ledger:
         assert len(self._model_ids) == 2
 
     def report(self):
+        """ report lists #wins by a model playing as black/white.
+       model0.lr=0.01_vw=0.5  model0.lr=0.02_vw=0.5
+Black                      6                      8
+White                      2                      4
+Total                      8                     12
+  This says overall, the 2nd model wins. It wins 8 out 10 games as black, 4 out of 10 games as white.
+        """
         results_dict = {}
         for model in self._model_ids:
             opponent = (self._model_ids - {model}).pop()
@@ -147,7 +154,7 @@ class RunOneSided:
             # First, check the roots for hopeless games.
             if active.should_resign():  # Force resign
                 active.set_result(-1 * active.root.position.to_play, was_resign=True)
-                inactive.set_result(active.root.position.to_play, was_resign=True)
+                inactive.set_result(-1 * active.root.position.to_play, was_resign=True)
                 break
 
             if active.is_done():
@@ -180,7 +187,7 @@ class RunOneSided:
 
     def _create_sgf(self, ith_game: int, init_position_n: int):
         """ merge comments from black and white """
-        fname = "{:d}-{:s}-vs-{:s}-{:d}.sgf".format(int(time.time()), self.white_model_id, self.black_model_id, ith_game)
+        fname = "{:d}-{:s}-vs-{:s}-{:d}.sgf".format(int(time.time()), self.black_model_id, self.white_model_id, ith_game)
         game_history = self.black_player.position.recent
         if len(game_history) < len(self.white_player.position.recent):
             game_history = self.white_player.position.recent
