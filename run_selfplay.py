@@ -21,8 +21,8 @@ FLAGS = flags.FLAGS
 
 class InitPositions:
     """
-        limit to lower-left-down-center triangle: C3, D3, E3, D4, E4, E5
-        open_moves, open_probs = ['C3', 'D3', 'E3', 'D4', 'E4', 'E5'], np.ones(6) / 6
+    limit to lower-left-down-center triangle: C3, D3, E3, D4, E4, E5
+    open_moves, open_probs = ['C3', 'D3', 'E3', 'D4', 'E4', 'E5'], np.ones(6) / 6
     """
     def __init__(self, open_moves: Optional[List], open_probs: Optional[List]):
         if not open_moves:
@@ -94,11 +94,11 @@ def main(argv):
 
 
 def main_local(argv):
-    FLAGS.load_file = f'{myconf.MODELS_DIR}/model8_epoch4.h5'
+    FLAGS.load_file = f'{myconf.MODELS_DIR}/model0.lr=0.02_vw=0.5.h5'
     FLAGS.sgf_dir = f'{myconf.SELFPLAY_DIR}/sgf'
     FLAGS.num_readouts = 400
     FLAGS.parallel_readouts = 16
-    FLAGS.softpick_move_cutoff = 6
+    FLAGS.softpick_move_cutoff = 4
     FLAGS.dirichlet_noise_weight = 0  # 0.05
     play_games(num_games=2)
 
