@@ -66,14 +66,15 @@ def play_games(num_games=500):
                               game_id=str(i)
                               )
             margin_est = player.black_margin_no_komi
+            result_str = player.result_string
             # moves_history = player.root.position.recent
             # history_str = ' '.join([coords.to_gtp(x.move) for x in moves_history[:8]])
             history_str = ' '.join(player.move_infos[:8])
 
             ru_rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
 
-            logging.info(f'game {i}: %d moves, score %.1f l1n=%d rss=%.1f\t%s', player.root.position.n,
-                         margin_est, len(shared_tree.children), ru_rss / 1e6,
+            logging.info(f'game {i}: %d moves, score %s l1n=%d rss=%.1f\t%s', player.root.position.n,
+                         result_str, len(shared_tree.children), ru_rss / 1e6,
                          history_str)
 
         del shared_tree

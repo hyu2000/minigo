@@ -218,7 +218,7 @@ class MCTSPlayer(MCTSPlayerInterface):
             # if game is over, override the value estimate with the true score
             if leaf.is_done():
                 value = leaf.position.score()
-                leaf.raw_margin = value + leaf.position.komi
+                leaf.raw_margin = value + leaf.position.komi   # TODO should move to win_loss?
                 win_loss = np.sign(value)
                 leaf.backup_value(win_loss, up_to=self.root)
                 continue
@@ -308,3 +308,19 @@ class CGOSPlayer(MCTSPlayer):
     def suggest_move(self, position):
         self.seconds_per_move = time_recommendation(position.n)
         return super().suggest_move(position)
+
+
+def test_sample_cdf():
+    pdf = np.ones(80) / 80
+    cdf = pdf.cumsum()
+
+    print()
+    rs = [random.random() for i in range(10)]
+    print(rs)
+    # not super-random, but ok
+    chosen = [cdf.searchsorted(x) for x in rs]
+    print(chosen)
+    elements = list(range(80))
+    chosen2 = np.random.choice(elements, 10, p=pdf)
+    print(chosen2)
+

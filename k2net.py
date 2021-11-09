@@ -131,13 +131,14 @@ class DummyNetwork(object):
         # disallow pass as well
         prototype[0:: go.N] = 0
         prototype[go.N - 1: go.N * go.N: go.N] = 0
-        return probs / probs.sum().sum()
+        return probs / np.sum(probs)
 
     def run_many(self, positions: List[go.Position]) -> Tuple[np.ndarray, np.ndarray]:
-        probs = np.ones((len(positions), myconf.TOTAL_MOVES)) / myconf.TOTAL_MOVES
+        probs = np.ones(myconf.TOTAL_MOVES) / myconf.TOTAL_MOVES
         # not allow edge plays when position.n < 10
         if positions[0].n < 10:
             probs = self.zeroout_edges(probs)
+        probs = np.tile(probs, (len(positions), 1))
         values = np.array([p.score() for p in positions])
         return probs, np.sign(values)
 

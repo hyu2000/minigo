@@ -18,8 +18,9 @@ do
     --holdout_pct=0 \
     --num_games_share_tree=1 \
     --dirichlet_noise_weight=0 \
-    --load_file="${DRIVE_HOME}/checkpoints/model10_epoch4.h5" \
-    --num_games=5000 \
-    2>&1 | tee "${DRIVE_HOME}/selfplay/run_selfplay1${i}.log" &
+    --num_games=1000 \
+    --resign_threshold=-1 \
+    2>&1 | tee "${DRIVE_HOME}/selfplay/run_selfplay${i}.log" &
+#    --load_file="${DRIVE_HOME}/checkpoints/model10_epoch4.h5" \
 
 done
