@@ -1,4 +1,4 @@
-""" generate TFrecord files; train/val split """
+""" generate TFrecord files from human games; train/val split """
 import itertools
 import random
 from collections import Counter, defaultdict
@@ -62,19 +62,23 @@ class GameStats(object):
 def summarize():
     store = GameStore()
     stats = GameStats()
-    for game_id, reader in store.game_iter([store.ds_nngs], filter_game=True):
+    for game_id, reader in store.game_iter([store.ds_top], filter_game=True):
         stats.process_game(reader)
     stats.show()
 
 
 def preprocess(train_val_split=0.9, games_in_batch=2000):
     store = GameStore()
-    game_iter = store.game_iter([store.ds_nngs], filter_game=True)
+    game_iter = store.game_iter([store.ds_top], filter_game=True)
 
     num_batch = 10
     batch_train = []
     games_val = []  # all val data goes here
+    num_games_no_results = 0
     for game_id, reader in game_iter:
+        if reader.black_margin_adj(adjust_komi=True) is None:
+            num_games_no_results += 1
+            continue
         game_samples = preprocessing.calc_samples_from_reader(reader)
         if random.random() < train_val_split:
             batch_train.append(game_samples)
@@ -84,12 +88,13 @@ def preprocess(train_val_split=0.9, games_in_batch=2000):
         if len(batch_train) < games_in_batch:
             continue
 
-        write_batch(f'{myconf.FEATURES_DIR}/train-{num_batch}.tfexamples', batch_train)
+        write_batch(f'{myconf.FEATURES_DIR}/train/train-{num_batch}.tfrecord.zz', batch_train)
         batch_train = []
         num_batch += 1
 
-    write_batch(f'{myconf.FEATURES_DIR}/train-{num_batch}.tfexamples', batch_train)
-    write_batch(f'{myconf.FEATURES_DIR}/val-nngs.tfexamples', games_val)
+    write_batch(f'{myconf.FEATURES_DIR}/train/train-{num_batch}.tfrecord.zz', batch_train)
+    write_batch(f'{myconf.FEATURES_DIR}/val/val-top50.tfrecord.zz', games_val)
+    logging.info('skipped %d games due to no result', num_games_no_results)
 
 
 def preprocess_by_stage(sample_rate=0.1, games_in_batch=2000):

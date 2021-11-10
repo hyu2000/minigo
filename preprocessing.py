@@ -278,7 +278,10 @@ def make_dataset_from_selfplay(data_extracts):
 
 
 def calc_samples_from_reader(reader: sgf_wrapper.SGFReader) -> Iterable:
+    # game result in reader.iter_pwcs() is black margin komi-free. We convert it to win/loss here
     pwcs = reader.iter_pwcs()
+    pwcs = [go.PositionWithContext(x.position, x.next_move, np.sign(x.result - 5.5))
+            for x in pwcs if x.result != sgf_wrapper.SGFReader.MISSING_MARGIN]
     tf_examples = map(_make_tf_example_from_pwc, pwcs)
     return tf_examples
 
