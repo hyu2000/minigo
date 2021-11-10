@@ -85,14 +85,14 @@ def compile_dual():
     model = dual_net.build_model(input_shape)
     # SAI: 1e-4
     # KataGo: per-sample learning rate of 6e-5, except 2e-5 for the first 5mm samples
-    opt = keras.optimizers.Adam(learning_rate=0.0005)
+    opt = keras.optimizers.Adam(learning_rate=0.005)
     model.compile(optimizer=opt,
                   loss={
                       'policy': 'categorical_crossentropy',
                       'value':  custom_BCE_loss},
                   loss_weights={
                       'policy': 0.50,
-                      'value':  0.50},
+                      'value':  1.00},
                   metrics={
                       'policy': keras.metrics.CategoricalAccuracy(name="move_acc"),
                       # 'value': custom_value_accuracy,
@@ -283,9 +283,9 @@ def train(argv: List):
         # keras.callbacks.EarlyStopping(monitor='val_loss', patience=2)
     ]
     if val_dir:
-        history = model.fit(ds_train.shuffle(2000).batch(64), epochs=4, callbacks=callbacks, validation_data=ds_val)
+        history = model.fit(ds_train.shuffle(2000).batch(64), epochs=8, callbacks=callbacks, validation_data=ds_val)
     else:
-        history = model.fit(ds_train.shuffle(2000).batch(64), epochs=4, callbacks=callbacks)
+        history = model.fit(ds_train.shuffle(2000).batch(64), epochs=8, callbacks=callbacks)
     print(history.history)
 
 
