@@ -258,10 +258,11 @@ def train_local():
 
 
 def train(argv: List):
-    assert len(argv) == 4
+    assert len(argv) >= 4
     train_dir  = argv[1]  # can be a dir pattern, e.g. "tfrecords/enhance*/train"
     model_dir  = argv[2]
     start_iter = int(argv[3])
+    val_dir = argv[4] if len(argv) > 4 else None
 
     new_iter = start_iter + 1
     START_EPOCH = 2
@@ -274,12 +275,17 @@ def train(argv: List):
     else:
         model = load_model(model_file)
     ds_train = load_selfplay_data(train_dir)
+    if val_dir:
+        ds_val = load_selfplay_data(val_dir)
 
     callbacks = [
         keras.callbacks.ModelCheckpoint(f'{model_dir}/model{new_iter}_epoch{{epoch}}.h5'),
         # keras.callbacks.EarlyStopping(monitor='val_loss', patience=2)
     ]
-    history = model.fit(ds_train.shuffle(2000).batch(64), epochs=4, callbacks=callbacks)
+    if val_dir:
+        history = model.fit(ds_train.shuffle(2000).batch(64), epochs=4, callbacks=callbacks, validation_data=ds_val)
+    else:
+        history = model.fit(ds_train.shuffle(2000).batch(64), epochs=4, callbacks=callbacks)
     print(history.history)
 
 
