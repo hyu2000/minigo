@@ -73,6 +73,7 @@ class MCTSNode(object):
             (raw number between 0-N^2, with None a pass)
     parent: A parent MCTSNode.
     """
+    TOTAL_MOVES = go.N * go.N + 1
 
     def __init__(self, position, fmove=None, parent=None):
         if parent is None:
@@ -275,7 +276,8 @@ class MCTSNode(object):
 
     def best_child(self):
         # Sort by child_N tie break with action score.
-        return np.argmax(self.child_N + self.child_action_score / 10000)
+        # TODO: using random to break ties is only relevant for flat start ...
+        return np.argmax(self.child_N + self.child_action_score / 10000 + np.random.random(self.TOTAL_MOVES) / 1e8)
 
     def most_visited_path_nodes(self):
         node = self
