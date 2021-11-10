@@ -127,9 +127,10 @@ def test_save_model():
 
 def test_update_model():
     """ load existing weights, but change model config"""
-    fname = f'{myconf.EXP_HOME}/checkpoints/model3_epoch_5.h5'
+    fname = f'{myconf.EXP_HOME}/checkpoints/model10_epoch4.h5'
     model = load_model(fname)
-    model.save(f'{myconf.EXP_HOME}/checkpoints/model3_epoch_5.new.h5')
+    model.summary()
+    # model.save(f'{myconf.EXP_HOME}/checkpoints/model3_epoch_5.new.h5')
 
 
 def test_eval_model():

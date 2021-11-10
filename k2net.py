@@ -49,6 +49,7 @@ def build_model(input_shape):
     """
     Trainable params: 72k
     2nd round: 125k
+    6-block 9x9: 392k
     """
     inputs = keras.Input(shape=input_shape)
     # add "ones" feature plain
