@@ -319,6 +319,10 @@ class SGFReader(object):
             return result_sign, SGFReader.UNKNOWN_MARGIN
         return result_sign, float(detail)
 
+    def result_str(self) -> Optional[str]:
+        result_str = sgf_prop(self.props.get('RE'))
+        return result_str
+
     def result(self) -> int:
         """ minigo game result: 0 mean no RE """
         result_str = sgf_prop(self.props.get('RE'))
