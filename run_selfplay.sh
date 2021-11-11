@@ -18,10 +18,10 @@ do
     --parallel_readouts=16 \
     --holdout_pct=0 \
     --num_games_share_tree=1 \
-    --dirichlet_noise_weight=0 \
+    --dirichlet_noise_weight=0.25 \
     --num_games=300 \
     --load_file="${DRIVE_HOME}/pbt/model4_epoch3.h5" \
-    --resign_threshold=-0.99 \
+    --resign_threshold=-1.0 \
     2>&1 | tee "${SELFPLAY_DIR}/run_selfplay${i}.log" &
 
 done
