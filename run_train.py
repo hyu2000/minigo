@@ -283,7 +283,7 @@ def train(argv: List):
         # keras.callbacks.EarlyStopping(monitor='val_loss', patience=2)
     ]
     if val_dir:
-        history = model.fit(ds_train.shuffle(2000).batch(64), epochs=8, callbacks=callbacks, validation_data=ds_val)
+        history = model.fit(ds_train.shuffle(2000).batch(64), epochs=8, callbacks=callbacks, validation_data=ds_val.batch(64))
     else:
         history = model.fit(ds_train.shuffle(2000).batch(64), epochs=8, callbacks=callbacks)
     print(history.history)
