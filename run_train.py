@@ -85,7 +85,8 @@ def compile_dual():
     model = dual_net.build_model(input_shape)
     # SAI: 1e-4
     # KataGo: per-sample learning rate of 6e-5, except 2e-5 for the first 5mm samples
-    opt = keras.optimizers.Adam(learning_rate=0.005)
+    # 1e-3 / 64 = 1.6e-5
+    opt = keras.optimizers.Adam(learning_rate=0.002)
     model.compile(optimizer=opt,
                   loss={
                       'policy': 'categorical_crossentropy',
