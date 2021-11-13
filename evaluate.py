@@ -197,7 +197,7 @@ class RunOneSided:
         black_comments = self.black_player.comments
         white_comments = self.white_player.comments
         assert len(black_comments) == len(white_comments) and len(black_comments) + init_position_n == len(game_history)
-        comments = ['' for i in range(init_position_n)]
+        comments = ['initial' for i in range(init_position_n)]
         comments.extend([black_comments[i] if i % 2 == 0 else white_comments[i] for i in range(len(black_comments))])
 
         with gfile.GFile(os.path.join(self.sgf_dir, fname), 'w') as _file:
