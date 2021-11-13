@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """Evaluation plays games between two neural nets."""
+import itertools
 import os
 import random
 import time
@@ -28,6 +29,7 @@ from tensorflow.python import gfile
 import coords
 import k2net as dual_net
 import go
+import preprocessing
 from run_selfplay import InitPositions
 from strategies import MCTSPlayer
 import sgf_wrapper
@@ -38,7 +40,8 @@ import myconf
 pd.set_option('display.max_columns', None)
 pd.set_option('display.width', 120)
 
-flags.DEFINE_string('eval_sgf_dir', None, 'Where to write evaluation results.')
+flags.DEFINE_string('eval_data_dir', f'{myconf.EXP_HOME}/eval_bots/data', 'Where to write game data.')
+flags.DEFINE_string('eval_sgf_dir', f'{myconf.EXP_HOME}/eval_bots/sgfs', 'Where to write evaluation results.')
 flags.DEFINE_integer('num_eval_games', 16, 'How many games to play')
 # From strategies.py
 flags.declare_key_flag('verbose')
@@ -120,14 +123,14 @@ class RunOneSided:
         with utils.logged_timer("Loading weights"):
             self.black_net = dual_net.DualNetwork(black_model)
             self.white_net = dual_net.DualNetwork(white_model)
-        self.black_player = MCTSPlayer(self.black_net, two_player_mode=True, num_readouts=400)
-        self.white_player = MCTSPlayer(self.white_net, two_player_mode=True, num_readouts=400)
+        self.black_player = MCTSPlayer(self.black_net)
+        self.white_player = MCTSPlayer(self.white_net)
 
         self.init_positions = InitPositions(None, None)
 
         self._num_games_so_far = 0
 
-    def play(self, init_position: go.Position) -> MCTSPlayer:
+    def _play(self, init_position: go.Position) -> MCTSPlayer:
         """ return None if game is not played """
         black, white = self.black_player, self.white_player
         for player in [black, white]:
@@ -161,8 +164,8 @@ class RunOneSided:
                 break
 
             move, best_move = active.pick_move(active.root.position.n < FLAGS.softpick_move_cutoff)
-            active.play_move(move)
-            inactive.play_move(move)
+            active.play_move(move, record_pi=True)
+            inactive.play_move(move, record_pi=False)
 
             if num_move < NUM_OPEN_MOVES:
                 history = active.root.position.recent
@@ -187,7 +190,7 @@ class RunOneSided:
 
     def _create_sgf(self, ith_game: int, init_position_n: int):
         """ merge comments from black and white """
-        fname = "{:d}-{:s}-vs-{:s}-{:d}.sgf".format(int(time.time()), self.black_model_id, self.white_model_id, ith_game)
+        fname = "{:s}-vs-{:s}-{:d}-{:d}.sgf".format(self.black_model_id, self.white_model_id, ith_game, int(time.time()))
         game_history = self.black_player.position.recent
         if len(game_history) < len(self.white_player.position.recent):
             game_history = self.white_player.position.recent
@@ -204,16 +207,30 @@ class RunOneSided:
                                           black_name=self.black_model_id, white_name=self.white_model_id)
             _file.write(sgfstr)
 
+    def _make_tfrecords(self, ith_game: int):
+        output_name = f'{ith_game}-%d' % int(time.time())
+        game_data_black = self.black_player.extract_data()
+        game_data_white = self.white_player.extract_data()
+        tf_examples = preprocessing.make_dataset_from_selfplay(itertools.chain(game_data_black, game_data_white))
+
+        # no Hold out 5% of games for validation.
+
+        fname = os.path.join(FLAGS.eval_data_dir, f'{output_name}.tfrecord.zz')
+
+        preprocessing.write_tf_examples(fname, tf_examples)
+
     def play_a_game(self):
         game_idx = self._num_games_so_far
         self._num_games_so_far += 1
 
         init_position = self.init_positions.sample()
-        active = self.play(init_position)
+        active = self._play(init_position)
         assert active is not None
         result_str = active.result_string
 
         self._create_sgf(game_idx, init_position.n)
+        self._make_tfrecords(game_idx)
+
         game_history = active.position.recent
         move_history_head = ' '.join([coords.to_gtp(game_history[i].move) for i in range(5)])
         logging.info(f'Finished game {game_idx}: %d moves, {result_str} \t%s', len(game_history), move_history_head)
@@ -252,6 +269,6 @@ def main(argv):
 
 
 if __name__ == '__main__':
-    flags.mark_flag_as_required('eval_sgf_dir')
+    # flags.mark_flag_as_required('eval_sgf_dir')
     app.run(main)
     # app.run(test_ledger)

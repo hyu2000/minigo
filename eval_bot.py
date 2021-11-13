@@ -1,5 +1,7 @@
 """ measure strength of a bot / DNN, to track training progress
 
+    It asks DNN to predict winner of a series of board positions from expert games. The assumption is that
+    if bot is below human professional level, this measures value-net accuracy.
 """
 
 from typing import List
@@ -85,8 +87,8 @@ def run_games():
     store = GameStore(data_dir=f'{myconf.DATA_DIR}')
 
     dfdict = {}
-    for model_id in [f'epoch{i}' for i in range(1, 5)]:
-        model_file = f'{myconf.MODELS_DIR}/model4_{model_id}.h5'
+    for model_id in [f'model{i}' for i in range(1, 8, 2)]:
+        model_file = f'{myconf.EXP_HOME}/checkpoints-3blocks/{model_id}_epoch2.h5'
         dnn = dual_net.DualNetwork(model_file)
 
         stats = ScoreStats()
@@ -102,7 +104,7 @@ def run_games():
     df = pd.DataFrame({k: df['accu'] for k, df in dfdict.items()})
     # df.index = df0.index
     df['count'] = df0['count']
-    df.to_csv('/tmp/eval_model4.csv')
+    df.to_csv('/tmp/eval_3blocks.csv')
     print(df)
 
 

@@ -86,14 +86,13 @@ def time_recommendation(move_num, seconds_per_move=5, time_limit=15 * 60,
 
 class MCTSPlayer(MCTSPlayerInterface):
     def __init__(self, network, seconds_per_move=5, num_readouts=0,
-                 resign_threshold=None, two_player_mode=False,
+                 resign_threshold=None,
                  timed_match=False):
         """ two_player_mode: evaluation mode, if True, not collecting pi """
         self.network = network
         self.seconds_per_move = seconds_per_move
         self.num_readouts = num_readouts or FLAGS.num_readouts
         self.verbosity = FLAGS.verbose
-        self.two_player_mode = two_player_mode
         self.temp_threshold = FLAGS.softpick_move_cutoff
 
         self.initialize_game()
@@ -161,23 +160,24 @@ class MCTSPlayer(MCTSPlayerInterface):
         move, best_move = self.pick_move()
         return move
 
-    def play_move(self, c):
+    def play_move(self, c, record_pi: bool = True):
         """Notable side effects:
           - finalizes the probability distribution according to
           this roots visit counts into the class' running tally, `searches_pi`
           - Makes the node associated with this move the root, for future
             `inject_noise` calls.
         """
-        if not self.two_player_mode:
+        if record_pi:
             self.searches_pi.append(self.root.children_as_pi(
                 squash=self.root.position.n < self.temp_threshold))
+        else:
+            self.searches_pi.append(None)
         self.comments.append(self.root.describe())
         try:
             self.root = self.root.maybe_add_child(coords.to_flat(c))
         except go.IllegalMove:
             dbg("Illegal move")
-            if not self.two_player_mode:
-                self.searches_pi.pop()
+            self.searches_pi.pop()
             self.comments.pop()
             raise
 
@@ -295,6 +295,8 @@ class MCTSPlayer(MCTSPlayerInterface):
         assert result is not None
         for pwc, pi in zip(go.replay_position(self.root.position, result, initial_position=init_position),
                            self.searches_pi):
+            if pi is None:  # record_pi == False
+                continue
             yield pwc.position, pi, pwc.result
 
     def get_num_readouts(self):
