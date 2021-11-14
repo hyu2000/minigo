@@ -29,7 +29,7 @@ from utils import dbg
 from player_interface import MCTSPlayerInterface
 
 
-# this affects pick_move() and searches_pi
+# this affects pick_move() and searches_pi. 6 for 9x9
 flags.DEFINE_integer('softpick_move_cutoff', (go.N * go.N // 12) // 2 * 2,
                      'The move number (<) up to which moves are softpicked from MCTS visits.')
 # Ensure that both white and black have an equal number of softpicked moves.
@@ -88,7 +88,7 @@ class MCTSPlayer(MCTSPlayerInterface):
     def __init__(self, network, seconds_per_move=5, num_readouts=0,
                  resign_threshold=None,
                  timed_match=False):
-        """ two_player_mode: evaluation mode, if True, not collecting pi """
+        """ """
         self.network = network
         self.seconds_per_move = seconds_per_move
         self.num_readouts = num_readouts or FLAGS.num_readouts

@@ -231,6 +231,12 @@ class SGFReader(object):
         size_str = sgf_prop(self.props.get('SZ'))
         return int(size_str)
 
+    def black_name(self) -> str:
+        return sgf_prop(self.props.get('PB'))
+
+    def white_name(self) -> str:
+        return sgf_prop(self.props.get('PW'))
+
     def not_handicap(self) -> bool:
         """ HA """
         handicap = sgf_prop(self.props.get('HA'))
