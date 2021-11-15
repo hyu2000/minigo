@@ -80,7 +80,7 @@ def main(argv):
     assert len(argv) == 3
     models_dir, features_dir = argv[1], argv[2]
     p = Population(models_dir)
-    p.bootstrap(f'{models_dir}/model5_epoch1.h5', f'{features_dir}')
+    p.bootstrap(f'{models_dir}/model6.lr=0.005_vw=1.h5', f'{features_dir}')
 
 
 if __name__ == '__main__':

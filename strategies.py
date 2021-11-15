@@ -199,7 +199,7 @@ class MCTSPlayer(MCTSPlayerInterface):
             cdf = self.root.children_as_pi(squash=True).cumsum()
             if cdf[-2] > 1e-6:
                 cdf /= cdf[-2]  # Prevents passing via softpick.
-                selection = random.random()
+                selection = np.random.random()   # probably better than random.random()?
                 fcoord = cdf.searchsorted(selection)
                 assert self.root.child_N[fcoord] != 0
         return coords.from_flat(fcoord), coords.from_flat(best_child)
