@@ -243,32 +243,47 @@ def get_model_id(model_path: str) -> str:
     return model_id
 
 
-def main(argv):
-    """Play matches between two neural nets."""
+def setup_common(argv):
     _, black_model, white_model = argv
-    models_dir = f'{myconf.EXP_HOME}/pbt'
+    models_dir = f'{myconf.MODELS_DIR}'
     if not black_model.startswith('/'):
         black_model = f'{models_dir}/{black_model}'
     if not white_model.startswith('/'):
         white_model = f'{models_dir}/{white_model}'
     utils.ensure_dir_exists(FLAGS.eval_sgf_dir)
+    return black_model, white_model
+
+
+def main_twosided(argv):
+    """Play matches between two neural nets, alternating sides"""
+    black_model, white_model = setup_common(argv)
 
     ledger = Ledger()
     runner1 = RunOneSided(black_model, white_model, FLAGS.eval_sgf_dir)
     runner2 = RunOneSided(white_model, black_model, FLAGS.eval_sgf_dir)
     logging.info('Tournament: %s vs %s, %d games', runner1.black_model_id, runner1.white_model_id, FLAGS.num_eval_games)
-    for i in range(FLAGS.num_eval_games):
+    for i in range(FLAGS.num_eval_games / 2):
         result_str = runner1.play_a_game()
         ledger.record_game(runner1.black_model_id, runner1.white_model_id, result_str)
         result_str = runner2.play_a_game()
         ledger.record_game(runner2.black_model_id, runner2.white_model_id, result_str)
-        if i % 2 == 1:
-            ledger.report()
+        ledger.report()
 
+
+def main_oneside(argv):
+    """ play a number of games between black and white """
+    black_model, white_model = setup_common(argv)
+
+    ledger = Ledger()
+    runner1 = RunOneSided(black_model, white_model, FLAGS.eval_sgf_dir)
+    logging.info('Tournament: %s vs %s, %d games', runner1.black_model_id, runner1.white_model_id, FLAGS.num_eval_games)
+    for i in range(FLAGS.num_eval_games):
+        result_str = runner1.play_a_game()
+        ledger.record_game(runner1.black_model_id, runner1.white_model_id, result_str)
     ledger.report()
 
 
 if __name__ == '__main__':
     # flags.mark_flag_as_required('eval_sgf_dir')
-    app.run(main)
+    app.run(main_oneside)
     # app.run(test_ledger)

@@ -16,6 +16,7 @@ lr=0.2_vw=1.5                                                   -
 """
 import os
 from collections import defaultdict
+import subprocess, shlex
 import pandas as pd
 from sgf_wrapper import SGFReader
 import myconf
@@ -63,9 +64,40 @@ def scan_results(sgfs_dir: str) -> pd.DataFrame:
     return dfw
 
 
+def start_games(black_id, white_id, num_games: int) -> subprocess.Popen:
+    """
+    python evaluate.py
+    """
+    cmdline = """/Users/hyu/anaconda/envs/tf/bin/python /Users/hyu/PycharmProjects/dlgo/minigo/evaluate.py
+                --softpick_move_cutoff=6
+                --parallel_readouts=16
+                --num_readouts=400
+                --resign_threshold=-1
+                --num_eval_games=%d
+                %s %s
+    """ % (num_games, black_id, white_id)
+    args = shlex.split(cmdline)
+    p = subprocess.Popen(args)
+    # p.wait()
+    return p
+
+
+def run_evals():
+    model1 = 'model0.lr=0.004_vw=1.h5'
+    model2 = 'model0.lr=0.005_vw=1.h5'
+    p1 = start_games(model1, model2, 3)
+    print(f'started 1')
+    p2 = start_games(model2, model1, 3)
+    print(f'started 2')
+    p1.wait()
+    p2.wait()
+    print('done')
+
+
 def main():
-    df = scan_results(f'{myconf.EXP_HOME}/eval_bots/sgfs')
-    df.to_pickle('/tmp/df.pkl')
+    # df = scan_results(f'{myconf.EXP_HOME}/eval_bots/sgfs')
+    # df.to_pickle('/tmp/df.pkl')
+    run_evals()
 
 
 if __name__ == '__main__':
