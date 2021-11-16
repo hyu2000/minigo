@@ -243,14 +243,14 @@ dataset = dataset.prefetch(buffer_size=batch_size)
 
 def train_local():
     # model = compile_dual()
-    model = load_model(f'{myconf.MODELS_DIR}/model4_epoch_1.h5')
+    model = load_model(f'{myconf.MODELS_DIR}/model7_epoch2.h5')
 
     data_dir = myconf.SELFPLAY_DIR
-    # data_dir = f'{myconf.EXP_HOME}/selfplay'
+    data_dir = myconf.FEATURES_DIR
     ds_train = load_selfplay_data(f'{data_dir}/train')
     ds_val = load_selfplay_data(f'{data_dir}/val')
     callbacks = [
-        keras.callbacks.ModelCheckpoint(f'{myconf.MODELS_DIR}/model_epoch_{{epoch}}.h5'),
+        keras.callbacks.ModelCheckpoint(f'{myconf.MODELS_DIR}/model8_epoch{{epoch}}.h5'),
         # keras.callbacks.EarlyStopping(monitor='val_loss', patience=2)
     ]
     history = model.fit(ds_train.shuffle(1000).batch(64), validation_data=ds_val.batch(64),
@@ -266,7 +266,7 @@ def train(argv: List):
     val_dir = argv[4] if len(argv) > 4 else None
 
     new_iter = start_iter + 1
-    START_EPOCH = 2
+    START_EPOCH = 1
     print(f'train on {train_dir}: {start_iter} -> {new_iter}')
 
     model_file = f'{model_dir}/model{start_iter}_epoch{START_EPOCH}.h5'
@@ -284,9 +284,9 @@ def train(argv: List):
         # keras.callbacks.EarlyStopping(monitor='val_loss', patience=2)
     ]
     if val_dir:
-        history = model.fit(ds_train.shuffle(2000).batch(64), epochs=8, callbacks=callbacks, validation_data=ds_val.batch(64))
+        history = model.fit(ds_train.shuffle(2000).batch(64), epochs=4, callbacks=callbacks, validation_data=ds_val.batch(64))
     else:
-        history = model.fit(ds_train.shuffle(2000).batch(64), epochs=8, callbacks=callbacks)
+        history = model.fit(ds_train.shuffle(2000).batch(64), epochs=4, callbacks=callbacks)
     print(history.history)
 
 
