@@ -29,7 +29,7 @@ MIN_NUM_GAMES_SIDED = 3
 
 
 class RawGameCount:
-    """ wrap around raw game counts df, provides convenience access """
+    """ wrap around raw sided game counts df, provides convenience access """
     def __init__(self, df: pd.DataFrame):
         assert df.shape[0] == df.shape[1]
         self.df = df
@@ -76,7 +76,7 @@ def verify_and_fold(raw_game_counts: RawGameCount, df_blackwins: pd.DataFrame) -
     """
     df_counts = raw_game_counts.df
     df_eye = raw_game_counts.eye() * MIN_NUM_GAMES_SIDED
-    assert (df_counts + df_eye >= MIN_NUM_GAMES_SIDED).all().all()
+    # assert (df_counts + df_eye >= MIN_NUM_GAMES_SIDED).all().all()
     # make sure df_counts == df_counts.T for black/white parity, as well as min #games is played
     pd.testing.assert_frame_equal(df_counts, df_counts.T)
     total_num_games = df_counts.sum().sum()
@@ -126,15 +126,17 @@ def run_evals(model1, model2, num_games):
 
 def main():
     raw_game_count, _ = scan_results(f'{myconf.EXP_HOME}/eval_bots/sgfs')
-    # df.to_pickle('/tmp/df.pkl')
 
     num_target_games = 3
     iter_id = 7
     lrs = [0.004, 0.005, 0.006, 0.008]
     vws = [0.7, 0.8, 1, 1.2]
     lr_ref, vw_ref = 0.005, 1
-    for lr in set(lrs) - {lr_ref}:
-        model1 = model_fname(iter_id, lr, vw_ref)
+    # for lr in set(lrs) - {lr_ref}:
+    #     model1 = model_fname(iter_id, lr, vw_ref)
+    #     modelr = model_fname(iter_id, lr_ref, vw_ref)
+    for vw in set(vws) - {vw_ref}:
+        model1 = model_fname(iter_id, lr_ref, vw)
         modelr = model_fname(iter_id, lr_ref, vw_ref)
         procs = []
         for black, white in [(model1, modelr), (modelr, model1)]:
@@ -147,5 +149,14 @@ def main():
             p.wait()
 
 
+def state_of_the_world():
+    raw_game_count, df_blackwins = scan_results(f'{myconf.EXP_HOME}/eval_bots/sgfs')
+    dfw = verify_and_fold(raw_game_count, df_blackwins)
+    pickle_fpath = '/tmp/df.pkl'
+    dfw.to_pickle(pickle_fpath)
+    print(f'dfw saved to {pickle_fpath}')
+
+
 if __name__ == '__main__':
     main()
+    state_of_the_world()
