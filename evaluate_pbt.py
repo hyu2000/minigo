@@ -34,7 +34,12 @@ class RawGameCount:
         assert df.shape[0] == df.shape[1]
         self.df = df
 
-    def count(self, black, white):
+    def count(self, black: str, white: str):
+        """ black/white should be model_id, but we handle model_id.h5 as well """
+        if black.endswith('.h5'):
+            black = black[:-3]
+        if white.endswith('.h5'):
+            white = white[:-3]
         try:
             return self.df.loc[black, white]
         except KeyError:
