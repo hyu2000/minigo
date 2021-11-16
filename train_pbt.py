@@ -47,7 +47,16 @@ class Population:
     def __init__(self, models_dir: str):
         self.models_dir = models_dir
 
+    @staticmethod
+    def _parse_generation_from_model_fname(model_fname: str) -> int:
+        """ we expect the form: model[xxx].* """
+        base_name = os.path.basename(model_fname)
+        model_id = base_name.split('.')[0]
+        assert model_id.startswith('model')
+        return int(model_id[5:])
+
     def bootstrap(self, init_model_file: str, features_dir: str):
+        cur_generation = self._parse_generation_from_model_fname(init_model_file)
         init_hyper_params = [(lr, vw) for lr in (4e-3, 5e-3, 6e-3, 8e-3) for vw in (0.7, 0.8, 1, 1.2)]
 
         ds_train = load_selfplay_data(features_dir)
@@ -58,7 +67,7 @@ class Population:
             print(f'training lr={lr} vw={value_weight} ...')
             history = model.fit(ds_train.shuffle(2000).batch(64), epochs=1)
             # save to disk
-            model_path = f'{self.models_dir}/%s' % self._model_fname(0, lr, value_weight)
+            model_path = f'{self.models_dir}/%s' % self._model_fname(cur_generation + 1, lr, value_weight)
             model.save(model_path)
 
     def _model_fname(self, i, lr, vw):
@@ -80,7 +89,7 @@ def main(argv):
     assert len(argv) == 3
     models_dir, features_dir = argv[1], argv[2]
     p = Population(models_dir)
-    p.bootstrap(f'{models_dir}/model6.lr=0.005_vw=1.h5', f'{features_dir}')
+    p.bootstrap(f'{models_dir}/model7.lr=0.005_vw=1.h5', f'{features_dir}')
 
 
 if __name__ == '__main__':
