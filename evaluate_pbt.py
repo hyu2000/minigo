@@ -17,6 +17,9 @@ lr=0.2_vw=1.5                                                   -
 import os
 from collections import defaultdict
 import subprocess, shlex
+from typing import Tuple
+
+import numpy as np
 import pandas as pd
 from sgf_wrapper import SGFReader
 import myconf
@@ -25,8 +28,25 @@ import myconf
 MIN_NUM_GAMES_SIDED = 3
 
 
-def scan_results(sgfs_dir: str) -> pd.DataFrame:
-    """ scan sgfs to build the model comparison matrix """
+class RawGameCount:
+    """ wrap around raw game counts df, provides convenience access """
+    def __init__(self, df: pd.DataFrame):
+        assert df.shape[0] == df.shape[1]
+        self.df = df
+
+    def count(self, black, white):
+        try:
+            return self.df.loc[black, white]
+        except KeyError:
+            return 0
+
+    def eye(self):
+        return pd.DataFrame(np.eye(len(self.df), len(self.df)),
+                            index=self.df.index, columns=self.df.columns)
+
+
+def scan_results(sgfs_dir: str) -> Tuple[RawGameCount, pd.DataFrame]:
+    """ scan sgfs, build the raw sided stats dfs """
     game_counts = defaultdict(lambda: defaultdict(int))
     black_wins  = defaultdict(lambda: defaultdict(int))
     models = set()
@@ -46,9 +66,17 @@ def scan_results(sgfs_dir: str) -> pd.DataFrame:
     # construct df: sided first
     models = sorted(models)
     df_counts_raw = pd.DataFrame(game_counts, index=models, columns=models)
-    assert (df_counts_raw.fillna(MIN_NUM_GAMES_SIDED) >= MIN_NUM_GAMES_SIDED).all().all()
     df_counts = df_counts_raw.T.fillna(0).astype(int)
     df_blackwins = pd.DataFrame(black_wins, index=models, columns=models).T.fillna(0).astype(int)
+    return RawGameCount(df_counts), df_blackwins
+
+
+def verify_and_fold(raw_game_counts: RawGameCount, df_blackwins: pd.DataFrame) -> pd.DataFrame:
+    """ verify black/white parity, and that a minimum number of games has been played
+    """
+    df_counts = raw_game_counts.df
+    df_eye = raw_game_counts.eye() * MIN_NUM_GAMES_SIDED
+    assert (df_counts + df_eye >= MIN_NUM_GAMES_SIDED).all().all()
     # make sure df_counts == df_counts.T for black/white parity, as well as min #games is played
     pd.testing.assert_frame_equal(df_counts, df_counts.T)
     total_num_games = df_counts.sum().sum()
@@ -62,6 +90,10 @@ def scan_results(sgfs_dir: str) -> pd.DataFrame:
     dfw = pd.concat([df_totalwins, df_counts2, df_wrate2], axis=1, keys=['bwin', 'total', 'wrate'])
     dfw = dfw.swaplevel(axis=1).sort_index(axis=1)
     return dfw
+
+
+def model_fname(i: int, lr, vw) -> str:
+    return f'model{i}.lr={lr}_vw={vw}.h5'
 
 
 def start_games(black_id, white_id, num_games: int) -> subprocess.Popen:
@@ -82,12 +114,10 @@ def start_games(black_id, white_id, num_games: int) -> subprocess.Popen:
     return p
 
 
-def run_evals():
-    model1 = 'model0.lr=0.004_vw=1.h5'
-    model2 = 'model0.lr=0.005_vw=1.h5'
-    p1 = start_games(model1, model2, 3)
+def run_evals(model1, model2, num_games):
+    p1 = start_games(model1, model2, num_games)
     print(f'started 1')
-    p2 = start_games(model2, model1, 3)
+    p2 = start_games(model2, model1, num_games)
     print(f'started 2')
     p1.wait()
     p2.wait()
@@ -95,9 +125,26 @@ def run_evals():
 
 
 def main():
-    # df = scan_results(f'{myconf.EXP_HOME}/eval_bots/sgfs')
+    raw_game_count, _ = scan_results(f'{myconf.EXP_HOME}/eval_bots/sgfs')
     # df.to_pickle('/tmp/df.pkl')
-    run_evals()
+
+    num_target_games = 3
+    iter_id = 7
+    lrs = [0.004, 0.005, 0.006, 0.008]
+    vws = [0.7, 0.8, 1, 1.2]
+    lr_ref, vw_ref = 0.005, 1
+    for lr in set(lrs) - {lr_ref}:
+        model1 = model_fname(iter_id, lr, vw_ref)
+        modelr = model_fname(iter_id, lr_ref, vw_ref)
+        procs = []
+        for black, white in [(model1, modelr), (modelr, model1)]:
+            games_to_run = num_target_games - raw_game_count.count(black, white)
+            if games_to_run <= 0:
+                continue
+            p = start_games(black, white, games_to_run)
+            procs.append(p)
+        for p in procs:
+            p.wait()
 
 
 if __name__ == '__main__':
