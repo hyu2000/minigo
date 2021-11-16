@@ -62,7 +62,7 @@ class Population:
             model.save(model_path)
 
     def _model_fname(self, i, lr, vw):
-        return f'model{i}.lr={lr};vw={vw}.h5'
+        return f'model{i}.lr={lr}_vw={vw}.h5'
 
     def list(self) -> List:
         """ scan model files on disk for the current list of hyper-params """
