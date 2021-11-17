@@ -13,15 +13,15 @@ do
     --selfplay_dir="${SELFPLAY_DIR}/train" \
     --holdout_dir="${SELFPLAY_DIR}/val" \
     --sgf_dir="${SELFPLAY_DIR}/sgf" \
-    --softpick_move_cutoff=8 \
-    --num_readouts=400 \
+    --softpick_move_cutoff=6 \
+    --num_readouts=600 \
     --parallel_readouts=16 \
     --holdout_pct=0 \
     --num_games_share_tree=1 \
-    --dirichlet_noise_weight=0.25 \
-    --num_games=300 \
-    --load_file="${DRIVE_HOME}/pbt/model4_epoch3.h5" \
-    --resign_threshold=-1.0 \
+    --dirichlet_noise_weight=0.10 \
+    --num_games=500 \
+    --load_file="${DRIVE_HOME}/pbt/model10_epoch1.h5" \
+    --resign_threshold=-0.999 \
     2>&1 | tee "${SELFPLAY_DIR}/run_selfplay${i}.log" &
 
 done
