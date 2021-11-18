@@ -58,6 +58,18 @@ def _format_move_info(move, best_move):
     return '%s(%s)' % (move_info, coords.to_gtp(best_move))
 
 
+def should_full_search(player: MCTSPlayer):
+    current_readouts = player.root.N
+    if current_readouts > FLAGS.num_readouts * 0.75:
+        return True
+
+    # allow more full search at early games, rather than late games
+    # range: 0.05 around full_readout_prob. Assume base=0.25, decrease from 0.30 to 0.20 over the game
+    n = player.root.position.n
+    accept_thresh = FLAGS.full_readout_prob + (50 - n) / 50 * 0.05
+    return random.random() < accept_thresh
+
+
 def play(network, init_position=None, init_root=None):
     """Plays out a self-play match, returning a MCTSPlayer object containing:
         - the final position
@@ -83,11 +95,10 @@ def play(network, init_position=None, init_root=None):
     while True:
         start = time.time()
 
-        player.root.inject_noise()
-        current_readouts = player.root.N
-        # play-cap randomization
-        if current_readouts > FLAGS.num_readouts * 0.75 or random.random() < FLAGS.full_readout_prob:
+        # play-cap randomization. We inject noise only when doing a full search
+        if should_full_search(player):
             readouts = FLAGS.num_readouts
+            player.root.inject_noise()
         else:
             readouts = FLAGS.num_fast_readouts
 
