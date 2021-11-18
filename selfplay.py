@@ -65,7 +65,6 @@ def play(network, init_position=None, init_root=None):
         - the n-ary tensor of floats representing the original value-net estimate
           where n is the number of moves in the game
     """
-    readouts = FLAGS.num_readouts  # defined in strategies.py
     # Disable resign in 5% of games
     if random.random() < FLAGS.resign_disable_pct:
         resign_threshold = -1.0
@@ -86,8 +85,12 @@ def play(network, init_position=None, init_root=None):
 
         player.root.inject_noise()
         current_readouts = player.root.N
-        # we want to do "X additional readouts", rather than "up to X readouts".
-        while player.root.N < current_readouts + readouts:
+        # play-cap randomization
+        readouts = FLAGS.num_fast_readouts
+        if current_readouts > FLAGS.num_readouts * 0.8 or random.random() < FLAGS.full_readout_prob:
+            readouts = FLAGS.num_readouts
+        # HY: not sure about this: we want to do "X additional readouts", rather than "up to X readouts".
+        while player.root.N < readouts:
             player.tree_search()
 
         if FLAGS.verbose >= 3:

@@ -44,6 +44,11 @@ flags.DEFINE_integer('num_readouts', 800 if go.N == 19 else 200,
                      'Number of searches to add to the MCTS search tree before playing a move.')
 flags.register_validator('num_readouts', lambda x: x > 0)
 
+flags.DEFINE_integer('num_fast_readouts', 100,
+                     'Number of searches to add to the MCTS search tree before playing a move.')
+flags.DEFINE_float('full_readout_prob', 0.25,
+                   'how often to run full readouts vs fast readouts')
+
 flags.DEFINE_integer('parallel_readouts', 8,
                      'Number of searches to execute in parallel. This is also the batch size'
                      'for neural network evaluation.')
@@ -168,8 +173,12 @@ class MCTSPlayer(MCTSPlayerInterface):
             `inject_noise` calls.
         """
         if record_pi:
-            self.searches_pi.append(self.root.children_as_pi(
-                squash=self.root.position.n < self.temp_threshold))
+            # play-cap randomization: only record when we search enough
+            if self.root.N >= FLAGS.num_readouts:
+                self.searches_pi.append(self.root.children_as_pi(
+                    squash=self.root.position.n < self.temp_threshold))
+            else:
+                self.searches_pi.append(self.root.original_prior)
         else:
             self.searches_pi.append(None)
         self.comments.append(self.root.describe())
