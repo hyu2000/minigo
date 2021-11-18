@@ -195,7 +195,7 @@ class MCTSNode(object):
 
     def incorporate_results(self, move_probabilities, raw_value, up_to):
         """ this expands the current node, if not already """
-        assert move_probabilities.shape == (go.N * go.N + 1,)
+        # assert move_probabilities.shape == (go.N * go.N + 1,)
         # A finished game should not be going through this code path - should
         # directly call backup_value() on the result of the game.
         assert not self.position.is_game_over()
@@ -219,7 +219,9 @@ class MCTSNode(object):
             # Re-normalize move_probabilities.
             move_probs *= 1 / scale
 
-        self.original_prior = self.child_prior = move_probs
+        # in play-cap randomization, original_prior might be used as searches_pi, which needs to be float32
+        self.original_prior = self.child_prior = move_probs.astype(np.float32)
+
         # initialize child Q as current node's value, to prevent dynamics where
         # if B is winning, then B will only ever explore 1 move, because the Q
         # estimation will be so much larger than the 0 of the other moves.
