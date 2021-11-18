@@ -86,9 +86,11 @@ def play(network, init_position=None, init_root=None):
         player.root.inject_noise()
         current_readouts = player.root.N
         # play-cap randomization
-        readouts = FLAGS.num_fast_readouts
-        if current_readouts > FLAGS.num_readouts * 0.8 or random.random() < FLAGS.full_readout_prob:
+        if current_readouts > FLAGS.num_readouts * 0.75 or random.random() < FLAGS.full_readout_prob:
             readouts = FLAGS.num_readouts
+        else:
+            readouts = FLAGS.num_fast_readouts
+
         # HY: not sure about this: we want to do "X additional readouts", rather than "up to X readouts".
         while player.root.N < readouts:
             player.tree_search()
