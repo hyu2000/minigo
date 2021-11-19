@@ -57,7 +57,7 @@ class Population:
 
     def bootstrap(self, init_model_file: str, features_dir: str):
         cur_generation = self._parse_generation_from_model_fname(init_model_file)
-        init_hyper_params = [(lr, vw) for lr in (4e-3, 5e-3, 6e-3, 8e-3) for vw in (0.7, 0.8, 1, 1.2)]
+        init_hyper_params = [(lr, vw) for lr in (3e-3, 5e-3, 6e-3, 8e-3) for vw in (0.6, 0.8, 1, 1.2)]
 
         ds_train = load_selfplay_data(features_dir)
         for lr, value_weight in init_hyper_params:
@@ -89,7 +89,7 @@ def main(argv):
     assert len(argv) == 3
     models_dir, features_dir = argv[1], argv[2]
     p = Population(models_dir)
-    p.bootstrap(f'{models_dir}/model7.lr=0.005_vw=1.h5', f'{features_dir}')
+    p.bootstrap(f'{models_dir}/model13.epoch1.h5', f'{features_dir}')
 
 
 if __name__ == '__main__':
