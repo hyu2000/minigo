@@ -22,6 +22,7 @@ import os
 import re
 import sys
 import time
+import datetime
 from typing import Iterator
 
 
@@ -94,3 +95,9 @@ def logged_timer(message):
     yield
     tock = time.time()
     logging.info("%s: %.3f seconds", message, (tock - tick))
+
+
+def microseconds_since_midnight():
+    now = datetime.datetime.now()
+    tdelta = now - now.replace(hour=0, minute=0, second=0, microsecond=0)
+    return tdelta.seconds * 1000000 + tdelta.microseconds

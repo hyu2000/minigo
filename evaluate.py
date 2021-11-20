@@ -18,7 +18,6 @@ import os
 import random
 import time
 from collections import defaultdict
-import multiprocessing as mp
 
 import attr
 from typing import Tuple, Dict, Sequence, List
@@ -190,7 +189,8 @@ class RunOneSided:
 
     def _create_sgf(self, ith_game: int, init_position_n: int):
         """ merge comments from black and white """
-        fname = "{:s}-vs-{:s}-{:d}-{:d}.sgf".format(self.black_model_id, self.white_model_id, ith_game, int(time.time()))
+        fname = "{:s}-vs-{:s}-{:d}-{:d}.sgf".format(self.black_model_id, self.white_model_id, ith_game,
+                                                    utils.microseconds_since_midnight())
         game_history = self.black_player.position.recent
         if len(game_history) < len(self.white_player.position.recent):
             game_history = self.white_player.position.recent
@@ -288,26 +288,7 @@ def main_oneside(argv) -> int:
     return total_black_win
 
 
-# TypeError: can't pickle FlagValues
-# def worker_initializer(parsed_flags):
-#     global FLAGS
-#     FLAGS = parsed_flags
-#
-#
-# def run_pool(argv):
-#     black_model, white_model, total_games = setup_common(argv)
-#     num_sided_games = total_games // 2
-#     num_half_sided_games = num_sided_games // 2
-#     with mp.Pool(processes=4, initializer=worker_initializer, initargs=(FLAGS,)) as pool:
-#         result1 = pool.apply_async(main_oneside, ([argv[0], black_model, white_model, num_sided_games - num_half_sided_games],))
-#         result2 = pool.apply_async(main_oneside, ([argv[0], white_model, black_model, num_sided_games - num_half_sided_games],))
-#         result3 = pool.apply_async(main_oneside, ([argv[0], black_model, white_model, num_half_sided_games],))
-#         result4 = pool.apply_async(main_oneside, ([argv[0], white_model, black_model, num_half_sided_games],))
-#         black_wins = result1.get() + result3.get() + num_sided_games - result2.get() - result4.get()
-#     print(f'{black_model} vs {white_model}: {black_wins} / {total_games}')
-
-
 if __name__ == '__main__':
     # flags.mark_flag_as_required('eval_sgf_dir')
-    # app.run(main_oneside)
-    app.run(main_twosided)
+    app.run(main_oneside)
+    # app.run(main_twosided)

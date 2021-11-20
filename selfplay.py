@@ -165,9 +165,9 @@ def run_game(dnn, init_position: go.Position=None, init_root: mcts.MCTSNode=None
         player = play(dnn, init_position=init_position, init_root=init_root)
 
     if game_id:
-        output_name = '{}-{}'.format(os.path.splitext(os.path.basename(game_id))[0], int(time.time()))
+        output_name = '{}-{}'.format(os.path.splitext(os.path.basename(game_id))[0], utils.microseconds_since_midnight())
     else:
-        output_name = '{}-{}'.format(int(time.time()), socket.gethostname())
+        output_name = '{}-{}'.format(utils.microseconds_since_midnight(), socket.gethostname())
     game_data = player.extract_data()
     if sgf_dir is not None:
         sgf_name = output_name
