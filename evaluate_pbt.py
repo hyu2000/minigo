@@ -118,17 +118,30 @@ def start_games(black_id, white_id, num_games: int) -> subprocess.Popen:
     return p
 
 
-def run_evals(model1, model2, num_games):
-    p1 = start_games(model1, model2, num_games)
-    print(f'started 1')
-    p2 = start_games(model2, model1, num_games)
-    print(f'started 2')
-    p1.wait()
-    p2.wait()
+def main_two_sided_eval():
+    model1, model2, num_games = 'model13_epoch1.h5', 'model16_epoch1.h5', 8
+    raw_game_count, _ = scan_results(f'{myconf.EXP_HOME}/eval_bots/sgfs')
+
+    procs = []
+    for black, white in [(model1, model2), (model2, model1)]:
+        games_to_run = num_games - raw_game_count.count(black, white)
+        if games_to_run <= 0:
+            continue
+        elif games_to_run <= 3:
+            print(f'starting {black} vs {white}: {games_to_run} games')
+            procs.append(start_games(black, white, games_to_run))
+        else:
+            print(f'starting {black} vs {white}: {games_to_run} games, 2 processes')
+            procs.append(start_games(black, white, games_to_run // 2))
+            procs.append(start_games(black, white, games_to_run - games_to_run // 2))
+    print(f'started all...')
+
+    for p in procs:
+        p.wait()
     print('done')
 
 
-def main():
+def main_pbt_eval():
     raw_game_count, _ = scan_results(f'{myconf.EXP_HOME}/eval_bots/sgfs')
 
     num_target_games = 5
@@ -162,5 +175,6 @@ def state_of_the_world():
 
 
 if __name__ == '__main__':
-    main()
+    # main_pbt_eval()
+    main_two_sided_eval()
     state_of_the_world()
