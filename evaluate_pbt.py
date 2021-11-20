@@ -110,9 +110,8 @@ def start_games(black_id, white_id, num_games: int) -> subprocess.Popen:
                 --parallel_readouts=16
                 --num_readouts=400
                 --resign_threshold=-1
-                --num_eval_games=%d
-                %s %s
-    """ % (num_games, black_id, white_id)
+                %s %s %d
+    """ % (black_id, white_id, num_games)
     args = shlex.split(cmdline)
     p = subprocess.Popen(args)
     # p.wait()
@@ -132,17 +131,17 @@ def run_evals(model1, model2, num_games):
 def main():
     raw_game_count, _ = scan_results(f'{myconf.EXP_HOME}/eval_bots/sgfs')
 
-    num_target_games = 3
-    iter_id = 7
-    lrs = [0.004, 0.005, 0.006, 0.008]
-    vws = [0.7, 0.8, 1, 1.2]
+    num_target_games = 5
+    gen_idx = 14
+    lrs = [0.003, 0.005, 0.006, 0.008]
+    vws = [0.6, 0.8, 1, 1.2]
     lr_ref, vw_ref = 0.005, 1
     # for lr in set(lrs) - {lr_ref}:
-    #     model1 = model_fname(iter_id, lr, vw_ref)
-    #     modelr = model_fname(iter_id, lr_ref, vw_ref)
+    #     model1 = model_fname(gen_idx, lr, vw_ref)
+    #     modelr = model_fname(gen_idx, lr_ref, vw_ref)
     for vw in set(vws) - {vw_ref}:
-        model1 = model_fname(iter_id, lr_ref, vw)
-        modelr = model_fname(iter_id, lr_ref, vw_ref)
+        model1 = model_fname(gen_idx, lr_ref, vw)
+        modelr = model_fname(gen_idx, lr_ref, vw_ref)
         procs = []
         for black, white in [(model1, modelr), (modelr, model1)]:
             games_to_run = num_target_games - raw_game_count.count(black, white)

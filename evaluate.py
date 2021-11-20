@@ -18,6 +18,7 @@ import os
 import random
 import time
 from collections import defaultdict
+import multiprocessing as mp
 
 import attr
 from typing import Tuple, Dict, Sequence, List
@@ -42,7 +43,6 @@ pd.set_option('display.width', 120)
 
 flags.DEFINE_string('eval_data_dir', f'{myconf.EXP_HOME}/eval_bots/data', 'Where to write game data.')
 flags.DEFINE_string('eval_sgf_dir', f'{myconf.EXP_HOME}/eval_bots/sgfs', 'Where to write evaluation results.')
-flags.DEFINE_integer('num_eval_games', 16, 'How many games to play')
 # From strategies.py
 flags.declare_key_flag('verbose')
 
@@ -244,25 +244,25 @@ def get_model_id(model_path: str) -> str:
 
 
 def setup_common(argv):
-    _, black_model, white_model = argv
+    _, black_model, white_model, num_games = argv
     models_dir = f'{myconf.MODELS_DIR}'
     if not black_model.startswith('/'):
         black_model = f'{models_dir}/{black_model}'
     if not white_model.startswith('/'):
         white_model = f'{models_dir}/{white_model}'
     utils.ensure_dir_exists(FLAGS.eval_sgf_dir)
-    return black_model, white_model
+    return black_model, white_model, int(num_games)
 
 
 def main_twosided(argv):
     """Play matches between two neural nets, alternating sides"""
-    black_model, white_model = setup_common(argv)
+    black_model, white_model, num_games = setup_common(argv)
 
     ledger = Ledger()
     runner1 = RunOneSided(black_model, white_model, FLAGS.eval_sgf_dir)
     runner2 = RunOneSided(white_model, black_model, FLAGS.eval_sgf_dir)
-    logging.info('Tournament: %s vs %s, %d games', runner1.black_model_id, runner1.white_model_id, FLAGS.num_eval_games)
-    for i in range(FLAGS.num_eval_games / 2):
+    logging.info('Tournament: %s vs %s, %d games', runner1.black_model_id, runner1.white_model_id, num_games)
+    for i in range(num_games // 2):
         result_str = runner1.play_a_game()
         ledger.record_game(runner1.black_model_id, runner1.white_model_id, result_str)
         result_str = runner2.play_a_game()
@@ -270,20 +270,44 @@ def main_twosided(argv):
         ledger.report()
 
 
-def main_oneside(argv):
+def main_oneside(argv) -> int:
     """ play a number of games between black and white """
-    black_model, white_model = setup_common(argv)
+    black_model, white_model, num_games = setup_common(argv)
 
     ledger = Ledger()
     runner1 = RunOneSided(black_model, white_model, FLAGS.eval_sgf_dir)
-    logging.info('Tournament: %s vs %s, %d games', runner1.black_model_id, runner1.white_model_id, FLAGS.num_eval_games)
-    for i in range(FLAGS.num_eval_games):
+    logging.info('Tournament: %s vs %s, %d games', runner1.black_model_id, runner1.white_model_id, num_games)
+    for i in range(num_games):
         result_str = runner1.play_a_game()
         ledger.record_game(runner1.black_model_id, runner1.white_model_id, result_str)
-    ledger.report()
+    df = ledger.report()
+
+    total_black_win = df.loc['Total', runner1.black_model_id]
+    total_white_win = df.loc['Total', runner1.white_model_id]
+    assert total_black_win + total_white_win == num_games
+    return total_black_win
+
+
+# TypeError: can't pickle FlagValues
+# def worker_initializer(parsed_flags):
+#     global FLAGS
+#     FLAGS = parsed_flags
+#
+#
+# def run_pool(argv):
+#     black_model, white_model, total_games = setup_common(argv)
+#     num_sided_games = total_games // 2
+#     num_half_sided_games = num_sided_games // 2
+#     with mp.Pool(processes=4, initializer=worker_initializer, initargs=(FLAGS,)) as pool:
+#         result1 = pool.apply_async(main_oneside, ([argv[0], black_model, white_model, num_sided_games - num_half_sided_games],))
+#         result2 = pool.apply_async(main_oneside, ([argv[0], white_model, black_model, num_sided_games - num_half_sided_games],))
+#         result3 = pool.apply_async(main_oneside, ([argv[0], black_model, white_model, num_half_sided_games],))
+#         result4 = pool.apply_async(main_oneside, ([argv[0], white_model, black_model, num_half_sided_games],))
+#         black_wins = result1.get() + result3.get() + num_sided_games - result2.get() - result4.get()
+#     print(f'{black_model} vs {white_model}: {black_wins} / {total_games}')
 
 
 if __name__ == '__main__':
     # flags.mark_flag_as_required('eval_sgf_dir')
-    app.run(main_oneside)
-    # app.run(test_ledger)
+    # app.run(main_oneside)
+    app.run(main_twosided)
