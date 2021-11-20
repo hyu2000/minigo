@@ -117,6 +117,9 @@ class RunOneSided:
         self.white_model = white_model
         self.sgf_dir = sgf_dir
 
+        utils.ensure_dir_exists(sgf_dir)
+        utils.ensure_dir_exists(FLAGS.eval_data_dir)
+
         self.black_model_id, self.white_model_id = get_model_id(black_model), get_model_id(white_model)
 
         with utils.logged_timer("Loading weights"):
@@ -208,7 +211,7 @@ class RunOneSided:
             _file.write(sgfstr)
 
     def _make_tfrecords(self, ith_game: int):
-        output_name = f'{ith_game}-%d' % int(time.time())
+        output_name = f'{ith_game}-%d' % utils.microseconds_since_midnight()
         game_data_black = self.black_player.extract_data()
         game_data_white = self.white_player.extract_data()
         tf_examples = preprocessing.make_dataset_from_selfplay(itertools.chain(game_data_black, game_data_white))
