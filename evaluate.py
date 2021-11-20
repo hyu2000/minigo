@@ -291,4 +291,3 @@ def main_oneside(argv) -> int:
 if __name__ == '__main__':
     # flags.mark_flag_as_required('eval_sgf_dir')
     app.run(main_oneside)
-    # app.run(main_twosided)
