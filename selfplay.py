@@ -20,6 +20,7 @@ import random
 import os
 import socket
 import time
+from typing import Tuple
 
 from absl import app, flags, logging
 import numpy as np
@@ -58,12 +59,24 @@ def _format_move_info(move, best_move):
     return '%s(%s)' % (move_info, coords.to_gtp(best_move))
 
 
-def should_full_search(player: MCTSPlayer):
+def should_full_search(player: MCTSPlayer) -> Tuple[bool, int]:
+    """
+    I don't understand this, but we retain this minigo logic anyways
+    # we want to do "X additional readouts", rather than "up to X readouts".
+    """
+    current_readouts = player.root.N
+    # if we have already searched the node enough, just push it over so we can record pi for policy training
+    if FLAGS.num_readouts - current_readouts - FLAGS.num_fast_readouts < 50:
+        return False, FLAGS.num_readouts
+
     # allow more full search at early games, rather than late games
     # range: 0.05 around full_readout_prob. Assume base=0.25, decrease from 0.30 to 0.20 over the game
     n = player.root.position.n
     accept_thresh = FLAGS.full_readout_prob + (50 - n) / 50 * 0.05
-    return random.random() < accept_thresh
+    if random.random() < accept_thresh:
+        return True, current_readouts + FLAGS.num_readouts
+
+    return False, current_readouts + FLAGS.num_fast_readouts
 
 
 def play(network, init_position=None, init_root=None):
@@ -92,15 +105,11 @@ def play(network, init_position=None, init_root=None):
         start = time.time()
 
         # play-cap randomization. We inject noise only when doing a full search
-        if should_full_search(player):
-            readouts = FLAGS.num_readouts
+        inject_noise, total_readouts = should_full_search(player)
+        if inject_noise:
             player.root.inject_noise()
-        else:
-            readouts = FLAGS.num_fast_readouts
 
-        # we want to do "X additional readouts", rather than "up to X readouts".
-        readouts += player.root.N
-        while player.root.N < readouts:
+        while player.root.N < total_readouts:
             player.tree_search()
 
         if FLAGS.verbose >= 3:
@@ -129,7 +138,7 @@ def play(network, init_position=None, init_root=None):
             print("Q: {:.5f}".format(player.root.Q))
             dur = time.time() - start
             print("%d: %d readouts, %.3f s/100. (%.2f sec)" % (
-                player.root.position.n, readouts, dur / readouts * 100.0, dur), flush=True)
+                player.root.position.n, total_readouts, dur / total_readouts * 100.0, dur), flush=True)
         if FLAGS.verbose >= 3:
             print("Played >>",
                   coords.to_gtp(coords.from_flat(player.root.fmove)))
