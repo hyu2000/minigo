@@ -175,8 +175,9 @@ class MCTSPlayer(MCTSPlayerInterface):
         if record_pi:
             # play-cap randomization: only record when we search enough
             if self.root.N >= FLAGS.num_readouts:
-                self.searches_pi.append(self.root.children_as_pi(
-                    squash=self.root.position.n < self.temp_threshold))
+                self.searches_pi.append(self.root.children_as_pi(False
+                    # squash=self.root.position.n < self.temp_threshold
+                ))
             else:
                 self.searches_pi.append(self.root.original_prior)
         else:
@@ -205,7 +206,7 @@ class MCTSPlayer(MCTSPlayerInterface):
         best_child = self.root.best_child()
         fcoord = best_child
         if soft_pick:
-            cdf = self.root.children_as_pi(squash=True).cumsum()
+            cdf = self.root.children_as_pi(squash=False).cumsum()
             if cdf[-2] > 1e-6:
                 cdf /= cdf[-2]  # Prevents passing via softpick.
                 selection = np.random.random()   # probably better than random.random()?

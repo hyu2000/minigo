@@ -268,8 +268,8 @@ class MCTSNode(object):
         slightly larger than unity to encourage diversity in early play and
         hopefully to move away from 3-3s
         """
-        probs = self.child_N
-        # pprune children with a single playout
+        probs = np.copy(self.child_N)  # don't modify the original
+        # prune children with a single playout
         probs[probs == 1] = 0
         if squash:
             probs = probs ** .98
