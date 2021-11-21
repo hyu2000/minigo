@@ -177,14 +177,14 @@ def rotate_train_nchw(x, pi):
     return rotate(x), pi_rot
 
 
-def apply_symmetry_dual(X0, y0, v0):
+def apply_symmetry_dual(X0, y0, v0, num_symmetries=3):
     """
     to transform on the fly, just need to use tensor ops
     # return tf.repeat(X0, repeats=2, axis=0), tf.repeat(y0, repeats=2, axis=0), tf.repeat(v0, repeats=2, axis=0)
     # return tf.experimental.numpy.rot90(X0, axes=(1, 2)), y0, v0
     """
     Xs, ys, vs = [], [], []
-    for s in SYMMETRIES:
+    for s in random.sample(SYMMETRIES, num_symmetries):
         Xs.append(apply_symmetry_feat(s, X0))
         ys.append(apply_symmetry_pi(s, y0))
         vs.append(v0)
