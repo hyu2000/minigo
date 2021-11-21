@@ -269,6 +269,8 @@ class MCTSNode(object):
         hopefully to move away from 3-3s
         """
         probs = self.child_N
+        # pprune children with a single playout
+        probs[probs == 1] = 0
         if squash:
             probs = probs ** .98
         sum_probs = np.sum(probs)
@@ -325,7 +327,7 @@ class MCTSNode(object):
         # Dump out some statistics
         output = []
         # output.append("{q:.4f}\n".format(q=self.Q))
-        output.append("Q={q:.4f} m={v:.4f}\n".format(q=self.Q, v=self.raw_margin))
+        output.append("Q={q:.4f} N={n:.0f}\n".format(q=self.Q, n=self.N))
         output.append(self.most_visited_path())
         output.append(
             "move : action    Q     U     P   P-Dir    N  soft-N  p-delta  p-rel")
