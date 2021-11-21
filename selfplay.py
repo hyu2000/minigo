@@ -59,10 +59,6 @@ def _format_move_info(move, best_move):
 
 
 def should_full_search(player: MCTSPlayer):
-    current_readouts = player.root.N
-    if current_readouts > FLAGS.num_readouts * 0.75:
-        return True
-
     # allow more full search at early games, rather than late games
     # range: 0.05 around full_readout_prob. Assume base=0.25, decrease from 0.30 to 0.20 over the game
     n = player.root.position.n
@@ -102,7 +98,8 @@ def play(network, init_position=None, init_root=None):
         else:
             readouts = FLAGS.num_fast_readouts
 
-        # HY: not sure about this: we want to do "X additional readouts", rather than "up to X readouts".
+        # we want to do "X additional readouts", rather than "up to X readouts".
+        readouts += player.root.N
         while player.root.N < readouts:
             player.tree_search()
 
