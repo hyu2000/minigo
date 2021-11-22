@@ -86,14 +86,14 @@ def compile_dual():
     # SAI: 1e-4
     # KataGo: per-sample learning rate of 6e-5, except 2e-5 for the first 5mm samples
     # 1e-3 / 64 = 1.6e-5
-    opt = keras.optimizers.Adam(learning_rate=0.002)
+    opt = keras.optimizers.Adam(learning_rate=0.005)
     model.compile(optimizer=opt,
                   loss={
                       'policy': 'categorical_crossentropy',
                       'value':  custom_BCE_loss},
                   loss_weights={
                       'policy': 0.50,
-                      'value':  0.50},
+                      'value':  1.0},
                   metrics={
                       'policy': keras.metrics.CategoricalAccuracy(name="move_acc"),
                       # 'value': custom_value_accuracy,
