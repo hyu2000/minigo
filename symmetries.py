@@ -177,7 +177,7 @@ def rotate_train_nchw(x, pi):
     return rotate(x), pi_rot
 
 
-def apply_symmetry_dual(X0, y0, v0, num_symmetries=3):
+def apply_symmetry_dual(X0, y0, v0, num_symmetries=8):
     """
     to transform on the fly, just need to use tensor ops
     # return tf.repeat(X0, repeats=2, axis=0), tf.repeat(y0, repeats=2, axis=0), tf.repeat(v0, repeats=2, axis=0)
