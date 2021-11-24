@@ -141,7 +141,7 @@ class RunOneSided:
             prob, val = player.network.run(first_node.position)
             first_node.incorporate_results(prob, val, first_node)
 
-        for num_move in range(500):
+        for num_move in range(init_position.n, 500):
             start = time.time()
             if num_move % 2:
                 active, inactive = white, black
@@ -201,7 +201,7 @@ class RunOneSided:
         white_comments = self.white_player.comments
         assert len(black_comments) == len(white_comments) and len(black_comments) + init_position_n == len(game_history)
         comments = ['initial' for i in range(init_position_n)]
-        comments.extend([black_comments[i] if i % 2 == 0 else white_comments[i] for i in range(len(black_comments))])
+        comments.extend([black_comments[i] if (init_position_n + i) % 2 == 0 else white_comments[i] for i in range(len(black_comments))])
 
         with gfile.GFile(os.path.join(self.sgf_dir, fname), 'w') as _file:
             sgfstr = sgf_wrapper.make_sgf(game_history,
