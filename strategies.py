@@ -206,7 +206,12 @@ class MCTSPlayer(MCTSPlayerInterface):
         best_child = self.root.best_child()
         fcoord = best_child
         if soft_pick:
-            cdf = self.root.children_as_pi(squash=False).cumsum()
+            pi = self.root.children_as_pi(squash=False)
+            # restrict soft-pick to only top 5 moves
+            nth = np.partition(pi.flatten(), -5)[-5]
+            pi[pi < nth] = 0
+            cdf = pi.cumsum()
+
             if cdf[-2] > 1e-6:
                 cdf /= cdf[-2]  # Prevents passing via softpick.
                 selection = np.random.random()   # probably better than random.random()?
