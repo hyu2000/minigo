@@ -19,9 +19,9 @@ def eval_game(sgf_fname, dnet: DualNetwork):
 
 def main():
     sgf_dir = f'{myconf.EXP_HOME}/eval_bots/sgfs'
-    model_fname = f'{myconf.MODELS_DIR}/model4_epoch3.h5'
+    model_fname = f'{myconf.MODELS_DIR}/model16_epoch1.h5'
     model = DualNetwork(model_fname)
-    for sgf_fname in os.listdir(sgf_dir):
+    for sgf_fname in sorted(os.listdir(sgf_dir)):
         if not sgf_fname.endswith('.sgf'):
             continue
         eval_game(f'{sgf_dir}/{sgf_fname}', model)
