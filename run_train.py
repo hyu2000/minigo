@@ -93,7 +93,7 @@ def compile_dual():
                       'value':  custom_BCE_loss},
                   loss_weights={
                       'policy': 0.50,
-                      'value':  1.0},
+                      'value':  0.75},
                   metrics={
                       'policy': keras.metrics.CategoricalAccuracy(name="move_acc"),
                       # 'value': custom_value_accuracy,
