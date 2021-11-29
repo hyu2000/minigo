@@ -20,12 +20,11 @@ flags.DEFINE_string('tar_dir', None, 'Where to find TarDataSets.')
 FLAGS = flags.FLAGS
 
 
-def check_game_processed(sgf_dir: str, game_id: str) -> bool:
+def check_game_processed(sgf_dir: str, base_game_id: str) -> bool:
     """ check game_id is already processed
     """
-    basename = os.path.splitext(os.path.basename(game_id))[0]
-    if glob.glob(f'{sgf_dir}/{basename}-*.sgf'):
-        logging.info(f'Already processed, skipping {basename} ...')
+    if glob.glob(f'{sgf_dir}/full/{base_game_id}-*.sgf'):
+        logging.info(f'Already processed, skipping {base_game_id} ...')
         return True
     return False
 
@@ -46,9 +45,9 @@ def play_endgames():
 
     i = 0
     for game_id, reader in game_iter:
-        if reader.result_str() is None:
-            continue
-        if check_game_processed(FLAGS.sgf_dir, game_id):
+        # this might only work in top50, where game_id is always 'go9/2015-*.sgf'
+        base_game_id = os.path.splitext(os.path.basename(game_id))[0]
+        if check_game_processed(FLAGS.sgf_dir, base_game_id):
             continue
 
         init_pos = reader.last_pos(ignore_final_pass=True)
@@ -61,7 +60,8 @@ def play_endgames():
                           sgf_dir=FLAGS.sgf_dir
                           )
 
-        logging.info(f'{i} {game_id} %d -> %d , RE %s , final %s', init_pos.n, player.root.position.n,
+        logging.info(f'{i} %s %d -> %d  RE %s  final %s', base_game_id,
+                     init_pos.n, player.root.position.n,
                      reader.result_str(), player.result_string)
         i += 1
         if i >= FLAGS.num_games:
