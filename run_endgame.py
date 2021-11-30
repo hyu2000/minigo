@@ -9,7 +9,7 @@ import os
 import numpy as np
 import myconf
 from selfplay import run_game, create_dir_if_needed
-from tar_dataset import GameStore
+from tar_dataset import GameStore, TarSubSet
 import k2net as dual_net
 from absl import logging, app, flags
 
@@ -29,6 +29,21 @@ def check_game_processed(sgf_dir: str, base_game_id: str) -> bool:
     return False
 
 
+def marked_games():
+    """  run a pre-defined set of games to gauge bot skill
+    """
+    games = [
+        '2015-02-10T00:44:03.069Z_3qvs9gx5yjiq',
+        '2015-12-07T12:19:59.962Z_bnrwgkgd612z',
+        '2015-03-30T02:35:22.420Z_6h156n4szylp',
+        '2015-03-30T01:00:38.957Z_x2rk400zy8fk',
+        '2015-01-06T23:37:14.849Z_4dq9qpy90tsx',
+        '2015-01-07T01:36:31.368Z_i1u8wcicyusf',
+    ]
+    games = [f'go9/{x}.sgf' for x in games]
+    return games
+
+
 def play_endgames():
     """ to parallelize selfplay (and handle M1 TF random hang), we use a rudimentary mechanism:
     - game_iter(shuffle=True)
@@ -36,6 +51,7 @@ def play_endgames():
     """
     store = GameStore(data_dir=FLAGS.tar_dir)
     game_iter = store.game_iter([store.ds_top], filter_game=True, shuffle=True)
+    # game_iter = TarSubSet(store.ds_top, marked_games()).game_iter()
 
     # model_file = f'{myconf.MODELS_DIR}/model3_epoch_5.h5'
     model_file = FLAGS.load_file

@@ -57,7 +57,7 @@ gokif2: no RE
 import itertools
 import random
 import tarfile
-from typing import Iterable
+from typing import Iterable, List
 
 from absl import logging
 
@@ -172,6 +172,24 @@ class TarDataSet(object):
                 print(tarinfo.name, "is", tarinfo.size, "bytes in size and is ", end="")
 
         logging.info('total: %s items', total)
+
+
+class TarSubSet:
+    """ only yield games that is in a pre-defined list """
+    def __init__(self, ds: TarDataSet, game_list: List[str]):
+        self.dataset = ds
+        self.game_list = game_list
+
+    def game_iter(self, shuffle=False):
+        """ generator -> game_id, SGFReader """
+        game_list = self.game_list
+        if shuffle:
+            game_list = self.game_list[:]  # make a copy
+            random.shuffle(game_list)
+
+        for game_id in game_list:
+            reader = self.dataset.get_game(game_id)
+            yield game_id, reader
 
 
 class GameStore(object):
