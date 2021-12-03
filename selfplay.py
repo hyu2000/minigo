@@ -65,6 +65,9 @@ def should_full_search(player: MCTSPlayer) -> Tuple[bool, int]:
     # we want to do "X additional readouts", rather than "up to X readouts".
     """
     current_readouts = player.root.N
+    if FLAGS.full_readout_prob >= 1.:
+        return True, current_readouts + FLAGS.num_readouts
+
     # if we have already searched the node enough, just push it over so we can record pi for policy training
     if FLAGS.num_readouts - current_readouts - FLAGS.num_fast_readouts < 50:
         return False, FLAGS.num_readouts
