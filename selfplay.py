@@ -198,7 +198,7 @@ def run_game(dnn, init_position: go.Position=None, init_root: mcts.MCTSNode=None
     tf_nopi_examples = preprocessing.make_dataset_from_selfplay(iter2)
 
     tf_full_examples, tf_nopi_examples = list(tf_full_examples), list(tf_nopi_examples)
-    logging.info(f'{game_id}: %d full examples, %d value only', len(tf_full_examples), len(tf_nopi_examples))
+    # logging.info(f'{game_id}: %d full examples, %d value only', len(tf_full_examples), len(tf_nopi_examples))
     for sample_type, samples in [('full', tf_full_examples), ('nopi', tf_nopi_examples)]:
         if len(samples) == 0:
             continue
