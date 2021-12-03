@@ -44,7 +44,7 @@ def read_tfrecord(record):
     return x, {'policy': pi, 'value': outcome}
 
 
-def load_selfplay_data(selfplay_dir: str):
+def load_selfplay_data(selfplay_dir: str, dtype: str):
     """ many small files. need perf tune:
 
 dataset = tf.data.TFRecordDataset(filenames_to_read,
@@ -59,7 +59,7 @@ dataset = dataset.prefetch(buffer_size=batch_size)
     """
     BATCH_READ_SIZE = 64
 
-    filenames = tf.data.Dataset.list_files(f'{selfplay_dir}/*.tfrecord.zz')  #.take(3)
+    filenames = tf.data.Dataset.list_files(f'{selfplay_dir}/*.tfrecord.{dtype}.zz')  #.take(3)
     dataset = tf.data.TFRecordDataset(
         filenames,
         compression_type='ZLIB',
@@ -93,27 +93,21 @@ def sample_generator(ds):
 
 def main(argv: List):
     """
-    - when output_dir is not specified, final output will be swapped into source_dir;
-    - when output_dir is different, write enhanced ds in subdir: train/val
-    Source data will be renamed to *-org, in both cases.
+    output_dir will be cleared; write enhanced ds in subdir: train/val
     """
-    source_dir = f'{myconf.EXP_HOME}/selfplay'
-    if len(argv) > 1:
-        source_dir = argv[1]
-    output_dir = source_dir
-    if len(argv) > 2:
-        output_dir = argv[2]
+    # source_dir = f'{myconf.EXP_HOME}/selfplay'
+    assert len(argv) > 2
+    source_dir = argv[1]
+    output_dir = argv[2]
 
     print(f'Applying symmetries to {source_dir} -> {output_dir}')
     for tag in ['train', 'val']:
         source_data_dir = f'{source_dir}/{tag}'
-        output_work_dir = f'{output_dir}/{tag}-symmetries'
         if len(os.listdir(source_data_dir)) == 0:
             print(f'empty source dir, skip: {source_data_dir}')
             continue
 
-        ds = load_selfplay_data(source_data_dir)
-
+        output_work_dir = f'{output_dir}/{tag}'
         try:
             print(f'Removing {output_work_dir}')
             shutil.rmtree(output_work_dir)
@@ -121,18 +115,13 @@ def main(argv: List):
             pass
         utils.ensure_dir_exists(output_work_dir)
 
-        for i, tf_examples in enumerate(utils.iter_chunks(10000, sample_generator(ds))):
-            fname = f'{output_work_dir}/chunk-{i}.tfrecord.zz'
-            print(f'{tag} chunk {i}: writing %d records' % len(tf_examples))
-            preprocessing.write_tf_examples(fname, tf_examples)
+        for dtype in ['full', 'nopi']:
+            ds = load_selfplay_data(source_data_dir, dtype)
 
-        shutil.move(source_data_dir, f'{source_data_dir}-org')
-        if output_dir == source_dir:
-            print('swap in enhanced data dir')
-            shutil.move(output_work_dir, source_data_dir)
-        else:
-            print('rename enhanced data dir')
-            shutil.move(output_work_dir, f'{output_dir}/{tag}')
+            for i, tf_examples in enumerate(utils.iter_chunks(10000, sample_generator(ds))):
+                fname = f'{output_work_dir}/chunk-{i}.tfrecord.{dtype}.zz'
+                print(f'{tag} {dtype} chunk {i}: writing %d records' % len(tf_examples))
+                preprocessing.write_tf_examples(fname, tf_examples)
 
 
 if __name__ == '__main__':
