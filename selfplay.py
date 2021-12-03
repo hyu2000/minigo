@@ -14,8 +14,7 @@
 """Python implementation of selfplay worker.
 
 This worker is used to set up many parallel selfplay instances."""
-
-
+import itertools
 import random
 import os
 import socket
@@ -50,6 +49,7 @@ flags.declare_key_flag('num_readouts')
 
 
 FLAGS = flags.FLAGS
+PI_CONST = np.zeros(go.N * go.N + 1, dtype=np.float32)
 
 
 def _format_move_info(move, best_move):
@@ -185,16 +185,29 @@ def run_game(dnn, init_position: go.Position=None, init_root: mcts.MCTSNode=None
         with tf.io.gfile.GFile(os.path.join(sgf_dir, 'full', f'{sgf_name}.sgf'), 'w') as f:
             f.write(player.to_sgf())
 
-    tf_examples = preprocessing.make_dataset_from_selfplay(game_data)
+    if selfplay_dir is None:
+        return player
 
-    if selfplay_dir is not None:
+    # separate out data where we have policy target vs those we don't
+    iter1, iter2 = itertools.tee(game_data)
+    missing_pi = lambda x: x[1] is None
+    iter1 = itertools.filterfalse(missing_pi, iter1)
+    iter2 = filter(missing_pi, iter2)
+    iter2 = map(lambda x: (x[0], PI_CONST, x[2]), iter2)
+    tf_full_examples = preprocessing.make_dataset_from_selfplay(iter1)
+    tf_nopi_examples = preprocessing.make_dataset_from_selfplay(iter2)
+
+    tf_full_examples, tf_nopi_examples = list(tf_full_examples), list(tf_nopi_examples)
+    logging.info(f'{game_id}: %d full examples, %d value only', len(tf_full_examples), len(tf_nopi_examples))
+    for sample_type, samples in [('full', tf_full_examples), ('nopi', tf_nopi_examples)]:
+        if len(samples) == 0:
+            continue
+
         # Hold out 5% of games for validation.
-        if random.random() < holdout_pct:
-            fname = os.path.join(holdout_dir, f'{output_name}.tfrecord.zz')
-        else:
-            fname = os.path.join(selfplay_dir, f'{output_name}.tfrecord.zz')
+        dir_path = holdout_dir if random.random() < holdout_pct else selfplay_dir
 
-        preprocessing.write_tf_examples(fname, tf_examples)
+        fname = os.path.join(dir_path, f'{output_name}.tfrecord.{sample_type}.zz')
+        preprocessing.write_tf_examples(fname, samples)
 
     return player
 

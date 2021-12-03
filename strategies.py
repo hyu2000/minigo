@@ -179,7 +179,7 @@ class MCTSPlayer(MCTSPlayerInterface):
                     # squash=self.root.position.n < self.temp_threshold
                 ))
             else:
-                self.searches_pi.append(self.root.original_prior)
+                self.searches_pi.append(None)
         else:
             self.searches_pi.append(None)
         self.comments.append(self.root.describe())
@@ -310,8 +310,8 @@ class MCTSPlayer(MCTSPlayerInterface):
         assert result is not None
         for pwc, pi in zip(go.replay_position(self.root.position, result, initial_position=init_position),
                            self.searches_pi):
-            if pi is None:  # record_pi == False
-                continue
+            # if pi is None:  # record_pi == False or fast search
+            #     continue
             yield pwc.position, pi, pwc.result
 
     def get_num_readouts(self):

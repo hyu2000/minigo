@@ -103,6 +103,20 @@ def compile_dual():
     return model
 
 
+def recompile_value_loss_only(model):
+    """ recompile a dual model to have only value loss, essentially ignoring policy head"""
+    model.compile(optimizer=model.optimizer,
+                  loss={
+                      'value':  custom_BCE_loss},
+                  loss_weights={
+                      'value':  0.75},
+                  metrics={
+                      # 'policy': keras.metrics.CategoricalAccuracy(name="move_acc"),
+                      # 'value': custom_value_accuracy,
+                      # 'value':  MyBinaryAccuracy(name="vacc")
+                  })
+
+
 def load_model(fname):
     logging.info('load_model %s', fname)
     model = compile_dual()
