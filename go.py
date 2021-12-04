@@ -108,6 +108,26 @@ def find_reached(board: np.ndarray, c: Tuple) -> Tuple[set, set]:
     return chain, reached
 
 
+def find_maximal_region_with_no(board: np.ndarray, c: Tuple, color_bound) -> Tuple[set, set]:
+    """ similar to find_reached, assume color_bound is black, find maximal region starting from c,
+    reachable thru empty or white stones
+    """
+    assert board[c] != color_bound
+    chain = {c}
+    border = set()
+    frontier = [c]
+    while frontier:
+        current = frontier.pop()
+        chain.add(current)
+        for n in NEIGHBORS[current]:
+            if board[n] != color_bound:
+                if n not in chain:
+                    frontier.append(n)
+            else:
+                border.add(n)
+    return chain, border
+
+
 def is_koish(board, c):
     'Check if c is surrounded on all sides by 1 color, and return that color'
     if board[c] != EMPTY:
