@@ -227,7 +227,7 @@ def load_dataset(file_pattern: str):
     return dataset
 
 
-def load_selfplay_data(selfplay_dir_pattern: str):
+def load_selfplay_data(selfplay_dir_pattern: str, subtype: str = ''):
     """ many small files. need perf tune:
 
 dataset = tf.data.TFRecordDataset(filenames_to_read,
@@ -242,7 +242,10 @@ dataset = dataset.prefetch(buffer_size=batch_size)
     """
     BATCH_READ_SIZE = 64
 
-    filenames = tf.data.Dataset.list_files(f'{selfplay_dir_pattern}/*.tfrecord.zz')
+    if subtype:
+        filenames = tf.data.Dataset.list_files(f'{selfplay_dir_pattern}/*.tfrecord.{subtype}.zz')
+    else:
+        filenames = tf.data.Dataset.list_files(f'{selfplay_dir_pattern}/*.tfrecord.zz')
     dataset = tf.data.TFRecordDataset(
         filenames,
         compression_type='ZLIB',
