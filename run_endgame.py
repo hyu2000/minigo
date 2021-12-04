@@ -9,7 +9,7 @@ import os
 import numpy as np
 import myconf
 from selfplay import run_game, create_dir_if_needed
-from tar_dataset import GameStore, TarSubSet
+from tar_dataset import GameStore, TarSubSet, SgfDataSet
 import k2net as dual_net
 from absl import logging, app, flags
 
@@ -52,6 +52,7 @@ def play_endgames():
     store = GameStore(data_dir=FLAGS.tar_dir)
     game_iter = store.game_iter([store.ds_top], filter_game=True, shuffle=True)
     # game_iter = TarSubSet(store.ds_top, marked_games()).game_iter()
+    # game_iter = SgfDataSet(f'{myconf.EXP_HOME}/selfplay17.300/sgf/full', '1-*.sgf').game_iter()
 
     # model_file = f'{myconf.MODELS_DIR}/model3_epoch_5.h5'
     model_file = FLAGS.load_file

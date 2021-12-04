@@ -54,7 +54,9 @@ go9-large: lots of games, no RE
 gokif2: no RE
 
 """
+import glob
 import itertools
+import os
 import random
 import tarfile
 from typing import Iterable, List
@@ -189,6 +191,24 @@ class TarSubSet:
 
         for game_id in game_list:
             reader = self.dataset.get_game(game_id)
+            yield game_id, reader
+
+
+class SgfDataSet:
+    """ all .sgf in a dir """
+    def __init__(self, sgf_dir: str, glob_pattern: str = '*'):
+        self.sgf_dir = sgf_dir
+        self.glob_pattern = glob_pattern
+
+    def game_iter(self, shuffle=False):
+        flist = glob.glob(f'{self.sgf_dir}/{self.glob_pattern}')
+        if shuffle:
+            random.shuffle(flist)
+        for fname in flist:
+            if not fname.endswith('.sgf'):
+                continue
+            reader = SGFReader.from_file_compatible(fname)
+            game_id = os.path.splitext(os.path.basename(fname))[0]
             yield game_id, reader
 
 
