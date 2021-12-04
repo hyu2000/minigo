@@ -29,8 +29,9 @@ from tests.test_go import coords_from_gtp_set
 class Region(namedtuple('Region', ['id', 'stones', 'liberties', 'chains', 'color'])):
     """
     stones: a frozenset of Coordinates belonging to this group
-    liberties: a frozenset of Coordinates that are empty and adjacent to this group.
-    color: color of this group
+    liberties: subset of stones that are empty
+    chains: enclosing chains
+    color: empty if all empty, otherwise color of the present stones
     """
 
     def __eq__(self, other):
@@ -40,7 +41,6 @@ class Region(namedtuple('Region', ['id', 'stones', 'liberties', 'chains', 'color
 
 class PassAliveTracker:
     """
-    - how we will use it:
     - is it easy to incrementally update its status?
     """
     def __init__(self):
@@ -86,7 +86,7 @@ class PassAliveTracker:
         regions_current = [r for r in self.regions.values()]
 
         for i in range(100):
-            print(f"Benson's algo: iter {i}: %d chains, %d regions" % (len(chains_current), len(regions_current)))
+            print(f"Benson iter {i}: %d chains, %d regions" % (len(chains_current), len(regions_current)))
 
             num_vital_regions = defaultdict(int)
             for region in regions_current:
@@ -132,21 +132,64 @@ class TestLibertyTracker(test_utils.MinigoUnitTest):
         coord = found_color[0][0], found_color[1][0]
         print(coord)
 
-    def test_maximal_region(self):
+    def test_benson_basic(self):
         board = test_utils.load_board('''
             .XX......
             X..X.....
             XXXX..O..
         ''' + self.EMPTY_ROW * 6)
+        for color in (go.BLACK,):
+            tracker = PassAliveTracker.from_board(board, color)
+            assert len(tracker.regions) == 3
+            for rid, region in tracker.regions.items():
+                print(rid, region.color, len(region.stones), len(region.liberties), region.chains)
+
+            chain_ids = tracker.eliminate(color)
+            assert len(chain_ids) == 2
+            print('pass-alive chains: ', chain_ids)
+
+    def test_not_pass_alive(self):
+        """ two black chains, two eyes: one vital to both, one (two spaces) vital to one only
+        With either black or white(!) in one of the two spaces, it becomes vital
+        """
+        board = test_utils.load_board('''
+            .OXXX.XO.
+            .OX..XXO.
+            .OXXXOOO.
+            .OOOOO...
+        ''' + self.EMPTY_ROW * 5)
+
         tracker = PassAliveTracker.from_board(board, go.BLACK)
         assert len(tracker.regions) == 3
         for rid, region in tracker.regions.items():
             print(rid, region.color, len(region.stones), len(region.liberties), region.chains)
 
         chain_ids = tracker.eliminate(go.BLACK)
-        print('pass-alive chains: ', chain_ids)
+        assert len(chain_ids) == 0
 
-    def test_not_pass_alive(self):
-        """ two black chains, two eyes: one vital to both, one (two spaces) vital to one only
-        With either black or white(!) in one of the two spaces, it becomes vital
+        # however, if we put any stone in row 1, col 3, black is pass-alive
+        for color in (go.BLACK, go.WHITE):
+            board[1][3] = color
+            tracker = PassAliveTracker.from_board(board, go.BLACK)
+            assert len(tracker.regions) == 3
+            chain_ids = tracker.eliminate(go.BLACK)
+            assert len(chain_ids) == 2
+
+    def test_pass_alive2(self):
         """
+        """
+        board = test_utils.load_board('''
+            OXX.X.X..
+            OX.XOXXXX
+            OXXOOOOOO
+            OOOO.....
+        ''' + self.EMPTY_ROW * 5)
+
+        tracker = PassAliveTracker.from_board(board, go.BLACK)
+        assert len(tracker.regions) == 5
+        for rid, region in tracker.regions.items():
+            print(rid, region.color, len(region.stones), len(region.liberties), region.chains)
+
+        chain_ids = tracker.eliminate(go.BLACK)
+        assert len(chain_ids) == 4
+
