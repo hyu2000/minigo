@@ -21,7 +21,7 @@ import numpy as np
 
 import coords
 import go
-from go import LibertyTracker, Group, N
+from go import LibertyTracker
 from tests import test_utils
 from tests.test_go import coords_from_gtp_set
 
@@ -149,7 +149,8 @@ class TestLibertyTracker(test_utils.MinigoUnitTest):
             print('pass-alive chains: ', chain_ids)
 
     def test_not_pass_alive(self):
-        """ two black chains, two eyes: one vital to both, one (two spaces) vital to one only
+        """ https://senseis.xmp.net/?BensonsAlgorithm  central case
+        two black chains, two eyes: one vital to both, one (two spaces) vital to one only
         With either black or white(!) in one of the two spaces, it becomes vital
         """
         board = test_utils.load_board('''
@@ -176,7 +177,7 @@ class TestLibertyTracker(test_utils.MinigoUnitTest):
             assert len(chain_ids) == 2
 
     def test_pass_alive2(self):
-        """
+        """ https://senseis.xmp.net/?BensonsAlgorithm  bottom case
         """
         board = test_utils.load_board('''
             OXX.X.X..
