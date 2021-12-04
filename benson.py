@@ -15,8 +15,8 @@ Implementation:
   or wall.  This is similar to a chain, just that it's the maximal region of empty+white
 
 """
-from collections import namedtuple
-from typing import Tuple, Dict
+from collections import namedtuple, defaultdict
+from typing import Tuple, Dict, Set
 import numpy as np
 
 import coords
@@ -26,12 +26,16 @@ from tests import test_utils
 from tests.test_go import coords_from_gtp_set
 
 
-class Region(namedtuple('Group', ['id', 'stones', 'liberties', 'chains', 'color'])):
+class Region(namedtuple('Region', ['id', 'stones', 'liberties', 'chains', 'color'])):
     """
     stones: a frozenset of Coordinates belonging to this group
     liberties: a frozenset of Coordinates that are empty and adjacent to this group.
     color: color of this group
     """
+
+    def __eq__(self, other):
+        return self.stones == other.stones and self.liberties == other.liberties and \
+               self.chains == other.chains and self.color == other.color
 
 
 class PassAliveTracker:
@@ -43,7 +47,7 @@ class PassAliveTracker:
         self.region_index = -np.ones([go.N, go.N], dtype=np.int32)  # type: np.ndarray
         self.regions = dict()  # type: Dict[int, Region]
         self.max_region_id = 0
-        self.lib_tracker = None
+        self.lib_tracker = None  # type: LibertyTracker
 
     @staticmethod
     def from_board(board: np.ndarray, color_bound) -> 'PassAliveTracker':
@@ -59,8 +63,10 @@ class PassAliveTracker:
                 coord = found_color[0][0], found_color[1][0]
                 region, reached = go.find_maximal_region_with_no(board, coord, color_bound)
                 liberties = frozenset(r for r in region if board[r] == go.EMPTY)
-                # reached -> set of bordering chains?
+                # reached -> set of bordering chains
                 chains = frozenset(lib_tracker.group_index[s] for s in reached)
+                assert all(lib_tracker.groups[i].color == color_bound for i in chains)
+
                 new_region = Region(curr_region_id, frozenset(region), liberties, chains, color)
                 tracker.regions[curr_region_id] = new_region
                 for s in region:
@@ -71,15 +77,36 @@ class PassAliveTracker:
         tracker.max_region_id = curr_region_id
         return tracker
 
-    def eliminate(self, color):
-        """ find pass-alive chains for color
-        Benson's algorithm
+    def eliminate(self, color) -> Set[int]:
+        """ find pass-alive chains for color, using Benson's algorithm
         """
-        for gid, group in self.lib_tracker.regions.items():
-            if group.color != color:
-                continue
-            # see if it has at least two (small) vital regions
+        chains_current = set(idx for idx, chain in self.lib_tracker.groups.items() if chain.color == color)
+        regions_current = [r for r in self.regions.values()]
 
+        for i in range(100):
+            print(f"Benson's algo: iter {i}: %d chains, %d regions" % (len(chains_current), len(regions_current)))
+
+            num_vital_regions = defaultdict(int)
+            for region in regions_current:
+                # see which chains this is vital for
+                for chain_idx in region.chains:
+                    chain = self.lib_tracker.groups[chain_idx]
+                    if len(chain.liberties) < len(region.liberties):
+                        continue
+                    if region.liberties.issubset(chain.liberties):
+                        num_vital_regions[chain_idx] += 1
+
+            # see if it has at least two (small) vital regions
+            chains_pruned = set(idx for idx in chains_current if num_vital_regions[idx] >= 2)
+            # prune regions
+            regions_pruned = [r for r in regions_current if all(chain_idx in chains_pruned for chain_idx in r.chains)]
+
+            if len(chains_pruned) == 0:
+                return chains_pruned
+            if len(chains_pruned) == len(chains_current) and len(regions_pruned) == len(regions_current):
+                return chains_pruned
+
+            chains_current, regions_current = chains_pruned, regions_pruned
 
 
 class TestLibertyTracker(test_utils.MinigoUnitTest):
@@ -112,7 +139,11 @@ class TestLibertyTracker(test_utils.MinigoUnitTest):
         tracker = PassAliveTracker.from_board(board, go.BLACK)
         assert len(tracker.regions) == 3
         for rid, region in tracker.regions.items():
-            print(rid, region.color, len(region.stones), len(region.liberties), region.chains)
+            if region.color == go.BLACK:
+                print(rid, region.color, len(region.stones), len(region.liberties), region.chains)
+
+        chain_ids = tracker.eliminate(go.BLACK)
+        print('pass-alive chains: ', chain_ids)
 
     def test_not_pass_alive(self):
         """ two black chains, two eyes: one vital to both, one (two spaces) vital to one only
