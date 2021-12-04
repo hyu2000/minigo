@@ -66,8 +66,10 @@ class PassAliveTracker:
                 # reached -> set of bordering chains
                 chains = frozenset(lib_tracker.group_index[s] for s in reached)
                 assert all(lib_tracker.groups[i].color == color_bound for i in chains)
+                # region color indicates presence of enemy stone
+                region_color = -color_bound if len(liberties) < len(region) else color
 
-                new_region = Region(curr_region_id, frozenset(region), liberties, chains, color)
+                new_region = Region(curr_region_id, frozenset(region), liberties, chains, region_color)
                 tracker.regions[curr_region_id] = new_region
                 for s in region:
                     tracker.region_index[s] = curr_region_id
@@ -139,8 +141,7 @@ class TestLibertyTracker(test_utils.MinigoUnitTest):
         tracker = PassAliveTracker.from_board(board, go.BLACK)
         assert len(tracker.regions) == 3
         for rid, region in tracker.regions.items():
-            if region.color == go.BLACK:
-                print(rid, region.color, len(region.stones), len(region.liberties), region.chains)
+            print(rid, region.color, len(region.stones), len(region.liberties), region.chains)
 
         chain_ids = tracker.eliminate(go.BLACK)
         print('pass-alive chains: ', chain_ids)
