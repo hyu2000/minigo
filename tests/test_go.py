@@ -139,6 +139,7 @@ class TestLibertyTracker(test_utils.MinigoUnitTest):
             .X.......
         ''' + EMPTY_ROW * 6)
         lib_tracker = LibertyTracker.from_board(board)
+        self.assertEqual(len(lib_tracker.groups), 4)
         lib_tracker.add_stone(BLACK, coords.from_gtp('B8'))
         self.assertEqual(len(lib_tracker.groups), 1)
         self.assertNotEqual(

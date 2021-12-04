@@ -23,7 +23,7 @@ A PlayerMove is a (Color, Move) tuple
 from collections import namedtuple
 import copy
 import itertools
-from typing import Iterable, Sequence
+from typing import Iterable, Sequence, Dict, Tuple
 
 import numpy as np
 import os
@@ -91,18 +91,19 @@ def replay_position(position, result, initial_position=None):
         pos = pos.play_move(next_move, color=color)
 
 
-def find_reached(board, c):
+def find_reached(board: np.ndarray, c: Tuple) -> Tuple[set, set]:
     color = board[c]
-    chain = set([c])
+    chain = {c}
     reached = set()
     frontier = [c]
     while frontier:
         current = frontier.pop()
         chain.add(current)
         for n in NEIGHBORS[current]:
-            if board[n] == color and n not in chain:
-                frontier.append(n)
-            elif board[n] != color:
+            if board[n] == color:
+                if n not in chain:
+                    frontier.append(n)
+            else:
                 reached.add(n)
     return chain, reached
 
@@ -152,7 +153,7 @@ class Group(namedtuple('Group', ['id', 'stones', 'liberties', 'color'])):
 
 class LibertyTracker():
     @staticmethod
-    def from_board(board):
+    def from_board(board: np.ndarray) -> 'LibertyTracker':
         board = np.copy(board)
         curr_group_id = 0
         lib_tracker = LibertyTracker()
@@ -163,8 +164,7 @@ class LibertyTracker():
                 coord = found_color[0][0], found_color[1][0]
                 chain, reached = find_reached(board, coord)
                 liberties = frozenset(r for r in reached if board[r] == EMPTY)
-                new_group = Group(curr_group_id, frozenset(
-                    chain), liberties, color)
+                new_group = Group(curr_group_id, frozenset(chain), liberties, color)
                 lib_tracker.groups[curr_group_id] = new_group
                 for s in chain:
                     lib_tracker.group_index[s] = curr_group_id
@@ -185,11 +185,9 @@ class LibertyTracker():
         # group_index: a NxN numpy array of group_ids. -1 means no group
         # groups: a dict of group_id to groups
         # liberty_cache: a NxN numpy array of liberty counts
-        self.group_index = group_index if group_index is not None else - \
-            np.ones([N, N], dtype=np.int32)
-        self.groups = groups or {}
-        self.liberty_cache = liberty_cache if liberty_cache is not None else np.zeros([
-                                                                                      N, N], dtype=np.uint8)
+        self.group_index = group_index if group_index is not None else -np.ones([N, N], dtype=np.int32)  # type: np.ndarray
+        self.groups = groups or {}  # type: Dict[int, Group]
+        self.liberty_cache = liberty_cache if liberty_cache is not None else np.zeros([N, N], dtype=np.uint8)  # type: np.ndarray
         self.max_group_id = max_group_id
 
     def __deepcopy__(self, memodict={}):
@@ -199,7 +197,7 @@ class LibertyTracker():
         new_groups = copy.copy(self.groups)
         return LibertyTracker(new_group_index, new_groups, liberty_cache=new_lib_cache, max_group_id=self.max_group_id)
 
-    def add_stone(self, color, c):
+    def add_stone(self, color, c) -> set:
         assert self.group_index[c] == MISSING_GROUP_ID
         captured_stones = set()
         opponent_neighboring_group_ids = set()
