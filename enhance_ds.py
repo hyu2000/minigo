@@ -59,7 +59,10 @@ dataset = dataset.prefetch(buffer_size=batch_size)
     """
     BATCH_READ_SIZE = 64
 
-    filenames = tf.data.Dataset.list_files(f'{selfplay_dir}/*.tfrecord.{dtype}.zz')  #.take(3)
+    try:
+        filenames = tf.data.Dataset.list_files(f'{selfplay_dir}/*.tfrecord.{dtype}.zz')  #.take(3)
+    except:
+        return None
     dataset = tf.data.TFRecordDataset(
         filenames,
         compression_type='ZLIB',
@@ -117,6 +120,9 @@ def main(argv: List):
 
         for dtype in ['full', 'nopi']:
             ds = load_selfplay_data(source_data_dir, dtype)
+            if ds is None:
+                print(f'no data found for {dtype}, skipping')
+                continue
 
             for i, tf_examples in enumerate(utils.iter_chunks(10000, sample_generator(ds))):
                 fname = f'{output_work_dir}/chunk-{i}.tfrecord.{dtype}.zz'
