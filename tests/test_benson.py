@@ -1,8 +1,7 @@
 import numpy as np
 import coords
-from benson import PassAliveTracker
 import go
-from go import LibertyTracker
+from go import LibertyTracker, PassAliveTracker
 from sgf_wrapper import SGFReader
 from tests import test_utils
 import myconf
@@ -42,7 +41,7 @@ class TestLibertyTracker(test_utils.MinigoUnitTest):
             for rid, region in tracker.regions.items():
                 print(rid, region.color, len(region.stones), len(region.liberties), region.chains)
 
-            chain_ids = tracker.eliminate(color)
+            chain_ids, _ = tracker.eliminate(color)
             assert len(chain_ids) == 2
             print('pass-alive chains: ', chain_ids)
 
@@ -63,7 +62,7 @@ class TestLibertyTracker(test_utils.MinigoUnitTest):
         for rid, region in tracker.regions.items():
             print(rid, region.color, len(region.stones), len(region.liberties), region.chains)
 
-        chain_ids = tracker.eliminate(go.BLACK)
+        chain_ids, _ = tracker.eliminate(go.BLACK)
         assert len(chain_ids) == 0
 
         # however, if we put any stone in row 1, col 3, black is pass-alive
@@ -89,7 +88,7 @@ class TestLibertyTracker(test_utils.MinigoUnitTest):
         for rid, region in tracker.regions.items():
             print(rid, region.color, len(region.stones), len(region.liberties), region.chains)
 
-        chain_ids = tracker.eliminate(go.BLACK)
+        chain_ids, _ = tracker.eliminate(go.BLACK)
         assert len(chain_ids) == 4
 
     def test_benson_real1(self):
@@ -97,20 +96,28 @@ class TestLibertyTracker(test_utils.MinigoUnitTest):
         """
         fname = '1-61704860349.sgf'
         fname = '1-61717098200.sgf'     # black all pass-alive, two white chains: one alive, one not
+        fname = '1-61717672696.sgf'     # big regions, nothing pass-alive
+        fname = '2-61736655674.sgf'     # dead stone within pass-alive region can be safely removed
+        fname = '2-61758327600.sgf'     # here dead stone removal really helps score
         fpath = f'{myconf.EXP_HOME}/selfplay17.300/sgf/full/{fname}'
+        fpath = f'{myconf.EXP_HOME}/selfplay/sgf/full/2015-01-07T01:56:00.051Z_ho6o2gojvb9g-8369170389.sgf'
         reader = SGFReader.from_file_compatible(fpath)
         pos = reader.last_pos(ignore_final_pass=True)
         board = pos.board
 
         for color in (go.BLACK, go.WHITE):
-            print(f'Running for {color}')
+            print(f'\nRunning for {color}')
             tracker = PassAliveTracker.from_board(board, color)
-            chain_ids = tracker.eliminate(color)
+            chain_ids, regions = tracker.eliminate(color)
             assert len(chain_ids) >= 0
             for chain_idx in chain_ids:
                 group = tracker.lib_tracker.groups[chain_idx]
                 stone0 = next(iter(group.stones))
-                print(f'group {chain_idx}: {group.color}  %d stones, %d liberties: %s' % (
+                print(f'chain {chain_idx}: {group.color}  %d stones, %d liberties: %s' % (
                     len(group.stones), len(group.liberties), coords.to_gtp(stone0)))
+            for region in regions:
+                num_opp_stones = len(region.stones) - len(region.liberties)
+                print(f'region {region.id}: {region.color}  size=%d, %d opp stones' % (
+                    len(region.stones), num_opp_stones))
 
 
