@@ -36,6 +36,16 @@ N = int(os.environ.get('BOARD_SIZE', 9))  # was 19
 # This means that swapping colors is as simple as multiplying array by -1.
 WHITE, EMPTY, BLACK, FILL, KO, UNKNOWN = range(-1, 5)
 
+
+def color_str(color: int) -> str:
+    if color == WHITE:
+        return 'WHITE'
+    if color == BLACK:
+        return 'BLACK'
+    if color == EMPTY:
+        return 'EMPTY'
+    return str(color)
+
 # Represents "group not found" in the LibertyTracker object
 MISSING_GROUP_ID = -1
 
@@ -386,7 +396,6 @@ class BensorAnalyzer:
             print(f"Benson iter {i}: %d chains, %d regions" % (len(chains_current), len(regions_current)))
 
             num_vital_regions = defaultdict(int)
-            vital_regions = set()  # type: Set[int]
             for region in regions_current:
                 # see which chains this is vital for
                 for chain_idx in region.chains:
@@ -395,7 +404,6 @@ class BensorAnalyzer:
                         continue
                     if region.liberties.issubset(chain.liberties):
                         num_vital_regions[chain_idx] += 1
-                        vital_regions.add(region.id)
 
             # see if it has at least two (small) vital regions
             chains_pruned = set(idx for idx in chains_current if num_vital_regions[idx] >= 2)
@@ -405,11 +413,19 @@ class BensorAnalyzer:
             if len(chains_pruned) == 0:
                 return chains_pruned, []
             if len(chains_pruned) == len(chains_current) and len(regions_pruned) == len(regions_current):
-                # remove regions that are not vital to any chain
-                regions_final = [r for r in regions_pruned if r.id in vital_regions]
-                return chains_pruned, regions_final
+                return chains_pruned, regions_pruned
 
             chains_current, regions_current = chains_pruned, regions_pruned
+
+    def remove_non_vital_regions(self):
+        """ remove regions that are not vital to any safe chain.
+        This just establish eye-space better
+        """
+        # regions_final = [r for r in regions_pruned if r.id in vital_regions]
+        # regions_nonvital = [r for r in regions_pruned if r.id not in vital_regions]
+        # if regions_nonvital:
+        #     print('final regions: removed %d of %d' % (len(regions_nonvital), len(regions_pruned)))
+        #     print('\t#opp stones: %s' % [len(r.stones) - len(r.liberties) for r in regions_nonvital])
 
 
 class Position():
@@ -635,6 +651,9 @@ class Position():
         score = 0 could happen if komi is integer
         """
         working_board = np.copy(self.board)
+        return self._score_board(working_board)
+
+    def _score_board(self, working_board):
         while EMPTY in working_board:
             unassigned_spaces = np.where(working_board == EMPTY)
             c = unassigned_spaces[0][0], unassigned_spaces[1][0]
@@ -654,7 +673,20 @@ class Position():
 
     def score_benson(self):
         """ this method will remove dead stones in pass-alive area """
-        
+        working_board = np.copy(self.board)
+        for color in (BLACK, WHITE):
+            analyzer = BensorAnalyzer(self.board, color)
+            _, regions = analyzer.eliminate()
+            num_dead_stones = 0
+            for region in regions:  # region is black-enclosed, but could be completely owned by white
+                num_opp_stones = len(region.stones) - len(region.liberties)
+                if num_opp_stones >= 4:
+                    # either white region, or white could survive, consider it unsettled
+                    continue
+                num_dead_stones += num_opp_stones
+                place_stones(working_board, color, region.stones)
+            # print(f'score_benson: removed {num_dead_stones} dead stones from safe %s region' % color_str(color))
+        return self._score_board(working_board)
 
     def result(self):
         score = self.score()
