@@ -386,6 +386,7 @@ class BensorAnalyzer:
             print(f"Benson iter {i}: %d chains, %d regions" % (len(chains_current), len(regions_current)))
 
             num_vital_regions = defaultdict(int)
+            vital_regions = set()  # type: Set[int]
             for region in regions_current:
                 # see which chains this is vital for
                 for chain_idx in region.chains:
@@ -394,6 +395,7 @@ class BensorAnalyzer:
                         continue
                     if region.liberties.issubset(chain.liberties):
                         num_vital_regions[chain_idx] += 1
+                        vital_regions.add(region.id)
 
             # see if it has at least two (small) vital regions
             chains_pruned = set(idx for idx in chains_current if num_vital_regions[idx] >= 2)
@@ -401,9 +403,11 @@ class BensorAnalyzer:
             regions_pruned = [r for r in regions_current if all(chain_idx in chains_pruned for chain_idx in r.chains)]
 
             if len(chains_pruned) == 0:
-                return chains_pruned, regions_pruned
+                return chains_pruned, []
             if len(chains_pruned) == len(chains_current) and len(regions_pruned) == len(regions_current):
-                return chains_pruned, regions_pruned
+                # remove regions that are not vital to any chain
+                regions_final = [r for r in regions_pruned if r.id in vital_regions]
+                return chains_pruned, regions_final
 
             chains_current, regions_current = chains_pruned, regions_pruned
 
