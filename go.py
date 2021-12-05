@@ -677,7 +677,7 @@ class Position():
     def score(self):
         """ this method will remove dead stones in pass-alive area """
         working_board = np.copy(self.board)
-        num_removed = [0, 0]  # black, white
+        num_removed = [0, 0]  # black dead, white dead
         for color in (BLACK, WHITE):
             analyzer = BensorAnalyzer(self.board, color)
             _, regions = analyzer.eliminate()
@@ -685,14 +685,16 @@ class Position():
             for region in regions:  # region is black-enclosed, but could be completely owned by white
                 num_opp_stones = len(region.stones) - len(region.liberties)
                 if num_opp_stones >= 4:
-                    # either white region, or white could survive, consider it unsettled
+                    # heuristics: consider 3 white stones not survivable in a black pass-alive area
+                    # Either white region, or white could survive, consider it unsettled
                     continue
                 num_dead_stones += num_opp_stones
                 place_stones(working_board, color, region.stones)
-            num_removed[(1 - color) // 2] = num_dead_stones
+            num_removed[(color + 1) // 2] = num_dead_stones
+        score = self._score_board(working_board)
         if sum(num_removed) > 0:
-            print(f'score_benson: removed %s dead stones from pass-alive area' % num_removed)
-        return self._score_board(working_board)
+            print(f'score_benson: removed %s dead stones from pass-alive area -> %.1f' % (num_removed, score))
+        return score
 
     def result(self):
         score = self.score()
