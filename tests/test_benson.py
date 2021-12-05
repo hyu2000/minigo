@@ -3,7 +3,9 @@ import coords
 from benson import PassAliveTracker
 import go
 from go import LibertyTracker
+from sgf_wrapper import SGFReader
 from tests import test_utils
+import myconf
 from tests.test_go import coords_from_gtp_set
 
 
@@ -91,6 +93,24 @@ class TestLibertyTracker(test_utils.MinigoUnitTest):
         assert len(chain_ids) == 4
 
     def test_benson_real1(self):
-        """ selfplay17.300/sgf/full/1-61704860349.sgf
         """
+        """
+        fname = '1-61704860349.sgf'
+        fname = '1-61717098200.sgf'     # black all pass-alive, two white chains: one alive, one not
+        fpath = f'{myconf.EXP_HOME}/selfplay17.300/sgf/full/{fname}'
+        reader = SGFReader.from_file_compatible(fpath)
+        pos = reader.last_pos(ignore_final_pass=True)
+        board = pos.board
+
+        for color in (go.BLACK, go.WHITE):
+            print(f'Running for {color}')
+            tracker = PassAliveTracker.from_board(board, color)
+            chain_ids = tracker.eliminate(color)
+            assert len(chain_ids) >= 0
+            for chain_idx in chain_ids:
+                group = tracker.lib_tracker.groups[chain_idx]
+                stone0 = next(iter(group.stones))
+                print(f'group {chain_idx}: {group.color}  %d stones, %d liberties: %s' % (
+                    len(group.stones), len(group.liberties), coords.to_gtp(stone0)))
+
 
