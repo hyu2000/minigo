@@ -119,7 +119,7 @@ class TestLibertyTracker(test_utils.MinigoUnitTest):
                 num_opp_stones = len(region.stones) - len(region.liberties)
                 print(f'region {region.id}: {region.color}  size=%d, %d opp stones' % (
                     len(region.stones), num_opp_stones))
-        score_tromp = pos.score()
-        score_benson = pos.score_benson()
+        score_tromp = pos.score_tromp()
+        score_benson = pos.score()
         print('Score: Tromp=%.1f, Benson=%.1f' % (score_tromp, score_benson))
 

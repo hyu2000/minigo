@@ -646,7 +646,7 @@ class Position():
                 self.recent[-1].move is None and
                 self.recent[-2].move is None)
 
-    def score(self):
+    def score_tromp(self):
         """Return score from B perspective. If W is winning, score is negative.
         score = 0 could happen if komi is integer
         """
@@ -671,7 +671,7 @@ class Position():
 
         return np.count_nonzero(working_board == BLACK) - np.count_nonzero(working_board == WHITE) - self.komi
 
-    def score_benson(self):
+    def score(self):
         """ this method will remove dead stones in pass-alive area """
         working_board = np.copy(self.board)
         num_removed = [0, 0]  # black, white
