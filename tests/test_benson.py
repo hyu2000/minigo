@@ -128,12 +128,12 @@ class TestLibertyTracker(test_utils.MinigoUnitTest):
         """
         """
         fname = '1-61704860349.sgf'
-        fname = '1-61717098200.sgf'     # black all pass-alive, two white chains: one alive, one not
+        fname = '1-61717098200.sgf'     # black all pass-alive, two white chains: one alive, one with only 1 eye
         fname = '1-61717672696.sgf'     # big regions, nothing pass-alive
         fname = '2-61736655674.sgf'     # dead stone within pass-alive region can be safely removed
-        fname = '2-61758327600.sgf'     # here dead stone removal really helps score
+        fname = '2-61758327600.sgf'     # here dead stone removal really helps score (still W+)
         fpath = f'{myconf.EXP_HOME}/selfplay17.300/sgf/full/{fname}'
-        fpath = f'{myconf.EXP_HOME}/selfplay/sgf/full/2015-01-07T01:56:00.051Z_ho6o2gojvb9g-8369170389.sgf'  # Tromp -7 Benson: 4
+        fpath = f'{myconf.EXP_HOME}/endgame29/sgf/full/2015-01-07T01:56:00.051Z_ho6o2gojvb9g-8369170389.sgf'  # Tromp -7 Benson: 4
         reader = SGFReader.from_file_compatible(fpath)
         pos = reader.last_pos(ignore_final_pass=True)
         board = pos.board

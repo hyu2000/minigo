@@ -684,16 +684,16 @@ class Position():
             num_dead_stones = 0
             for region in regions:  # region is black-enclosed, but could be completely owned by white
                 num_opp_stones = len(region.stones) - len(region.liberties)
-                if num_opp_stones >= 4:
+                if num_opp_stones >= 4 and len(region.liberties) >= 2:
                     # heuristics: consider 3 white stones not survivable in a black pass-alive area
-                    # Either white region, or white could survive, consider it unsettled
+                    # Either white region (with 2 potential eyes), or white could survive, consider it unsettled
                     continue
                 num_dead_stones += num_opp_stones
                 place_stones(working_board, color, region.stones)
             num_removed[(color + 1) // 2] = num_dead_stones
         score = self._score_board(working_board)
-        if sum(num_removed) > 0:
-            print(f'score_benson: removed %s dead stones from pass-alive area -> %.1f' % (num_removed, score))
+        # if sum(num_removed) > 0:
+        #     print(f'score_benson: removed %s dead stones from pass-alive area -> %.1f' % (num_removed, score))
         return score
 
     def result(self):
