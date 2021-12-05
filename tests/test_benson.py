@@ -100,7 +100,7 @@ class TestLibertyTracker(test_utils.MinigoUnitTest):
         fname = '2-61736655674.sgf'     # dead stone within pass-alive region can be safely removed
         fname = '2-61758327600.sgf'     # here dead stone removal really helps score
         fpath = f'{myconf.EXP_HOME}/selfplay17.300/sgf/full/{fname}'
-        fpath = f'{myconf.EXP_HOME}/selfplay/sgf/full/2015-01-07T01:56:00.051Z_ho6o2gojvb9g-8369170389.sgf'
+        fpath = f'{myconf.EXP_HOME}/selfplay/sgf/full/2015-01-07T01:56:00.051Z_ho6o2gojvb9g-8369170389.sgf'  # Tromp -7 Benson: 4
         reader = SGFReader.from_file_compatible(fpath)
         pos = reader.last_pos(ignore_final_pass=True)
         board = pos.board
@@ -119,5 +119,7 @@ class TestLibertyTracker(test_utils.MinigoUnitTest):
                 num_opp_stones = len(region.stones) - len(region.liberties)
                 print(f'region {region.id}: {region.color}  size=%d, %d opp stones' % (
                     len(region.stones), num_opp_stones))
-
+        score_tromp = pos.score()
+        score_benson = pos.score_benson()
+        print('Score: Tromp=%.1f, Benson=%.1f' % (score_tromp, score_benson))
 

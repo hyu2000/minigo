@@ -393,7 +393,7 @@ class BensorAnalyzer:
         regions_current = [r for r in self.regions.values()]
 
         for i in range(100):
-            print(f"Benson iter {i}: %d chains, %d regions" % (len(chains_current), len(regions_current)))
+            # print(f'Benson iter {i}: %d chains, %d regions' % (len(chains_current), len(regions_current)))
 
             num_vital_regions = defaultdict(int)
             for region in regions_current:
@@ -674,6 +674,7 @@ class Position():
     def score_benson(self):
         """ this method will remove dead stones in pass-alive area """
         working_board = np.copy(self.board)
+        num_removed = [0, 0]  # black, white
         for color in (BLACK, WHITE):
             analyzer = BensorAnalyzer(self.board, color)
             _, regions = analyzer.eliminate()
@@ -685,7 +686,9 @@ class Position():
                     continue
                 num_dead_stones += num_opp_stones
                 place_stones(working_board, color, region.stones)
-            # print(f'score_benson: removed {num_dead_stones} dead stones from safe %s region' % color_str(color))
+            num_removed[(1 - color) // 2] = num_dead_stones
+        if sum(num_removed) > 0:
+            print(f'score_benson: removed %s dead stones from pass-alive area' % num_removed)
         return self._score_board(working_board)
 
     def result(self):
