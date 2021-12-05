@@ -1,7 +1,7 @@
 import numpy as np
 import coords
 import go
-from go import LibertyTracker, PassAliveTracker
+from go import LibertyTracker, BensorAnalyzer
 from sgf_wrapper import SGFReader
 from tests import test_utils
 import myconf
@@ -36,12 +36,12 @@ class TestLibertyTracker(test_utils.MinigoUnitTest):
             XXXX..O..
         ''' + self.EMPTY_ROW * 6)
         for color in (go.BLACK,):
-            tracker = PassAliveTracker.from_board(board, color)
+            tracker = BensorAnalyzer.from_board(board, color)
             assert len(tracker.regions) == 3
             for rid, region in tracker.regions.items():
                 print(rid, region.color, len(region.stones), len(region.liberties), region.chains)
 
-            chain_ids, _ = tracker.eliminate(color)
+            chain_ids, _ = tracker.eliminate()
             assert len(chain_ids) == 2
             print('pass-alive chains: ', chain_ids)
 
@@ -57,20 +57,20 @@ class TestLibertyTracker(test_utils.MinigoUnitTest):
             .OOOOO...
         ''' + self.EMPTY_ROW * 5)
 
-        tracker = PassAliveTracker.from_board(board, go.BLACK)
+        tracker = BensorAnalyzer.from_board(board, go.BLACK)
         assert len(tracker.regions) == 3
         for rid, region in tracker.regions.items():
             print(rid, region.color, len(region.stones), len(region.liberties), region.chains)
 
-        chain_ids, _ = tracker.eliminate(go.BLACK)
+        chain_ids, _ = tracker.eliminate()
         assert len(chain_ids) == 0
 
         # however, if we put any stone in row 1, col 3, black is pass-alive
         for color in (go.BLACK, go.WHITE):
             board[1][3] = color
-            tracker = PassAliveTracker.from_board(board, go.BLACK)
+            tracker = BensorAnalyzer.from_board(board, go.BLACK)
             assert len(tracker.regions) == 3
-            chain_ids = tracker.eliminate(go.BLACK)
+            chain_ids = tracker.eliminate()
             assert len(chain_ids) == 2
 
     def test_pass_alive2(self):
@@ -83,12 +83,12 @@ class TestLibertyTracker(test_utils.MinigoUnitTest):
             OOOO.....
         ''' + self.EMPTY_ROW * 5)
 
-        tracker = PassAliveTracker.from_board(board, go.BLACK)
+        tracker = BensorAnalyzer.from_board(board, go.BLACK)
         assert len(tracker.regions) == 5
         for rid, region in tracker.regions.items():
             print(rid, region.color, len(region.stones), len(region.liberties), region.chains)
 
-        chain_ids, _ = tracker.eliminate(go.BLACK)
+        chain_ids, _ = tracker.eliminate()
         assert len(chain_ids) == 4
 
     def test_benson_real1(self):
@@ -107,8 +107,8 @@ class TestLibertyTracker(test_utils.MinigoUnitTest):
 
         for color in (go.BLACK, go.WHITE):
             print(f'\nRunning for {color}')
-            tracker = PassAliveTracker.from_board(board, color)
-            chain_ids, regions = tracker.eliminate(color)
+            tracker = BensorAnalyzer.from_board(board, color)
+            chain_ids, regions = tracker.eliminate()
             assert len(chain_ids) >= 0
             for chain_idx in chain_ids:
                 group = tracker.lib_tracker.groups[chain_idx]

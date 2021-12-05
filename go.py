@@ -319,7 +319,7 @@ class Region(namedtuple('Region', ['id', 'stones', 'liberties', 'chains', 'color
                self.chains == other.chains and self.color == other.color
 
 
-class PassAliveTracker:
+class BensorAnalyzer:
     """ Benson's algorithm to determine pass-alive chains
 
     Let X be the set of all Black chains and R be the set of all Black-enclosed regions of X.
@@ -333,22 +333,23 @@ class PassAliveTracker:
 
     - is it easy to incrementally update its status?
     """
-    def __init__(self):
+    def __init__(self, board: np.ndarray, color_bound):
         self.region_index = -np.ones([N, N], dtype=np.int32)  # type: np.ndarray
         self.regions = dict()  # type: Dict[int, Region]
         self.max_region_id = 0
-        self.lib_tracker = None  # type: LibertyTracker
 
-    @staticmethod
-    def from_board(board: np.ndarray, color_bound) -> 'PassAliveTracker':
+        self.lib_tracker = LibertyTracker.from_board(board)
+        self._find_enclosed_regions(board, color_bound)
+        self.color_bound = color_bound
+
+    def _find_enclosed_regions(self, board, color_bound):
         """
         Black-enclosed regions: start from empty spots, find the max region (include white) that's surrounded by black
         or wall. This is similar to a chain, just that it's the maximal region of empty+white
         """
-        tracker = PassAliveTracker()
-        lib_tracker = LibertyTracker.from_board(board)
-
         board = np.copy(board)
+        lib_tracker = self.lib_tracker
+
         curr_region_id = 0
         for color in (EMPTY,):
             while color in board:
@@ -364,19 +365,21 @@ class PassAliveTracker:
                 region_color = -color_bound if len(liberties) < len(region) else color
 
                 new_region = Region(curr_region_id, frozenset(region), liberties, chains, region_color)
-                tracker.regions[curr_region_id] = new_region
+                self.regions[curr_region_id] = new_region
                 for s in region:
-                    tracker.region_index[s] = curr_region_id
+                    self.region_index[s] = curr_region_id
                 place_stones(board, FILL, region)
 
-        tracker.lib_tracker = lib_tracker
-        tracker.max_region_id = curr_region_id
-        return tracker
+        self.max_region_id = curr_region_id
 
-    def eliminate(self, color) -> Tuple[Set[int], Iterable[Region]]:
+    @staticmethod
+    def from_board(board: np.ndarray, color_bound) -> 'BensorAnalyzer':
+        return BensorAnalyzer(board, color_bound)
+
+    def eliminate(self) -> Tuple[Set[int], Iterable[Region]]:
         """ find pass-alive chains for color, using Benson's algorithm
         """
-        chains_current = set(idx for idx, chain in self.lib_tracker.groups.items() if chain.color == color)
+        chains_current = set(idx for idx, chain in self.lib_tracker.groups.items() if chain.color == self.color_bound)
         regions_current = [r for r in self.regions.values()]
 
         for i in range(100):
@@ -647,6 +650,7 @@ class Position():
 
     def score_benson(self):
         """ this method will remove dead stones in pass-alive area """
+        
 
     def result(self):
         score = self.score()
