@@ -671,6 +671,9 @@ class Position():
 
         return np.count_nonzero(working_board == BLACK) - np.count_nonzero(working_board == WHITE) - self.komi
 
+    def score_benson(self):
+        return self.score()
+
     def score(self):
         """ this method will remove dead stones in pass-alive area """
         working_board = np.copy(self.board)

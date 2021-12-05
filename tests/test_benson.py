@@ -91,6 +91,32 @@ class TestLibertyTracker(test_utils.MinigoUnitTest):
         chain_ids, _ = tracker.eliminate()
         assert len(chain_ids) == 4
 
+    def test_benson_score(self):
+        """ in a pass-alive enclosed area, opponent could still survive
+        """
+        board = test_utils.load_board('''
+            .O...X.X.
+            O.O..XXXX
+            .O...X...
+            XXXXXX...
+        ''' + self.EMPTY_ROW * 5)
+
+        tracker = BensorAnalyzer.from_board(board, go.BLACK)
+        assert len(tracker.regions) == 4
+        for rid, region in tracker.regions.items():
+            num_opp_stones = len(region.stones) - len(region.liberties)
+            print(f'region {region.id}: {region.color}  size=%d, %d opp stones' % (
+                len(region.stones), num_opp_stones))
+
+        chain_ids, regions = tracker.eliminate()
+        assert len(chain_ids) == 1
+        print('final regions: %d' % len(regions))
+
+        pos = go.Position(board, komi=0)
+        score_tromp = pos.score_tromp()
+        score_benson = pos.score_benson()
+        print('Score: Tromp=%.1f, Benson=%.1f' % (score_tromp, score_benson))
+
     def test_benson_real1(self):
         """
         """
@@ -120,6 +146,6 @@ class TestLibertyTracker(test_utils.MinigoUnitTest):
                 print(f'region {region.id}: {region.color}  size=%d, %d opp stones' % (
                     len(region.stones), num_opp_stones))
         score_tromp = pos.score_tromp()
-        score_benson = pos.score()
+        score_benson = pos.score_benson()
         print('Score: Tromp=%.1f, Benson=%.1f' % (score_tromp, score_benson))
 
