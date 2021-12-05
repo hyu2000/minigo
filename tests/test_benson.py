@@ -116,6 +116,13 @@ class TestLibertyTracker(test_utils.MinigoUnitTest):
         score_tromp = pos.score_tromp()
         score_benson = pos.score_benson()
         print('Score: Tromp=%.1f, Benson=%.1f' % (score_tromp, score_benson))
+        assert score_tromp == score_benson
+
+        # but if we remove any white stone (#whites < 4), it's not considered survivable
+        board[0][1] = go.EMPTY
+        pos = go.Position(board, komi=0)
+        assert pos.score_benson() == 81
+        assert pos.score_tromp() < 81
 
     def test_benson_real1(self):
         """
