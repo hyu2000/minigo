@@ -387,7 +387,9 @@ class BensorAnalyzer:
         return BensorAnalyzer(board, color_bound)
 
     def eliminate(self) -> Tuple[Set[int], Iterable[Region]]:
-        """ find pass-alive chains for color, using Benson's algorithm
+        """ find pass-alive chains for color, using Benson's algorithm.
+
+        Note we use regions returned for scoring purposes. They need to be what Benson's original algo specifies.
         """
         chains_current = set(idx for idx, chain in self.lib_tracker.groups.items() if chain.color == self.color_bound)
         regions_current = [r for r in self.regions.values()]
@@ -677,6 +679,8 @@ class Position():
     def score(self):
         """ this method will remove dead stones in pass-alive area """
         working_board = np.copy(self.board)
+
+        # first, mark pass-alive area
         num_removed = [0, 0]  # black dead, white dead
         for color in (BLACK, WHITE):
             analyzer = BensorAnalyzer(self.board, color)
@@ -691,6 +695,8 @@ class Position():
                 num_dead_stones += num_opp_stones
                 place_stones(working_board, color, region.stones)
             num_removed[(color + 1) // 2] = num_dead_stones
+
+        # everything else, use Tromp scoring
         score = self._score_board(working_board)
         # if sum(num_removed) > 0:
         #     print(f'score_benson: removed %s dead stones from pass-alive area -> %.1f' % (num_removed, score))

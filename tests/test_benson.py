@@ -3,6 +3,7 @@ import coords
 import go
 from go import LibertyTracker, BensorAnalyzer
 from sgf_wrapper import SGFReader
+from tar_dataset import GameStore
 from tests import test_utils
 import myconf
 from tests.test_go import coords_from_gtp_set
@@ -124,7 +125,25 @@ class TestLibertyTracker(test_utils.MinigoUnitTest):
         assert pos.score_benson() == 81
         assert pos.score_tromp() < 81
 
-    def test_benson_real1(self):
+    def test_benson_score_seki(self):
+        """ in a seki case, white 3 stones are live, but black is not pass-alive, so this won't affect Benson score """
+        board = test_utils.load_board('''
+            .OOO.XO..
+            XXXXXXO..
+            OOOOOOO..
+            .........
+        ''' + self.EMPTY_ROW * 5)
+        tracker = BensorAnalyzer.from_board(board, go.BLACK)
+        chain_ids, regions = tracker.eliminate()
+        assert len(chain_ids) == 0
+
+        pos = go.Position(board, komi=0)
+        score_tromp = pos.score_tromp()
+        score_benson = pos.score_benson()
+        print('Score: Tromp=%.1f, Benson=%.1f' % (score_tromp, score_benson))
+        assert score_tromp == score_benson
+
+    def test_benson_real_sgf(self):
         """
         """
         fname = '1-61704860349.sgf'
@@ -156,3 +175,24 @@ class TestLibertyTracker(test_utils.MinigoUnitTest):
         score_benson = pos.score_benson()
         print('Score: Tromp=%.1f, Benson=%.1f' % (score_tromp, score_benson))
 
+    def test_benson_top50(self):
+        """ just curious what UL chains looks like for Top50
+        """
+        game_id = '2015-05-15T06:04:40.426Z_kn8727sbhgld'   # no UL chains for W
+        game_id = '2015-03-30T01:00:38.957Z_x2rk400zy8fk'   # seki in top-left
+        store = GameStore()
+        ds_top = store.ds_top
+        reader = ds_top.get_game(f'go9/{game_id}.sgf')
+        pos = reader.last_pos(ignore_final_pass=True)
+        board = pos.board
+
+        for color in (go.BLACK, go.WHITE):
+            print(f'\nRunning for {color}')
+            tracker = BensorAnalyzer.from_board(board, color)
+            chain_ids, regions = tracker.eliminate()
+            assert len(chain_ids) >= 0
+            for chain_idx in chain_ids:
+                group = tracker.lib_tracker.groups[chain_idx]
+                stone0 = next(iter(group.stones))
+                print(f'chain {chain_idx}: {group.color}  %d stones, %d liberties: %s' % (
+                    len(group.stones), len(group.liberties), coords.to_gtp(stone0)))
