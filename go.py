@@ -430,6 +430,10 @@ class BensonAnalyzer:
         #     print('\t#opp stones: %s' % [len(r.stones) - len(r.liberties) for r in regions_nonvital])
 
 
+class BensonScoreDetail(namedtuple('BensonScoreDetail', ['score', 'final', 'black_area', 'white_area'])):
+    pass
+
+
 class Position():
     def __init__(self, board=None, n=0, komi=5.5, caps=(0, 0),
                  lib_tracker=None, ko=None, recent=tuple(),
@@ -674,21 +678,20 @@ class Position():
         return np.count_nonzero(working_board == BLACK) - np.count_nonzero(working_board == WHITE) - self.komi
 
     def score(self) -> float:
-        score, final = self._score_benson()
-        return score
+        score_detail = self._benson_analysis()
+        return score_detail.score
 
-    def score_benson(self) -> Tuple[float, bool]:
-        score, final = self._score_benson()
-        return score, final
+    def score_benson(self) -> BensonScoreDetail:
+        return self._benson_analysis()
 
-    def _score_benson(self) -> Tuple[float, bool]:
+    def _benson_analysis(self) -> BensonScoreDetail:
         """ based on Benson's algo: this method will remove dead stones in pass-alive area
         It also indicates whether winner is final: either all area is settled, or that winner's margin is large enough
         """
         working_board = np.copy(self.board)
 
         # first, mark pass-alive area
-        num_passalive = [0, 0]     # black live, white live
+        area_passalive = [0, 0]    # black live, white live
         num_removed = [0, 0]       # white dead in black area, black dead in white area
         for icolor, color in enumerate((BLACK, WHITE)):
             analyzer = BensonAnalyzer(self.board, color)
@@ -702,12 +705,12 @@ class Position():
                     continue
                 num_dead_stones += num_opp_stones
                 place_stones(working_board, color, region.stones)
-                num_passalive[icolor] += len(region.stones)
+                area_passalive[icolor] += len(region.stones)
             num_removed[icolor] = num_dead_stones
 
         # see if we know the winner regardless of unsettled area
-        num_unsettled = N * N - sum(num_passalive)
-        advantage = num_passalive[0] - num_passalive[1] - self.komi
+        num_unsettled = N * N - sum(area_passalive)
+        advantage = area_passalive[0] - area_passalive[1] - self.komi
         game_over = abs(advantage) > 2 * num_unsettled
 
         # everything else, use Tromp scoring
@@ -716,7 +719,7 @@ class Position():
             print('benson scoring: advantage=%.1f, unsettled area=%d, game over' % (advantage, num_unsettled))
         # if sum(num_removed) > 0:
         #     print(f'score_benson: removed %s dead stones from pass-alive area -> %.1f' % (num_removed, score))
-        return score, game_over
+        return BensonScoreDetail(score, game_over, area_passalive[0], area_passalive[1])
 
     def result(self):
         score = self.score()

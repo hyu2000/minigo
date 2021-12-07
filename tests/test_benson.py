@@ -115,17 +115,17 @@ class TestLibertyTracker(test_utils.MinigoUnitTest):
 
         pos = go.Position(board, komi=0)
         score_tromp = pos.score_tromp()
-        score_benson, final = pos.score_benson()
-        print('Score: Tromp=%.1f, Benson=%.1f, final=%s' % (score_tromp, score_benson, final))
-        assert score_tromp == score_benson
+        benson_detail = pos.score_benson()
+        print('Score: Tromp=%.1f, Benson=%.1f, final=%s' % (score_tromp, benson_detail.score, benson_detail.final))
+        assert score_tromp == benson_detail.score
 
         # but if we remove any white stone (#whites < 4), it's not considered survivable
         board[0][1] = go.EMPTY
         pos = go.Position(board, komi=0)
         score_tromp = pos.score_tromp()
-        score_benson, final = pos.score_benson()
-        print('Score: Tromp=%.1f, Benson=%.1f, final=%s' % (score_tromp, score_benson, final))
-        assert score_benson == 81
+        benson_detail = pos.score_benson()
+        print('Score: Tromp=%.1f, Benson=%.1f, final=%s' % (score_tromp, benson_detail.score, benson_detail.final))
+        assert benson_detail.score == 81
         assert score_tromp < 81
 
     def test_benson_score_seki(self):
@@ -142,9 +142,9 @@ class TestLibertyTracker(test_utils.MinigoUnitTest):
 
         pos = go.Position(board, komi=0)
         score_tromp = pos.score_tromp()
-        score_benson, final = pos.score_benson()
-        print('Score: Tromp=%.1f, Benson=%.1f' % (score_tromp, score_benson))
-        assert score_tromp == score_benson
+        benson_detail = pos.score_benson()
+        print('Score: Tromp=%.1f, Benson=%.1f' % (score_tromp, benson_detail.score))
+        assert score_tromp == benson_detail.score
 
     def test_benson_real_sgf(self):
         """
@@ -175,8 +175,8 @@ class TestLibertyTracker(test_utils.MinigoUnitTest):
                 print(f'region {region.id}: {region.color}  size=%d, %d opp stones' % (
                     len(region.stones), num_opp_stones))
         score_tromp = pos.score_tromp()
-        score_benson, final = pos.score_benson()
-        print('Score: Tromp=%.1f, Benson=%.1f' % (score_tromp, score_benson))
+        benson_detail = pos.score_benson()
+        print('Score: Tromp=%.1f, Benson=%.1f' % (score_tromp, benson_detail.score))
 
     def test_benson_top50(self):
         """ just curious what UL chains looks like for Top50
@@ -201,6 +201,6 @@ class TestLibertyTracker(test_utils.MinigoUnitTest):
                     len(group.stones), len(group.liberties), coords.to_gtp(stone0)))
 
         score_tromp = pos.score_tromp()
-        score_benson, final = pos.score_benson()
-        print('Score: Tromp=%.1f, Benson=%.1f' % (score_tromp, score_benson))
+        benson_detail = pos.score_benson()
+        print('Score: Tromp=%.1f, Benson=%.1f' % (score_tromp, benson_detail.score))
 
