@@ -115,15 +115,18 @@ class TestLibertyTracker(test_utils.MinigoUnitTest):
 
         pos = go.Position(board, komi=0)
         score_tromp = pos.score_tromp()
-        score_benson = pos.score_benson()
-        print('Score: Tromp=%.1f, Benson=%.1f' % (score_tromp, score_benson))
+        score_benson, final = pos.score_benson()
+        print('Score: Tromp=%.1f, Benson=%.1f, final=%s' % (score_tromp, score_benson, final))
         assert score_tromp == score_benson
 
         # but if we remove any white stone (#whites < 4), it's not considered survivable
         board[0][1] = go.EMPTY
         pos = go.Position(board, komi=0)
-        assert pos.score_benson() == 81
-        assert pos.score_tromp() < 81
+        score_tromp = pos.score_tromp()
+        score_benson, final = pos.score_benson()
+        print('Score: Tromp=%.1f, Benson=%.1f, final=%s' % (score_tromp, score_benson, final))
+        assert score_benson == 81
+        assert score_tromp < 81
 
     def test_benson_score_seki(self):
         """ in a seki case, white 3 stones are live, but black is not pass-alive, so this won't affect Benson score """
@@ -139,7 +142,7 @@ class TestLibertyTracker(test_utils.MinigoUnitTest):
 
         pos = go.Position(board, komi=0)
         score_tromp = pos.score_tromp()
-        score_benson = pos.score_benson()
+        score_benson, final = pos.score_benson()
         print('Score: Tromp=%.1f, Benson=%.1f' % (score_tromp, score_benson))
         assert score_tromp == score_benson
 
@@ -172,7 +175,7 @@ class TestLibertyTracker(test_utils.MinigoUnitTest):
                 print(f'region {region.id}: {region.color}  size=%d, %d opp stones' % (
                     len(region.stones), num_opp_stones))
         score_tromp = pos.score_tromp()
-        score_benson = pos.score_benson()
+        score_benson, final = pos.score_benson()
         print('Score: Tromp=%.1f, Benson=%.1f' % (score_tromp, score_benson))
 
     def test_benson_top50(self):
