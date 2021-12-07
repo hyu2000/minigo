@@ -329,7 +329,7 @@ class Region(namedtuple('Region', ['id', 'stones', 'liberties', 'chains', 'color
                self.chains == other.chains and self.color == other.color
 
 
-class BensorAnalyzer:
+class BensonAnalyzer:
     """ Benson's algorithm to determine pass-alive chains
 
     Let X be the set of all Black chains and R be the set of all Black-enclosed regions of X.
@@ -383,8 +383,8 @@ class BensorAnalyzer:
         self.max_region_id = curr_region_id
 
     @staticmethod
-    def from_board(board: np.ndarray, color_bound) -> 'BensorAnalyzer':
-        return BensorAnalyzer(board, color_bound)
+    def from_board(board: np.ndarray, color_bound) -> 'BensonAnalyzer':
+        return BensonAnalyzer(board, color_bound)
 
     def eliminate(self) -> Tuple[Set[int], Iterable[Region]]:
         """ find pass-alive chains for color, using Benson's algorithm.
@@ -691,7 +691,7 @@ class Position():
         num_passalive = [0, 0]     # black live, white live
         num_removed = [0, 0]       # white dead in black area, black dead in white area
         for icolor, color in enumerate((BLACK, WHITE)):
-            analyzer = BensorAnalyzer(self.board, color)
+            analyzer = BensonAnalyzer(self.board, color)
             _, regions = analyzer.eliminate()
             num_dead_stones = 0
             for region in regions:  # region is black-enclosed, but could be completely owned by white
@@ -713,7 +713,7 @@ class Position():
         # everything else, use Tromp scoring
         score = self._score_board(working_board)
         if game_over:
-            print('benson scoring: advantage=%.1f, score=%.1f, game over' % (advantage, score))
+            print('benson scoring: advantage=%.1f, unsettled area=%d, game over' % (advantage, num_unsettled))
         # if sum(num_removed) > 0:
         #     print(f'score_benson: removed %s dead stones from pass-alive area -> %.1f' % (num_removed, score))
         return score, game_over
