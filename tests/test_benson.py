@@ -183,6 +183,8 @@ class TestLibertyTracker(test_utils.MinigoUnitTest):
         """
         game_id = '2015-05-15T06:04:40.426Z_kn8727sbhgld'   # no UL chains for W
         game_id = '2015-03-30T01:00:38.957Z_x2rk400zy8fk'   # seki in top-left
+        # 'endgame31/2015-08-16T13:24:20.572Z_4ya0d0havhsw-60519671507' move #89: top-right white block is killed,
+        # but not counted as black area. In move #88 it's counted as black due to lack of eye space
         store = GameStore()
         ds_top = store.ds_top
         reader = ds_top.get_game(f'go9/{game_id}.sgf')
@@ -202,5 +204,5 @@ class TestLibertyTracker(test_utils.MinigoUnitTest):
 
         score_tromp = pos.score_tromp()
         benson_detail = pos.score_benson()
-        print('Score: Tromp=%.1f, Benson=%.1f' % (score_tromp, benson_detail.score))
+        print('Score: Tromp=%.1f, Benson=%s' % (score_tromp, benson_detail))
 

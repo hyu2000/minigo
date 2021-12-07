@@ -695,7 +695,7 @@ class Position():
         num_removed = [0, 0]       # white dead in black area, black dead in white area
         for icolor, color in enumerate((BLACK, WHITE)):
             analyzer = BensonAnalyzer(self.board, color)
-            _, regions = analyzer.eliminate()
+            chain_ids, regions = analyzer.eliminate()
             num_dead_stones = 0
             for region in regions:  # region is black-enclosed, but could be completely owned by white
                 num_opp_stones = len(region.stones) - len(region.liberties)
@@ -707,6 +707,11 @@ class Position():
                 place_stones(working_board, color, region.stones)
                 area_passalive[icolor] += len(region.stones)
             num_removed[icolor] = num_dead_stones
+
+            for chain_id in chain_ids:
+                chain = analyzer.lib_tracker.groups[chain_id]
+                assert chain.color == color
+                area_passalive[icolor] += len(chain.stones)
 
         # see if we know the winner regardless of unsettled area
         num_unsettled = N * N - sum(area_passalive)
