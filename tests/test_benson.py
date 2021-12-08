@@ -12,7 +12,7 @@ from tests.test_go import coords_from_gtp_set
 class TestLibertyTracker(test_utils.MinigoUnitTest):
     EMPTY_ROW = '.' * go.N + '\n'
 
-    def test_basic(self):
+    def test_dev(self):
         """ from test_capture_many """
         board = test_utils.load_board('''
             .XX......

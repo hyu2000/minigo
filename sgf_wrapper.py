@@ -21,7 +21,7 @@ Most of the complexity here is dealing with two features of SGF:
 - Plays don't necessarily alternate colors; they can be repeated B or W moves
   This feature is used to handle free handicap placement.
 """
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Iterable
 
 import numpy as np
 import itertools
@@ -280,7 +280,7 @@ class SGFReader(object):
         else:
             return pos
 
-    def iter_pwcs(self):
+    def iter_pwcs(self) -> Iterable[PositionWithContext]:
         """ based on replay_sgf: result is black margin now """
         komi = self.komi()
         result = self.black_margin_adj(adjust_komi=True)
@@ -308,8 +308,10 @@ class SGFReader(object):
 
     @staticmethod
     def _parse_result_str(s: str) -> Tuple[int, float]:
-        """ B+R B+2.5 B+T """
+        """ B+R B+2.5 B+T   DRAW """
         s = s.upper()
+        if s == 'DRAW':
+            return 0, 0
 
         winner = s[0]
         result_sign = 0

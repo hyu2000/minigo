@@ -720,8 +720,8 @@ class Position():
 
         # everything else, use Tromp scoring
         score = self._score_board(working_board)
-        if game_over:
-            print('benson scoring: advantage=%.1f, unsettled area=%d, game over' % (advantage, num_unsettled))
+        # if game_over:
+        #     print('benson scoring: advantage=%.1f, unsettled area=%d, game over' % (advantage, num_unsettled))
         # if sum(num_removed) > 0:
         #     print(f'score_benson: removed %s dead stones from pass-alive area -> %.1f' % (num_removed, score))
         return BensonScoreDetail(score, game_over, area_passalive[0], area_passalive[1])
