@@ -59,8 +59,10 @@ dataset = dataset.prefetch(buffer_size=batch_size)
     """
     BATCH_READ_SIZE = 64
 
+    if dtype and not dtype.startswith('.'):
+        dtype = f'.{dtype}'
     try:
-        filenames = tf.data.Dataset.list_files(f'{selfplay_dir}/*.tfrecord.{dtype}.zz')  #.take(3)
+        filenames = tf.data.Dataset.list_files(f'{selfplay_dir}/*.tfrecord{dtype}.zz')  #.take(3)
     except:
         return None
     dataset = tf.data.TFRecordDataset(
