@@ -678,6 +678,9 @@ class Position():
         return np.count_nonzero(working_board == BLACK) - np.count_nonzero(working_board == WHITE) - self.komi
 
     def score(self) -> float:
+        if self.n < 40:
+            # Pass-alive typically happens later in game. Use Tromp which is faster
+            return self.score_tromp()
         score_detail = self._benson_analysis()
         return score_detail.score
 
