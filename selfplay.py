@@ -136,6 +136,10 @@ def play(network, init_position=None, init_root=None):
             # assert not np.isnan(tromp_margin)
             # player.set_result(np.sign(tromp_margin - pos.komi), was_resign=False, black_margin_no_komi=tromp_margin)
             break
+        benson_score_details = player.root.position.score_benson()
+        if benson_score_details.final:  # end the game when score is final
+            player.set_result(np.sign(benson_score_details.score), was_resign=False)
+            break
 
         if (FLAGS.verbose >= 2) or (FLAGS.verbose >= 1 and player.root.position.n % 10 == 9):
             print("Q: {:.5f}".format(player.root.Q))
