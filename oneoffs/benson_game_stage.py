@@ -5,8 +5,22 @@ Data: endgame selfplay sgfs
 For each game, we measure when pass-alive chains start to form, how they evolve (#chains, #stones in them),
 score diff between Benson and Tromp
 For summary: for step 5, 10, 15, ..., chance of pass-alive chains occurring, chance of score differing, avg score diff
+
+Data: endgame30 random samples
+pass-alive chains onset time: 39, 40
+         %games w/ pass-alive chains
+step 50:  5-6%
+     60: 25% - 30%
+
+%game can be stopped early: 30%-50%
+avg steps saved (per game): 2.7 ~ 3.2
 """
+
 from collections import defaultdict
+from numbers import Number
+from typing import Dict, Any
+
+import numpy as np
 
 import myconf
 from tar_dataset import SgfDataSet
@@ -25,7 +39,7 @@ class ScoreStats:
 
         self._game_length = defaultdict(int)
         self._game_benson_length = defaultdict(int)
-        self._game_length_shorted = defaultdict(int)
+        self._game_length_shortened = defaultdict(int)
 
     def add_step_stat(self, n: int, benson_detail: go.BensonScoreDetail, tromp_score_diff: float):
         """ called every step of a game """
@@ -42,7 +56,12 @@ class ScoreStats:
         """
         self._game_length[n] += 1
         self._game_benson_length[n_benson] += 1
-        self._game_length_shorted[n - n_benson] += 1
+        self._game_length_shortened[n - n_benson] += 1
+
+    @staticmethod
+    def _counter_to_arr(d: Dict[Number, int]) -> np.ndarray:
+        arr_expanded = np.concatenate([[k]*count for k, count in d.items()])
+        return arr_expanded
 
     def summary(self):
         # total number of games processed
@@ -50,23 +69,27 @@ class ScoreStats:
         assert num_games == self._step_count[0]
         print(f'\nTotal #games: {num_games}')
 
+        # when Benson calls a game final
+        print('\ngame length stats:')
+        game_length_arr = self._counter_to_arr(self._game_length)
+        print('avg game length: %.1f, median: %.1f' % (np.mean(game_length_arr), np.median(game_length_arr)))
+        steps_shortened_arr = self._counter_to_arr(self._game_length_shortened)
+        print(f'avg length shortened: %.1f, median: %.1f' % (np.mean(steps_shortened_arr), np.median(steps_shortened_arr)))
+
         # onset of pass-alive chains
         print('\n% of pass-alive:')
-        for n in sorted(self._step_count_ul.keys()):
-            print(f'{n}\t%.2f' % (self._step_count_ul[n] / self._step_count[n]))
-
-        # when Benson calls a game final
-        print('\ngame length shortened stats:')
-        for n in sorted(self._game_length_shorted.keys()):
-            print(f'{n} %d' % (self._game_length_shorted[n]))
+        for i, n in enumerate(sorted(self._step_count_ul.keys())):
+            if i == 0 or n % 5 == 0:
+                print(f'{n}\t%.2f' % (self._step_count_ul[n] / self._step_count[n]))
 
 
 def main():
-    selfplay_dir = f'{myconf.EXP_HOME}/endgame30'
+    selfplay_dir = f'{myconf.EXP_HOME}/endgame25'
     ds = SgfDataSet(f'{selfplay_dir}/sgf/full')
+    print(f'Sampling {selfplay_dir}  {NUM_GAMES_TO_PROCESS} games')
     stats = ScoreStats()
     for i, (game_id, reader) in enumerate(ds.game_iter(shuffle=True)):
-        print(f'Processing {game_id}')
+        # print(f'Processing {game_id}')
         benson_length = 0
         game_length = 0
 
