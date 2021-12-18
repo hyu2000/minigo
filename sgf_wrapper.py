@@ -253,8 +253,8 @@ class SGFReader(object):
             i += 1
         return i
 
-    def last_pos(self, ignore_final_pass=False) -> go.Position:
-        """ last pos, based on iter_pwcs()
+    def last_pos(self, up_to=-1, ignore_final_pass=False) -> go.Position:
+        """ last pos, or a specific move # (up_to), based on iter_pwcs()
         ignore_final_pass: when a game ended with single or two passes, return the position before that
         """
         komi = self.komi()
@@ -263,6 +263,8 @@ class SGFReader(object):
         current_node = self.root_node
         i = 0
         while pos is not None and current_node is not None:
+            if 0 <= up_to == i:
+                return pos
             try:
                 pos = handle_node(pos, current_node)
                 if current_node.next is not None:

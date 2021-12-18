@@ -156,8 +156,10 @@ class TestLibertyTracker(test_utils.MinigoUnitTest):
         fname = '2-61758327600.sgf'     # here dead stone removal really helps score (still W+)
         fpath = f'{myconf.EXP_HOME}/selfplay17.300/sgf/full/{fname}'
         fpath = f'{myconf.EXP_HOME}/endgame29/sgf/full/2015-01-07T01:56:00.051Z_ho6o2gojvb9g-8369170389.sgf'  # Tromp -7 Benson: 4
+        # at move 74, game is already set
+        fpath = f'{myconf.EXP_HOME}/endgame31_1_benson.labelled.600/sgf/full/2015-01-07T02:04:51.978Z_oqi051ul4urq-40841835255.sgf'
         reader = SGFReader.from_file_compatible(fpath)
-        pos = reader.last_pos(ignore_final_pass=True)
+        pos = reader.last_pos(up_to=74, ignore_final_pass=True)
         board = pos.board
 
         for color in (go.BLACK, go.WHITE):
@@ -176,7 +178,7 @@ class TestLibertyTracker(test_utils.MinigoUnitTest):
                     len(region.stones), num_opp_stones))
         score_tromp = pos.score_tromp()
         benson_detail = pos.score_benson()
-        print('Score: Tromp=%.1f, Benson=%.1f' % (score_tromp, benson_detail.score))
+        print('Score: Tromp=%.1f, Benson=%s' % (score_tromp, benson_detail))
 
     def test_benson_top50(self):
         """ just curious what UL chains looks like for Top50

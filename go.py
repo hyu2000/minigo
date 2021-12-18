@@ -719,7 +719,7 @@ class Position():
         # see if we know the winner regardless of unsettled area
         num_unsettled = N * N - sum(area_passalive)
         advantage = area_passalive[0] - area_passalive[1] - self.komi
-        game_over = abs(advantage) > 2 * num_unsettled
+        game_over = abs(advantage) > num_unsettled
 
         # everything else, use Tromp scoring
         score = self._score_board(working_board)
