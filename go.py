@@ -390,6 +390,7 @@ class BensonAnalyzer:
         """ find pass-alive chains for color, using Benson's algorithm.
 
         Note we use regions returned for scoring purposes. They need to be what Benson's original algo specifies.
+        regions are mainly black-enclosed regions, but could be a big neighboring white region (side-by-side)
         """
         chains_current = set(idx for idx, chain in self.lib_tracker.groups.items() if chain.color == self.color_bound)
         regions_current = [r for r in self.regions.values()]
@@ -719,7 +720,7 @@ class Position():
         # see if we know the winner regardless of unsettled area
         num_unsettled = N * N - sum(area_passalive)
         advantage = area_passalive[0] - area_passalive[1] - self.komi
-        game_over = abs(advantage) > num_unsettled
+        game_over = abs(advantage) > num_unsettled or num_unsettled == 0
 
         # everything else, use Tromp scoring
         score = self._score_board(working_board)
