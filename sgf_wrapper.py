@@ -263,7 +263,7 @@ class SGFReader(object):
         current_node = self.root_node
         i = 0
         while pos is not None and current_node is not None:
-            if 0 <= up_to == i:
+            if 0 <= up_to and pos.n == up_to:
                 return pos
             try:
                 pos = handle_node(pos, current_node)

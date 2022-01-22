@@ -138,6 +138,7 @@ def play(network, init_position=None, init_root=None):
             break
         benson_score_details = player.root.position.score_benson()
         if benson_score_details.final:  # end the game when score is final
+            # logging.info('ending game as Benson score is final')
             player.set_result(np.sign(benson_score_details.score), was_resign=False)
             break
 
