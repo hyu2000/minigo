@@ -432,6 +432,11 @@ class BensonAnalyzer:
 
 
 class BensonScoreDetail(namedtuple('BensonScoreDetail', ['score', 'final', 'black_area', 'white_area'])):
+    """ This counts unconditional live areas correctly; for everything else, it resorts to Tromp scoring.
+
+    Note: when final=True, we are sure of the winner, but score might not be exact, since the game may not
+    have finished (but won't affect final winner). score sign should be correct.
+    """
     pass
 
 
