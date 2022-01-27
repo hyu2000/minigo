@@ -115,12 +115,13 @@ def probe_along_sgf(bot: BotAnalyzer, sgf_fname: str):
 
 
 def run_game():
-    model_id = 'model13_epoch2'
+    model_id = 'model1_epoch2'
     logging.info('loading %s', model_id)
     dnn = DualNetwork(f'{myconf.EXP_HOME}/checkpoints/{model_id}.h5')
     player = BotAnalyzer(dnn)
     # probe_along_game(player, BEST_C2_GAME, 1.0)
     sgf_fname = '/Users/hyu/PycharmProjects/dlgo/5x5/logs/selfplay7-sgfs/0-1633047668.sgf'
+    sgf_fname = '/Users/hyu/PycharmProjects/dlgo/9x9/games-sample/871010.sgf'
     logging.info('Reviewing %s', sgf_fname)
     probe_along_sgf(player, sgf_fname)
 
