@@ -33,7 +33,8 @@ P = 8
 
 
 def make_onehot(feature, planes: int):
-    """ onehot_features[:,:,i] = 1 iff a point has i+1 liberty """
+    """ onehot_features[:,:,i] = 1 iff a point has i+1 liberty; the last plane = 1 if a point has liberty >=i+1
+    """
     onehot_features = np.zeros(feature.shape + (planes,), dtype=np.uint8)
     capped = np.minimum(feature, planes)
     onehot_index_offsets = np.arange(0, utils.product(
@@ -56,7 +57,8 @@ def planes(num_planes):
 
 # TODO(tommadams): add a generic stone_features for all N <= 8
 @planes(16)
-def stone_features(position):
+def stone_features(position: go.Position):
+    """ AGZ: 8 binary feature planes each for black / white: latest 8 board positions """
     # a bit easier to calculate it with axis 0 being the 16 board states,
     # and then roll axis 0 to the end.
     features = np.zeros([16, go.N, go.N], dtype=np.uint8)
@@ -134,6 +136,16 @@ def recent_move_feature(position):
     return onehot_features
 
 
+@planes(3)
+def recent_move_feature3(position):
+    onehot_features = np.zeros([go.N, go.N, 3], dtype=np.uint8)
+    for i, player_move in enumerate(reversed(position.recent[-P:])):
+        _, move = player_move  # unpack the info from position.recent
+        if move is not None:
+            onehot_features[move[0], move[1], i] = 1
+    return onehot_features
+
+
 @planes(P)
 def liberty_feature(position):
     return make_onehot(position.get_liberties(), P)
@@ -146,7 +158,8 @@ def liberty_feature3(position: go.Position):
 
 
 @planes(3)
-def few_liberties_feature(position):
+def few_liberties_feature(position: go.Position):
+    """ indicates where our stones in danger, see tests """
     feature = position.get_liberties()
     onehot_features = np.zeros(feature.shape + (3,), dtype=np.uint8)
     onehot_index_offsets = np.arange(0, utils.product(
@@ -159,6 +172,9 @@ def few_liberties_feature(position):
 
 @planes(1)
 def would_capture_feature(position):
+    """ binary feature: 1 if playing there results in capturing of enemy stones
+    Equivalently, the empty spot near enemy group of liberty 1
+    """
     features = np.zeros([go.N, go.N, 1], dtype=np.uint8)
     for g in position.lib_tracker.groups.values():
         if g.color == position.to_play:
@@ -204,6 +220,17 @@ DLGO_FEATURES = [
     color_to_play_feature
 ]
 DLGO_FEATURES_PLANES = sum(f.planes for f in DLGO_FEATURES)
+
+
+""" redux: based on DEFAULT_FEATURES """
+REDUX_FEATURES = [
+    stone_color_feature,
+    color_to_play_feature,
+    liberty_feature3,
+    recent_move_feature3,
+    would_capture_feature,
+]
+REDUX_FEATURES_PLANES = sum(f.planes for f in REDUX_FEATURES)
 
 
 def extract_features(position, features):

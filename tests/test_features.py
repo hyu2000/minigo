@@ -178,3 +178,11 @@ class TestFeatureExtraction(test_utils.MinigoUnitTest):
         self.assertEqualNPArray([0], f[0, 0])
         # move at (0, 7) would capture 3 stones
         self.assertEqualNPArray([1], f[0, 7])
+
+
+class TestOverall(test_utils.MinigoUnitTest):
+    def test_redux_features(self):
+        feat_desc = features.REDUX_FEATURES
+        print(features.DLGO_FEATURES_PLANES, features.REDUX_FEATURES_PLANES)
+        f = features.extract_features(TEST_POSITION, feat_desc)
+        print(f.shape)
