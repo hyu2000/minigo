@@ -21,7 +21,7 @@ FLAGS = flags.FLAGS
 
 
 def check_game_processed(sgf_dir: str, base_game_id: str) -> bool:
-    """ check game_id is already processed
+    """ check game_id is already processed (glob is slow!)
     """
     if glob.glob(f'{sgf_dir}/full/{base_game_id}-*.sgf'):
         logging.info(f'Already processed, skipping {base_game_id} ...')
@@ -64,8 +64,8 @@ def play_endgames():
     for game_id, reader in game_iter:
         # this might only work in top50, where game_id is always 'go9/2015-*.sgf'
         base_game_id = os.path.splitext(os.path.basename(game_id))[0]
-        if check_game_processed(FLAGS.sgf_dir, base_game_id):
-            continue
+        # if check_game_processed(FLAGS.sgf_dir, base_game_id):
+        #     continue
 
         init_pos = reader.last_pos(ignore_final_pass=True)
 

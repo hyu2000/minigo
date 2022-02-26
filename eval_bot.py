@@ -1,7 +1,8 @@
-""" measure strength of a bot / DNN, to track training progress
+""" This runs DNN on board positions from expert games, to measure agreement with expert moves / game outcome.
+    When bot is below human professional level, this is a surrogate for DNN strength.
 
-    It asks DNN to predict winner of a series of board positions from expert games. The assumption is that
-    if bot is below human professional level, this measures value-net accuracy.
+    - policy net: topN accuracy
+    - vnet: only look at later stage of a game (openings are hard to judge)
 """
 
 from typing import List
@@ -18,9 +19,6 @@ import go
 import k2net as dual_net
 from tar_dataset import GameStore
 
-from tensorflow.python.compiler.mlcompute import mlcompute
-mlcompute.set_mlc_device(device_name='cpu')  # Available options are 'cpu', 'gpu', and ‘any'.
-
 # evaluate every 5 moves
 START_POS = 1
 POS_STEP = 5
@@ -33,12 +31,16 @@ class ScoreStats(object):
         self.num_correct = np.zeros(MAX_NUM_STEPS)
         self.max_steps = 0
 
-    def add(self, win_loss, scores: np.array):
+    def add(self, win_loss, scores: np.array, target_moves: List, move_probs: np.ndarray):
+        # value prediction stats
         num_steps = len(scores)
         scores = np.sign(scores)
         self.num_games[:num_steps] += np.ones(len(scores))
         self.num_correct[:num_steps] += scores == win_loss
         self.max_steps = max(self.max_steps, len(scores))
+
+        # policy stats
+        assert len(target_moves) == len(move_probs)
 
     def summary(self):
         df = pd.DataFrame({
@@ -69,17 +71,19 @@ def run_game(dnn: DualNetwork, game_id, reader: SGFReader, stats: ScoreStats):
         return
 
     pos_to_eval = []  # type: List[go.Position]
+    target_moves = []  # type: List[tuple]
     for pwc in reader.iter_pwcs():
         position = pwc.position
         if position.n % POS_STEP == START_POS:
             pos_to_eval.append(position)
+            target_moves.append(pwc.next_move)
 
     if len(pos_to_eval) == 0:
         print(f'empty pos for {game_id}')
         return
 
-    _, vnet_scores = dnn.run_many(pos_to_eval)
-    stats.add(win_loss, vnet_scores)
+    move_probs, vnet_scores = dnn.run_many(pos_to_eval)
+    stats.add(win_loss, vnet_scores, target_moves, move_probs)
 
 
 def run_games():

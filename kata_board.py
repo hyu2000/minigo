@@ -499,8 +499,9 @@ class Board:
                 nextTailTarget = self.rebuildChainHelper(head, nextTailTarget, adj, pla)
         return nextTailTarget
 
-    # Add a stone, assumes that the location is empty without checking
     def add_unsafe(self, pla, loc):
+        """ Add a stone, assumes that the location is empty without checking
+        """
         opp = Board.get_opp(pla)
 
         # Put the stone down

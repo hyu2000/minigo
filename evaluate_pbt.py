@@ -21,6 +21,8 @@ from typing import Tuple
 
 import numpy as np
 import pandas as pd
+
+import utils
 from sgf_wrapper import SGFReader
 import myconf
 
@@ -119,8 +121,10 @@ def start_games(black_id, white_id, num_games: int) -> subprocess.Popen:
 
 
 def main_two_sided_eval():
-    model1, model2, num_games = 'model13_epoch1.h5', 'model16_epoch1.h5', 8
-    raw_game_count, _ = scan_results(f'{myconf.EXP_HOME}/eval_bots/sgfs')
+    model1, model2, num_games = 'model4_epoch3.h5', 'model17_epoch6.h5', 8
+    sgfs_dir = f'{myconf.EXP_HOME}/eval_bots/sgfs'
+    utils.ensure_dir_exists(sgfs_dir)
+    raw_game_count, _ = scan_results(sgfs_dir)
 
     procs = []
     for black, white in [(model1, model2), (model2, model1)]:
