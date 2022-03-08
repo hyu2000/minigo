@@ -3,6 +3,10 @@ import subprocess
 import json
 import attr
 
+import coords
+import sgf_wrapper
+from go import PlayerMove
+
 ANALYSIS_CONFIG = '/Users/hyu/go/analysis_example.cfg'
 MODEL = '/Users/hyu/go/models/kata1-b6c96-s175395328-d26788732.txt.elo10k.gz'
 cmdline = f'/opt/homebrew/bin/katago analysis -config {ANALYSIS_CONFIG} -model {MODEL}'
@@ -151,6 +155,7 @@ def test_selfplay():
     proc, stdin, stdout = start_engine()
 
     moves = [["B", "C2"]]
+    comments = ['init']
     for i in range(1, 25):
         arequest = ARequest(moves, [len(moves)])
         request1 = json.dumps(attr.asdict(arequest))
@@ -165,8 +170,19 @@ def test_selfplay():
         assert move1.order == 0
         rinfo = RootInfo.from_dict(resp1.rootInfo)
         next_move = [rinfo.currentPlayer, move1.move]
-        print(f"move {i}: {next_move} {move1.winrate} {move1.scoreLead}")
+        comment = f"move {i}: {next_move} %.2f %.2f" % (move1.winrate, move1.scoreLead)
+        print(comment)
         moves.append(next_move)
+        comments.append(comment)
 
     remainder = proc.communicate()[0].decode('utf-8')
     print('remainder:\n', remainder)
+
+    player_moves = (PlayerMove(1 if color == 'B' else -1, coords.from_gtp(pos)) for color, pos in moves)
+    sgf_str = sgf_wrapper.make_sgf(player_moves, 'UNK', komi=0.5,
+                                    white_name='kata',
+                                    black_name='kata',
+                                    comments=comments)
+    with open(f'/Users/hyu/Downloads/test_kata.sgf', 'w') as f:
+        f.write(sgf_str)
+
