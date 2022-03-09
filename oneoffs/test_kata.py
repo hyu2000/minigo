@@ -156,6 +156,7 @@ def test_simple_parse():
 
 def agg_move_info(move_infos: List[Dict]):
     """ how is order determined? not by visits, lcb, winrate, """
+    # TODO
     # vis_counts = [move.get('visits') for move in move_infos]
     good_moves = [move for move in move_infos if move.get('visits') > MIN_VISITS and move.get('winrate') > 0.5]
     return len(good_moves)
@@ -201,5 +202,64 @@ def test_selfplay():
         f.write(sgf_str)
 
 
+def assemble_comment(actual_move, resp1: AResponse) -> str:
+    rinfo = RootInfo.from_dict(resp1.rootInfo)
+    # TODO win-path by current player
+    good_moves = [move for move in resp1.moveInfos if move.get('visits') > MIN_VISITS and move.get('winrate') > 0.5]
+    s = '%.2f %.2f %d' % (rinfo.winrate, rinfo.scoreLead, len(good_moves))
+
+    lines = [s]
+    for move_info in resp1.moveInfos[:10]:
+        minfo = MoveInfo.from_dict(move_info)
+        is_actual_move = '*' if minfo.move == actual_move else ' '
+        s = '%s%d %.2f %.2f %d' % (is_actual_move, minfo.order, minfo.winrate, minfo.scoreLead, minfo.visits)
+        lines.append(s)
+
+    return '\n'.join(lines)
+
+
 def test_analyze_game():
     """ analyze & annotate existing game """
+    sgf_fname = '/Users/hyu/Downloads/kata1sgfs/kata.b60c320train.sgf'
+    reader = sgf_wrapper.SGFReader.from_file_compatible(sgf_fname)
+
+    moves = []
+    player_moves = []  # type: List[PlayerMove]
+    for pwc in reader.iter_pwcs():
+        player_moves.append(PlayerMove(pwc.position.to_play, pwc.next_move))
+        move = [go.color_str(pwc.position.to_play)[0], coords.to_gtp(pwc.next_move)]
+        moves.append(move)
+
+    proc, stdin, stdout = start_engine()
+
+    # moves = moves[:4]  # test only
+    turns_to_analyze = list(range(len(moves)))
+    arequest = ARequest(moves, turns_to_analyze, komi=reader.komi())
+
+    request1 = json.dumps(attr.asdict(arequest))
+    # ask engine
+    stdin.write(f'{request1}\n')
+
+    # process multiple responses
+    comments = []
+    for i, move in enumerate(moves):
+        output = stdout.readline()
+        jdict = json.loads(output)
+        resp1 = AResponse(**jdict)
+        assert resp1.turnNumber == i
+
+        # assemble debug info in comment
+        comment = assemble_comment(move[1], resp1)
+        comments.append(comment)
+        print(i, len(resp1.moveInfos))
+
+    remainder = proc.communicate()[0].decode('utf-8')
+    print('remainder:\n', remainder)
+
+    sgf_str = sgf_wrapper.make_sgf(player_moves, reader.result_str(), komi=arequest.komi,
+                                   white_name=reader.white_name(),
+                                   black_name=reader.black_name(),
+                                   comments=comments)
+    with open(f'/Users/hyu/Downloads/test_annotate.sgf', 'w') as f:
+        f.write(sgf_str)
+
