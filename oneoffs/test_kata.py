@@ -1,9 +1,12 @@
 import io
 import subprocess
 import json
+from typing import List, Dict
+
 import attr
 
 import coords
+import go
 import sgf_wrapper
 from go import PlayerMove
 
@@ -11,15 +14,17 @@ ANALYSIS_CONFIG = '/Users/hyu/go/analysis_example.cfg'
 MODEL = '/Users/hyu/go/models/kata1-b6c96-s175395328-d26788732.txt.elo10k.gz'
 cmdline = f'/opt/homebrew/bin/katago analysis -config {ANALYSIS_CONFIG} -model {MODEL}'
 
+MIN_VISITS = 10
+
 
 @attr.s
 class ARequest(object):
     moves = attr.ib(type=list)
     analyzeTurns = attr.ib(type=list)
     id = attr.ib(type=str, default='foo')
-    boardXSize = attr.ib(type=int, default=5)
-    boardYSize = attr.ib(type=int, default=5)
-    komi = attr.ib(type=float, default=0.5)
+    boardXSize = attr.ib(type=int, default=go.N)
+    boardYSize = attr.ib(type=int, default=go.N)
+    komi = attr.ib(type=float, default=5.5)
 
     rules = attr.ib(type=str, default='chinese')
 
@@ -64,7 +69,6 @@ class MoveInfo(object):
         """ ignore attributes we don't care """
         return MoveInfo(move=d['move'], order=d['order'], visits=d['visits'], winrate=d['winrate'],
                         pv=d['pv'], prior=d['prior'], scoreLead=d['scoreLead'])
-
 
 
 def start_engine():
@@ -150,14 +154,22 @@ def test_simple_parse():
     print(remainder)
 
 
+def agg_move_info(move_infos: List[Dict]):
+    """ how is order determined? not by visits, lcb, winrate, """
+    # vis_counts = [move.get('visits') for move in move_infos]
+    good_moves = [move for move in move_infos if move.get('visits') > MIN_VISITS and move.get('winrate') > 0.5]
+    return len(good_moves)
+
+
 def test_selfplay():
     """ play a game using top move suggested by Kata """
     proc, stdin, stdout = start_engine()
 
-    moves = [["B", "C2"]]
+    moves = [["B", "C4"]]
     comments = ['init']
-    for i in range(1, 25):
-        arequest = ARequest(moves, [len(moves)])
+    arequest = ARequest(moves, [len(moves)])
+    for i in range(1, 20):
+        arequest.analyzeTurns = [len(moves)]
         request1 = json.dumps(attr.asdict(arequest))
 
         # ask engine
@@ -168,21 +180,26 @@ def test_selfplay():
         resp1 = AResponse(**jdict)
         move1 = MoveInfo.from_dict(resp1.moveInfos[0])
         assert move1.order == 0
+        winning_moves = agg_move_info(resp1.moveInfos)
         rinfo = RootInfo.from_dict(resp1.rootInfo)
         next_move = [rinfo.currentPlayer, move1.move]
-        comment = f"move {i}: {next_move} %.2f %.2f" % (move1.winrate, move1.scoreLead)
+        comment = f"move {i}: {next_move} %.2f %.2f root: %.2f %.2f %d" % (
+            move1.winrate, move1.scoreLead, rinfo.winrate, rinfo.scoreLead, winning_moves)
         print(comment)
-        moves.append(next_move)
+        arequest.moves.append(next_move)
         comments.append(comment)
 
     remainder = proc.communicate()[0].decode('utf-8')
     print('remainder:\n', remainder)
 
     player_moves = (PlayerMove(1 if color == 'B' else -1, coords.from_gtp(pos)) for color, pos in moves)
-    sgf_str = sgf_wrapper.make_sgf(player_moves, 'UNK', komi=0.5,
+    sgf_str = sgf_wrapper.make_sgf(player_moves, 'UNK', komi=arequest.komi,
                                     white_name='kata',
                                     black_name='kata',
                                     comments=comments)
     with open(f'/Users/hyu/Downloads/test_kata.sgf', 'w') as f:
         f.write(sgf_str)
 
+
+def test_analyze_game():
+    """ analyze & annotate existing game """
