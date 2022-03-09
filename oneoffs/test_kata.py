@@ -154,11 +154,13 @@ def test_simple_parse():
     print(remainder)
 
 
-def agg_move_info(move_infos: List[Dict]):
+def count_good_moves(rinfo: RootInfo, move_infos: List[Dict]) -> int:
     """ how is order determined? not by visits, lcb, winrate, """
-    # TODO
     # vis_counts = [move.get('visits') for move in move_infos]
-    good_moves = [move for move in move_infos if move.get('visits') > MIN_VISITS and move.get('winrate') > 0.5]
+    if rinfo.currentPlayer == 'B':
+        good_moves = [move for move in move_infos if move.get('visits') > MIN_VISITS and move.get('winrate') > 0.5]
+    else:
+        good_moves = [move for move in move_infos if move.get('visits') > MIN_VISITS and move.get('winrate') < 0.5]
     return len(good_moves)
 
 
@@ -181,8 +183,8 @@ def test_selfplay():
         resp1 = AResponse(**jdict)
         move1 = MoveInfo.from_dict(resp1.moveInfos[0])
         assert move1.order == 0
-        winning_moves = agg_move_info(resp1.moveInfos)
         rinfo = RootInfo.from_dict(resp1.rootInfo)
+        winning_moves = count_good_moves(rinfo, resp1.moveInfos)
         next_move = [rinfo.currentPlayer, move1.move]
         comment = f"move {i}: {next_move} %.2f %.2f root: %.2f %.2f %d" % (
             move1.winrate, move1.scoreLead, rinfo.winrate, rinfo.scoreLead, winning_moves)
@@ -204,18 +206,28 @@ def test_selfplay():
 
 def assemble_comment(actual_move, resp1: AResponse) -> str:
     rinfo = RootInfo.from_dict(resp1.rootInfo)
-    # TODO win-path by current player
-    good_moves = [move for move in resp1.moveInfos if move.get('visits') > MIN_VISITS and move.get('winrate') > 0.5]
-    s = '%.2f %.2f %d' % (rinfo.winrate, rinfo.scoreLead, len(good_moves))
+    good_moves = count_good_moves(rinfo, resp1.moveInfos)
+    s = '%.2f %.2f %d' % (rinfo.winrate, rinfo.scoreLead, good_moves)
 
     lines = [s]
     for move_info in resp1.moveInfos[:10]:
         minfo = MoveInfo.from_dict(move_info)
         is_actual_move = '*' if minfo.move == actual_move else ' '
-        s = '%s%d %.2f %.2f %d' % (is_actual_move, minfo.order, minfo.winrate, minfo.scoreLead, minfo.visits)
+        s = f'%s%d {minfo.move} %.2f %.2f %d' % (is_actual_move, minfo.order, minfo.winrate, minfo.scoreLead, minfo.visits)
         lines.append(s)
 
     return '\n'.join(lines)
+
+
+def read_multi_responses(stdout, nmoves):
+    """ process multiple responses (which could arrive out-of-order), sort by turns """
+    responses = []
+    for i in range(nmoves):
+        output = stdout.readline()
+        jdict = json.loads(output)
+        responses.append(AResponse(**jdict))
+
+    return sorted(responses, key=lambda x: x.turnNumber)
 
 
 def test_analyze_game():
@@ -232,7 +244,7 @@ def test_analyze_game():
 
     proc, stdin, stdout = start_engine()
 
-    # moves = moves[:4]  # test only
+    # moves = moves[:5]  # test only
     turns_to_analyze = list(range(len(moves)))
     arequest = ARequest(moves, turns_to_analyze, komi=reader.komi())
 
@@ -240,12 +252,9 @@ def test_analyze_game():
     # ask engine
     stdin.write(f'{request1}\n')
 
-    # process multiple responses
+    responses = read_multi_responses(stdout, len(moves))
     comments = []
-    for i, move in enumerate(moves):
-        output = stdout.readline()
-        jdict = json.loads(output)
-        resp1 = AResponse(**jdict)
+    for i, (move, resp1) in enumerate(zip(moves, responses)):
         assert resp1.turnNumber == i
 
         # assemble debug info in comment
