@@ -209,6 +209,10 @@ def test_selfplay():
         f.write(sgf_str)
 
 
+def _format_pv(move_info: MoveInfo) -> str:
+    return ' '.join(move_info.pv).replace('pass', 'x')
+
+
 def assemble_comment(actual_move, resp1: AResponse) -> str:
     rinfo = RootInfo.from_dict(resp1.rootInfo)
     good_moves = count_good_moves(rinfo, resp1.moveInfos)
@@ -219,7 +223,7 @@ def assemble_comment(actual_move, resp1: AResponse) -> str:
         minfo = MoveInfo.from_dict(move_info)
         is_actual_move = minfo.move == actual_move
         marker = '*' if is_actual_move else ' '
-        pv = minfo.pv if is_actual_move or minfo.order == 0 else ''
+        pv = _format_pv(minfo) if is_actual_move or minfo.order == 0 else ''
         s = f'{marker}{minfo.order} {minfo.move} %.2f %.2f %d {pv}' % (minfo.winrate, minfo.scoreLead, minfo.visits)
         lines.append(s)
 
@@ -232,6 +236,9 @@ def read_multi_responses(stdout, nmoves):
     for i in range(nmoves):
         output = stdout.readline()
         jdict = json.loads(output)
+        if 'error' in jdict:
+            print(f'Found error in {i}: %s', jdict)
+            break
         responses.append(AResponse(**jdict))
 
     return sorted(responses, key=lambda x: x.turnNumber)
