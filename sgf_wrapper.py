@@ -35,7 +35,7 @@ from absl import logging
 
 
 SGF_TEMPLATE = '''(;GM[1]FF[4]CA[UTF-8]AP[Minigo_sgfgenerator]RU[{ruleset}]
-SZ[{boardsize}]KM[{komi}]PW[{white_name}]PB[{black_name}]RE[{result}]
+SZ[{boardsize}]KM[{komi}]PW[{white_name}]PB[{black_name}]RE[{result}]C[{game_comment}]
 {game_moves})'''
 
 PROGRAM_IDENTIFIER = "Minigo"
@@ -62,6 +62,7 @@ def make_sgf(
     komi=7.5,
     white_name=PROGRAM_IDENTIFIER,
     black_name=PROGRAM_IDENTIFIER,
+    game_comment='',
     comments=[]
 ):
     """Turn a game into SGF.
@@ -71,6 +72,7 @@ def make_sgf(
     Args:
         move_history: iterable of PlayerMoves
         result_string: "B+R", "W+0.5", etc.
+        game_comment: comment for the entire game
         comments: iterable of string/None. Will be zipped with move_history.
     """
     boardsize = go.N

@@ -12,7 +12,8 @@ from go import PlayerMove
 
 ANALYSIS_CONFIG = '/Users/hyu/go/analysis_example.cfg'
 MODELS_DIR = '/Users/hyu/go/models'
-MODEL_B6 = '/kata1-b6c96-s175395328-d26788732.txt.elo10k.gz'
+MODEL_B6_10k = 'kata1-b6c96-s175395328-d26788732.txt.elo10k.gz'
+MODEL_B6_5k  = 'kata1-b6c96-s24455424-d3879081.txt.elo5k.gz'
 MODEL_B40 = 'kata1-b40c256-s11101799168-d2715431527.bin.gz'
 MODEL_B20 = 'g170e-b20c256x2-s5303129600-d1228401921.bin.gz' \
             ''
@@ -75,7 +76,7 @@ class MoveInfo(object):
                         pv=d['pv'], prior=d['prior'], scoreLead=d['scoreLead'])
 
 
-def start_engine(model=MODEL_B6):
+def start_engine(model=MODEL_B6_10k):
     cmdline = CMDLINE_TEMPLATE.format(config=ANALYSIS_CONFIG, model=f'{MODELS_DIR}/{model}')
     proc = subprocess.Popen(
         cmdline.split(),
@@ -210,21 +211,24 @@ def test_selfplay():
 
 
 def _format_pv(move_info: MoveInfo) -> str:
-    return ' '.join(move_info.pv).replace('pass', 'x')
+    moves = move_info.pv[1:10]
+    return ' '.join(moves).replace('pass', 'x')
 
 
 def assemble_comment(actual_move, resp1: AResponse) -> str:
     rinfo = RootInfo.from_dict(resp1.rootInfo)
     good_moves = count_good_moves(rinfo, resp1.moveInfos)
-    s = '%.2f %.2f path=%d' % (rinfo.winrate, rinfo.scoreLead, good_moves)
+    s = f'%.2f %.2f {rinfo.visits} path=%d' % (rinfo.winrate, rinfo.scoreLead, good_moves)
 
     lines = [s]
+    lines.append('move win% lead visits (%) prior pv')
     for move_info in resp1.moveInfos[:10]:
         minfo = MoveInfo.from_dict(move_info)
         is_actual_move = minfo.move == actual_move
         marker = '*' if is_actual_move else ' '
-        pv = _format_pv(minfo) if is_actual_move or minfo.order == 0 else ''
-        s = f'{marker}{minfo.order} {minfo.move} %.2f %.2f %d {pv}' % (minfo.winrate, minfo.scoreLead, minfo.visits)
+        pv = _format_pv(minfo)  #if is_actual_move or minfo.order == 0 else ''
+        s = f'{marker}{minfo.order} {minfo.move} %.2f %.2f %d (%.2f) %.2f {pv}' % (
+            minfo.winrate, minfo.scoreLead, minfo.visits, minfo.visits / rinfo.visits, minfo.prior)
         lines.append(s)
 
     return '\n'.join(lines)
@@ -246,8 +250,9 @@ def read_multi_responses(stdout, nmoves):
 
 def test_analyze_game():
     """ analyze & annotate existing game """
-    sgf_fname = '/Users/hyu/Downloads/kata1sgfs/kata.b60c320train.sgf'
-    model = MODEL_B6
+    # sgf_fname = '/Users/hyu/Downloads/kata1sgfs/katatrain.b60c320.sgf'
+    sgf_fname = '/Users/hyu/Downloads/optimalC2.5x5.sgf'
+    model = MODEL_B20
     reader = sgf_wrapper.SGFReader.from_file_compatible(sgf_fname)
 
     moves = []
@@ -280,10 +285,10 @@ def test_analyze_game():
     remainder = proc.communicate()[0].decode('utf-8')
     print('remainder:\n', remainder)
 
-    comments[0] = 'analyzer: %s\n%s' % (model, comments[0])
     sgf_str = sgf_wrapper.make_sgf(player_moves, reader.result_str(), komi=arequest.komi,
                                    white_name=reader.white_name(),
                                    black_name=reader.black_name(),
+                                   game_comment=f'analyzed by: {model}',
                                    comments=comments)
     with open(f'/Users/hyu/Downloads/test_annotate.sgf', 'w') as f:
         f.write(sgf_str)
