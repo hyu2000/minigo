@@ -172,12 +172,14 @@ def count_good_moves(rinfo: RootInfo, move_infos: List[Dict]) -> int:
 
 def test_selfplay():
     """ play a game using top move suggested by Kata """
-    proc, stdin, stdout = start_engine()
+    model = MODEL_B6_10k
+    proc, stdin, stdout = start_engine(model)
 
-    moves = [["B", "C4"]]
-    comments = ['init']
-    arequest = ARequest(moves, [len(moves)])
-    for i in range(1, 20):
+    moves = ['C2', 'C3', 'D3', 'D2']
+    moves = [['B' if i % 2 == 0 else 'W', move] for i, move in enumerate(moves)]
+    comments = ['init' for x in moves]
+    arequest = ARequest(moves, [len(moves)], komi=0)
+    for i in range(1, 30):
         arequest.analyzeTurns = [len(moves)]
         request1 = json.dumps(attr.asdict(arequest))
 
@@ -190,10 +192,8 @@ def test_selfplay():
         move1 = MoveInfo.from_dict(resp1.moveInfos[0])
         assert move1.order == 0
         rinfo = RootInfo.from_dict(resp1.rootInfo)
-        winning_moves = count_good_moves(rinfo, resp1.moveInfos)
         next_move = [rinfo.currentPlayer, move1.move]
-        comment = f"move {i}: {next_move} %.2f %.2f root: %.2f %.2f %d" % (
-            move1.winrate, move1.scoreLead, rinfo.winrate, rinfo.scoreLead, winning_moves)
+        comment = assemble_comment(move1.move, resp1)
         print(comment)
         arequest.moves.append(next_move)
         comments.append(comment)
@@ -202,11 +202,12 @@ def test_selfplay():
     print('remainder:\n', remainder)
 
     player_moves = (PlayerMove(1 if color == 'B' else -1, coords.from_gtp(pos)) for color, pos in moves)
+    # TODO RE should be valid, otherwise test_analyze cannot read it in. Use Tromp score?
     sgf_str = sgf_wrapper.make_sgf(player_moves, 'UNK', komi=arequest.komi,
-                                    white_name='kata',
-                                    black_name='kata',
+                                    white_name=model,
+                                    black_name=model,
                                     comments=comments)
-    with open(f'/Users/hyu/Downloads/test_kata.sgf', 'w') as f:
+    with open(f'/Users/hyu/Downloads/test_selfplay.sgf', 'w') as f:
         f.write(sgf_str)
 
 
