@@ -62,7 +62,7 @@ def make_sgf(
     komi=7.5,
     white_name=PROGRAM_IDENTIFIER,
     black_name=PROGRAM_IDENTIFIER,
-    game_comment='',
+    game_comment=' ',
     comments=[]
 ):
     """Turn a game into SGF.
@@ -75,6 +75,7 @@ def make_sgf(
         game_comment: comment for the entire game
         comments: iterable of string/None. Will be zipped with move_history.
     """
+    assert len(game_comment) > 0   # wgo won't show *any* comment if it's empty. ' ' will do
     boardsize = go.N
     game_moves = ''.join(translate_sgf_move(*z)
                          for z in itertools.zip_longest(move_history, comments))
