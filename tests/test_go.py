@@ -529,6 +529,40 @@ class TestPosition(test_utils.MinigoUnitTest):
         )
         self.assertEqualPositions(ko_delayed_retake, expected_position)
 
+    def test_super_ko(self):
+        """ round-robin ko *is* allowed in current ko implementation
+
+        This could lead to infinite loop, but one side can decide to lock in the result when the other passes.
+        """
+        start_board = test_utils.load_board('''
+            .OX...OX.
+            OX.....OX
+        ''' + EMPTY_ROW * 7)
+        start_position = Position(
+            board=start_board,
+            n=0,
+            komi=6.5,
+            caps=(1, 2),
+            ko=None,
+            recent=tuple(),
+            to_play=BLACK,
+        )
+        position1 = start_position.play_move(coords.from_gtp('A9'))
+        assert not position1.is_move_legal(coords.from_gtp('B9'))
+        position2 = position1.play_move(coords.from_gtp('J9'))
+        assert not position2.is_move_legal(coords.from_gtp('H9'))
+        position3 = position2.play_move(coords.from_gtp('pass'))
+
+        position4 = position3.play_move(coords.from_gtp('B9'))
+        position5 = position4.play_move(coords.from_gtp('H9'))
+        print(position5.board)
+        position6 = position5.play_move(coords.from_gtp('pass'))
+        assert (start_board == position6.board).all()
+        assert start_position.to_play == position6.to_play
+
+        # now we can start the cycle over again
+        assert position6.is_move_legal(coords.from_gtp('A9'))
+
     def test_is_game_over(self):
         root = go.Position()
         self.assertFalse(root.is_game_over())
