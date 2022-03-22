@@ -172,10 +172,10 @@ def count_good_moves(rinfo: RootInfo, move_infos: List[Dict]) -> int:
 
 def test_selfplay():
     """ play a game using top move suggested by Kata """
-    model = MODEL_B6_10k
+    model = MODEL_B20
     proc, stdin, stdout = start_engine(model)
 
-    moves = ['C2', 'C3', 'D3', 'D2']
+    moves = ['C2', 'C3', 'D3', 'B3', 'B2']
     moves = [['B' if i % 2 == 0 else 'W', move] for i, move in enumerate(moves)]
     comments = ['init' for x in moves]
     arequest = ARequest(moves, [len(moves)], komi=0)
@@ -194,7 +194,7 @@ def test_selfplay():
         rinfo = RootInfo.from_dict(resp1.rootInfo)
         next_move = [rinfo.currentPlayer, move1.move]
         comment = assemble_comment(move1.move, resp1)
-        print(comment)
+        print(comment[:20])
         arequest.moves.append(next_move)
         comments.append(comment)
 
@@ -251,9 +251,10 @@ def read_multi_responses(stdout, nmoves):
 
 def test_analyze_game():
     """ analyze & annotate existing game """
-    # sgf_fname = '/Users/hyu/Downloads/kata1sgfs/katatrain.b60c320.sgf'
-    sgf_fname = '/Users/hyu/Downloads/optimalC2.5x5.sgf'
-    model = MODEL_B20
+    sgf_fname = '/Users/hyu/Downloads/katago-sgfs/katatrain.b60c320.sgf'
+    # sgf_fname = '/Users/hyu/Downloads/optimalC2.5x5.sgf'
+    # sgf_fname = '/Users/hyu/Downloads/katago-sgfs/5x5/C2C3D3B3.sgf'
+    model = MODEL_B40
     reader = sgf_wrapper.SGFReader.from_file_compatible(sgf_fname)
 
     moves = []

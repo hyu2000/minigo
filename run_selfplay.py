@@ -95,12 +95,16 @@ def main(argv):
 
 
 def main_local(argv):
-    FLAGS.load_file = f'{myconf.MODELS_DIR}/model0.lr=0.02_vw=0.5.h5'
+    FLAGS.load_file = f'{myconf.MODELS_DIR}/model12_epoch1.h5'
     FLAGS.sgf_dir = f'{myconf.SELFPLAY_DIR}/sgf'
+    FLAGS.selfplay_dir = f'{myconf.SELFPLAY_DIR}/train'
+    FLAGS.holdout_dir = f'{myconf.SELFPLAY_DIR}/val'
     FLAGS.num_readouts = 400
     FLAGS.parallel_readouts = 16
+    FLAGS.holdout_pct = 0
     FLAGS.softpick_move_cutoff = 4
-    FLAGS.dirichlet_noise_weight = 0  # 0.05
+    FLAGS.dirichlet_noise_weight = 0.025
+    FLAGS.resign_threshold = -1.0
     play_games(num_games=2)
 
 

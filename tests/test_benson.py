@@ -158,8 +158,9 @@ class TestLibertyTracker(test_utils.MinigoUnitTest):
         fpath = f'{myconf.EXP_HOME}/endgame29/sgf/full/2015-01-07T01:56:00.051Z_ho6o2gojvb9g-8369170389.sgf'  # Tromp -7 Benson: 4
         # at move 74, game is already set
         fpath = f'{myconf.EXP_HOME}/endgame31_1_benson.labelled.600/sgf/full/2015-01-07T02:04:51.978Z_oqi051ul4urq-40841835255.sgf'
+        fpath = f'{myconf.EXP_HOME}/selfplay/sgf/full/1-79782750761.sgf'
         reader = SGFReader.from_file_compatible(fpath)
-        pos = reader.last_pos(up_to=74, ignore_final_pass=True)
+        pos = reader.last_pos(ignore_final_pass=True, up_to=84)
         board = pos.board
 
         for color in (go.BLACK, go.WHITE):

@@ -729,6 +729,9 @@ class Position():
 
         # everything else, use Tromp scoring
         score = self._score_board(working_board)
+        # this should always hold: when game_over, score should always have the right sign as winner
+        # if game_over:
+        #     assert np.sign(advantage) == np.sign(score)
         # if game_over:
         #     print('benson scoring: advantage=%.1f, unsettled area=%d, game over' % (advantage, num_unsettled))
         # if sum(num_removed) > 0:

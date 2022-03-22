@@ -72,7 +72,7 @@ class Ledger:
 
         self._model_ids.add(black_model_id)
         self._model_ids.add(white_model_id)
-        assert len(self._model_ids) == 2
+        # assert len(self._model_ids) == 2
 
     def report(self):
         """ report lists #wins by a model playing as black/white.

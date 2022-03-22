@@ -50,7 +50,7 @@ def play_endgames():
     - check whether the game has already been processed before proceeding
     """
     store = GameStore(data_dir=FLAGS.tar_dir)
-    game_iter = store.game_iter([store.ds_top], filter_game=True, shuffle=True)
+    game_iter = store.game_iter([store.ds_pro], filter_game=True, shuffle=False)  #True)
     # game_iter = TarSubSet(store.ds_top, marked_games()).game_iter()
     # game_iter = SgfDataSet(f'{myconf.EXP_HOME}/selfplay17.300/sgf/full', '1-*.sgf').game_iter()
 
@@ -62,6 +62,8 @@ def play_endgames():
 
     i = 0
     for game_id, reader in game_iter:
+        if reader.result_str() is None:  # skip game w/o RE
+            continue
         # this might only work in top50, where game_id is always 'go9/2015-*.sgf'
         base_game_id = os.path.splitext(os.path.basename(game_id))[0]
         # if check_game_processed(FLAGS.sgf_dir, base_game_id):

@@ -84,7 +84,7 @@ class ScoreStats:
 
 
 def main():
-    selfplay_dir = f'{myconf.EXP_HOME}/endgame25'
+    selfplay_dir = f'{myconf.EXP_HOME}/endgame23'
     ds = SgfDataSet(f'{selfplay_dir}/sgf/full')
     print(f'Sampling {selfplay_dir}  {NUM_GAMES_TO_PROCESS} games')
     stats = ScoreStats()

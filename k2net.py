@@ -12,11 +12,11 @@ import myconf
 
 
 def get_features():
-    return features_lib.DLGO_FEATURES
+    return features_lib.REDUX_FEATURES
 
 
 def get_features_planes():
-    return features_lib.DLGO_FEATURES_PLANES
+    return features_lib.REDUX_FEATURES_PLANES
 
 
 Conv2D = keras.layers.Conv2D
@@ -46,6 +46,22 @@ def residual_module(layer_in, n_filters, kernel_size=(3, 3)):
 
 
 def build_model(input_shape):
+    inputs = keras.Input(shape=input_shape)
+    # add "ones" feature plain
+    x = tf.pad(inputs, [[0, 0], [0, 0], [0, 0], [0, 1]], 'CONSTANT', constant_values=1)
+
+    # focus on depth?
+    for i in range(10):
+        x = residual_module(x, 64, (3, 3))
+
+    features_common = x
+
+    # value head
+
+    # policy head
+
+
+def build_model_v1(input_shape):
     """
     Trainable params: 72k
     2nd round: 125k
