@@ -46,7 +46,7 @@ flags.register_validator('num_readouts', lambda x: x > 0)
 
 flags.DEFINE_integer('num_fast_readouts', 100,
                      'Number of searches to add to the MCTS search tree before playing a move.')
-flags.DEFINE_float('full_readout_prob', 0.25,
+flags.DEFINE_float('full_readout_prob', 1.0,
                    'how often to run full readouts vs fast readouts')
 
 flags.DEFINE_integer('parallel_readouts', 8,

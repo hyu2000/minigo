@@ -17,8 +17,8 @@ def init():
     # needs flags
     global player
     model_id = 'model12_epoch2'
-    dnn = DualNetwork(f'{myconf.EXP_HOME}/checkpoints/{model_id}.h5')
-    # dnn = DualNetwork(f'{myconf.EXP_HOME}/../5x5/checkpoints/model13_epoch2.h5')
+    # dnn = DualNetwork(f'{myconf.EXP_HOME}/checkpoints/{model_id}.h5')
+    dnn = DualNetwork(f'{myconf.EXP_HOME}/models-old/model15_epoch2.h5')
     logging.info('mcts %s #readouts=%d', model_id, flags.FLAGS.num_readouts)
     player = web_player.WebPlayer(dnn)
 
