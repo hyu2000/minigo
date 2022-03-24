@@ -20,8 +20,7 @@ TOTAL_MOVES = BOARD_SIZE_SQUARED + 1
 EXP_HOME = '/Users/hyu/PycharmProjects/dlgo/5x5'
 DATA_DIR = f'{EXP_HOME}/games'
 FEATURES_DIR = f'{EXP_HOME}/features'
-# MODELS_DIR = f'{EXP_HOME}/checkpoints'
-MODELS_DIR = f'{EXP_HOME}/pbt'
+MODELS_DIR = f'{EXP_HOME}/checkpoints'
 SELFPLAY_DIR = f'{EXP_HOME}/selfplay'
 
 

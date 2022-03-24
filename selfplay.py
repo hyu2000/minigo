@@ -129,17 +129,18 @@ def play(network, init_position=None, init_root=None):
         player.play_move(move)
         player.add_move_info(_format_move_info(move, best_move))
         orig_root.uninject_noise()
-        if player.root.is_done():
+        if player.root.position.is_game_over():
             player.set_result(player.root.position.result(), was_resign=False)
-            # pos = player.root.position
-            # tromp_margin = pos.score() + pos.komi
-            # assert not np.isnan(tromp_margin)
-            # player.set_result(np.sign(tromp_margin - pos.komi), was_resign=False, black_margin_no_komi=tromp_margin)
             break
         benson_score_details = player.root.position.score_benson()
         if benson_score_details.final:  # end the game when score is final
             # logging.info('ending game as Benson score is final')
             player.set_result(np.sign(benson_score_details.score), was_resign=False)
+            break
+        if player.root.position.n >= FLAGS.max_game_length:
+            # this is likely super-ko, should ignore game
+            logging.warning(f'game exceeds {FLAGS.max_game_length}, void')
+            player.set_result(0, was_resign=False)
             break
 
         if (FLAGS.verbose >= 2) or (FLAGS.verbose >= 1 and player.root.position.n % 10 == 9):
@@ -190,6 +191,8 @@ def run_game(dnn, init_position: go.Position=None, init_root: mcts.MCTSNode=None
         with tf.io.gfile.GFile(os.path.join(sgf_dir, 'full', f'{sgf_name}.sgf'), 'w') as f:
             f.write(player.to_sgf())
 
+    if player.result == 0:  # void
+        return player
     if selfplay_dir is None:
         return player
 

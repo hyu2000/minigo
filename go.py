@@ -30,7 +30,10 @@ import os
 
 import coords
 
-N = int(os.environ.get('BOARD_SIZE', 9))  # was 19
+N = int(os.environ.get('BOARD_SIZE', 5))  # was 19
+
+# Position.score() switches from Tromp to Benson after this, for speed reasons
+NUM_MOVES_BEFORE_BENSON = N * N // 2  # this is sensitive to go.N.  40 for 9x9
 
 # Represent a board as a numpy array, with 0 empty, 1 is black, -1 is white.
 # This means that swapping colors is as simple as multiplying array by -1.
@@ -441,7 +444,7 @@ class BensonScoreDetail(namedtuple('BensonScoreDetail', ['score', 'final', 'blac
 
 
 class Position():
-    def __init__(self, board=None, n=0, komi=5.5, caps=(0, 0),
+    def __init__(self, board=None, n=0, komi=0.5, caps=(0, 0),
                  lib_tracker=None, ko=None, recent=tuple(),
                  board_deltas=None, to_play=BLACK):
         """
@@ -684,7 +687,7 @@ class Position():
         return np.count_nonzero(working_board == BLACK) - np.count_nonzero(working_board == WHITE) - self.komi
 
     def score(self) -> float:
-        if self.n < 40:
+        if self.n < NUM_MOVES_BEFORE_BENSON:
             # Pass-alive typically happens later in game. Use Tromp which is faster
             return self.score_tromp()
         score_detail = self._benson_analysis()

@@ -26,7 +26,7 @@ class InitPositions:
     """
     def __init__(self, open_moves: Optional[List], open_probs: Optional[List]):
         if not open_moves:
-            open_moves, open_probs = ['D4', 'E4'], np.ones(2) / 2
+            open_moves, open_probs = ['C2', 'B2'], np.ones(2) / 2
         assert len(open_moves) == len(open_probs)
 
         self.init_positions = [go.Position().play_move(coords.from_gtp(move)) for move in open_moves]
@@ -95,11 +95,11 @@ def main(argv):
 
 
 def main_local(argv):
-    FLAGS.load_file = f'{myconf.MODELS_DIR}/model12_epoch1.h5'
+    FLAGS.load_file = f'{myconf.MODELS_DIR}/model13_epoch2.h5'
     FLAGS.sgf_dir = f'{myconf.SELFPLAY_DIR}/sgf'
     FLAGS.selfplay_dir = f'{myconf.SELFPLAY_DIR}/train'
     FLAGS.holdout_dir = f'{myconf.SELFPLAY_DIR}/val'
-    FLAGS.num_readouts = 400
+    FLAGS.num_readouts = 100
     FLAGS.parallel_readouts = 16
     FLAGS.holdout_pct = 0
     FLAGS.softpick_move_cutoff = 4
@@ -109,4 +109,4 @@ def main_local(argv):
 
 
 if __name__ == '__main__':
-    app.run(main)
+    app.run(main_local)

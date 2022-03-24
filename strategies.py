@@ -277,7 +277,7 @@ class MCTSPlayer(MCTSPlayerInterface):
         if was_resign:
             string = "B+R" if winner == go.BLACK else "W+R"
         else:
-            string = self.root.position.result_string()
+            string = self.root.position.result_string() if winner != 0 else 'VOID'
         self.result_string = string
 
     def to_sgf(self, use_comments=True):
