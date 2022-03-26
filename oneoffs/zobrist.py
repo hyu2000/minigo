@@ -1,6 +1,6 @@
 import enum
 from collections import namedtuple
-from typing import Optional, Iterable, Dict
+from typing import Optional, Iterable, Dict, Tuple
 
 import numpy as np
 
@@ -17,12 +17,12 @@ class Point(namedtuple('Point', 'row col')):
     pass
 
 
-class ZTable:
+class ZobristHash:
     def __init__(self):
-        self.ztable = self.initialize_ztable(HASH_CODE, go.N)
+        self.ztable = self.initialize_ztable(DLGO_ZOBRIST_HASH, go.N)
 
     @staticmethod
-    def initialize_ztable(hmap: Dict[(Point, Player), np.uint64], n: int) -> np.ndarray:
+    def initialize_ztable(hmap: Dict[Tuple[Point, Player], np.uint64], n: int) -> np.ndarray:
         """
         how to lookup the final table:    ztable[move[0], move[1], to_play]
         """
@@ -37,18 +37,17 @@ class ZTable:
                 ztable[(i, j, 2)] ^= ztable[(i, j, 1)]
         return ztable
 
-    def position_hash(self, pos: go.Position) -> np.uint64:
-        board = pos.board
+    def board_hash(self, board: np.ndarray) -> np.uint64:
         new_hash = np.uint64(EMPTY_BOARD)
-        for i in board.shape[0]:
-            for j in board.shape[1]:
+        for i in range(board.shape[0]):
+            for j in range(board.shape[1]):
                 color = board[i, j]
                 if color != 0:
                     new_hash ^= self.ztable[(i, j, color)]
         return new_hash
 
     def play_move(self, pos: go.Position, move: Optional[tuple], captured: Iterable[tuple]) -> np.uint64:
-        start_hash = self.position_hash(pos)
+        start_hash = self.board_hash(pos.board)
         if move is None:
             return start_hash
         to_play = pos.to_play  # -1/1
@@ -59,7 +58,29 @@ class ZTable:
         return new_hash
 
 
-HASH_CODE = {
+def test_empty_const():
+    res = 0
+    for (p, color), h in DLGO_ZOBRIST_HASH.items():
+        if color is None:
+           res ^= h
+    assert res == EMPTY_BOARD
+
+
+def test_basic():
+    ztable = ZobristHash()
+    ztable.initialize_ztable(DLGO_ZOBRIST_HASH, 5)
+    assert ztable.ztable.shape == (5, 5, 3)
+    pos0 = go.Position()
+    assert ztable.board_hash(pos0.board) == EMPTY_BOARD
+
+    move0 = coords.from_gtp('C3')
+    pos1 = pos0.play_move(move0)
+    hash1 = ztable.board_hash(pos1.board)
+    assert hash1 == ztable.play_move(pos0, move0, [])
+    print(EMPTY_BOARD, hash1)
+
+
+DLGO_ZOBRIST_HASH = {
     (Point(row=1, col=1), None): 6402364705153495313,
     (Point(row=1, col=1), Player.black): 444191475187629924,
     (Point(row=1, col=1), Player.white): 3180807544946524599,
