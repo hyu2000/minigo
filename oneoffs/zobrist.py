@@ -1,6 +1,11 @@
 import enum
 from collections import namedtuple
+from typing import Optional, Iterable, Dict
+
 import numpy as np
+
+import coords
+import go
 
 
 class Player(enum.Enum):
@@ -10,6 +15,48 @@ class Player(enum.Enum):
 
 class Point(namedtuple('Point', 'row col')):
     pass
+
+
+class ZTable:
+    def __init__(self):
+        self.ztable = self.initialize_ztable(HASH_CODE, go.N)
+
+    @staticmethod
+    def initialize_ztable(hmap: Dict[(Point, Player), np.uint64], n: int) -> np.ndarray:
+        """
+        how to lookup the final table:    ztable[move[0], move[1], to_play]
+        """
+        PLAYER_MAP = [Player.white, None, Player.black]
+        ztable = np.ndarray(shape=(n, n, 3), dtype=np.uint64)
+        for i in range(n):
+            for j in range(n):
+                for k in range(3):
+                    ztable[(i, j, k)] = hmap[Point(i+1, j+1), PLAYER_MAP[k]]
+                # the most common op when playing/undo a move needs to apply "empty" hash
+                ztable[(i, j, 0)] ^= ztable[(i, j, 1)]
+                ztable[(i, j, 2)] ^= ztable[(i, j, 1)]
+        return ztable
+
+    def position_hash(self, pos: go.Position) -> np.uint64:
+        board = pos.board
+        new_hash = np.uint64(EMPTY_BOARD)
+        for i in board.shape[0]:
+            for j in board.shape[1]:
+                color = board[i, j]
+                if color != 0:
+                    new_hash ^= self.ztable[(i, j, color)]
+        return new_hash
+
+    def play_move(self, pos: go.Position, move: Optional[tuple], captured: Iterable[tuple]) -> np.uint64:
+        start_hash = self.position_hash(pos)
+        if move is None:
+            return start_hash
+        to_play = pos.to_play  # -1/1
+        new_hash = start_hash
+        new_hash ^= self.ztable[(move[0], move[1], to_play)]
+        for p in captured:
+            new_hash ^= self.ztable[(p[0], p[1], -to_play)]
+        return new_hash
 
 
 HASH_CODE = {
