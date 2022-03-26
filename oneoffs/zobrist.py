@@ -18,8 +18,8 @@ class Point(namedtuple('Point', 'row col')):
 
 
 class ZobristHash:
-    def __init__(self):
-        self.ztable = self.initialize_ztable(DLGO_ZOBRIST_HASH, go.N)
+    def __init__(self, board_size: int = go.N):
+        self.ztable = self.initialize_ztable(DLGO_ZOBRIST_HASH, board_size)
 
     @staticmethod
     def initialize_ztable(hmap: Dict[Tuple[Point, Player], np.uint64], n: int) -> np.ndarray:
@@ -67,8 +67,7 @@ def test_empty_const():
 
 
 def test_basic():
-    ztable = ZobristHash()
-    ztable.initialize_ztable(DLGO_ZOBRIST_HASH, 5)
+    ztable = ZobristHash(5)
     assert ztable.ztable.shape == (5, 5, 3)
     pos0 = go.Position()
     assert ztable.board_hash(pos0.board) == EMPTY_BOARD
@@ -78,6 +77,21 @@ def test_basic():
     hash1 = ztable.board_hash(pos1.board)
     assert hash1 == ztable.play_move(pos0, move0, [])
     print(EMPTY_BOARD, hash1)
+
+    move1 = coords.from_gtp('B3')
+    pos2 = pos1.play_move(move1)
+    hash2 = ztable.board_hash(pos2.board)
+
+    # tranposition: now play pass, white B3, C3, we should reach the same board & hash
+    pos1 = pos0.play_move(None)
+    pos2 = pos1.play_move(move1)
+    pos3 = pos2.play_move(move0)
+    new_hash2 = ztable.board_hash(pos3.board)
+    assert new_hash2 == hash2
+    assert hash2 == ztable.play_move(pos2, move0, [])
+
+    # test remove stones: a bit contrived, not real capture
+
 
 
 DLGO_ZOBRIST_HASH = {
