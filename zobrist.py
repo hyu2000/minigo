@@ -1,11 +1,15 @@
+"""
+all tests here assumes go.N == 5
+"""
 import enum
 from collections import namedtuple
-from typing import Optional, Iterable, Dict, Tuple
+from typing import Optional, Iterable, Dict, Tuple, TYPE_CHECKING
 
 import numpy as np
 
 import coords
 import go
+from symmetries import apply_symmetry_feat, SYMMETRIES
 
 
 class Player(enum.Enum):
@@ -58,9 +62,38 @@ class ZobristHash:
             h ^= self.ztable[(p[0], p[1], -to_play)]
         return h
 
+    def board_hash_canonical(self, board: np.ndarray) -> np.uint64:
+        """ a unique hash across 8 symmetries """
+        hashes = [self.board_hash(apply_symmetry_feat(s, board)) for s in SYMMETRIES]
+        return min(hashes)
 
-# singleton
-zobrist_hasher = ZobristHash()  # type: ZobristHash
+    def legal_moves_sans_symmetry(self, pos: go.Position) -> np.ndarray:
+        """ """
+        lmoves = pos.all_legal_moves()
+
+        # hashes can be more efficiently built from start_hash
+        # start_hash = self.board_hash(pos.board)
+        hashes = set()
+        for flat_idx in np.argwhere(lmoves[:-1] == 1):
+            flat_idx = flat_idx[0]   # why we need this?
+            move = coords.from_flat(flat_idx)
+            board_after_move = pos.play_move(move).board
+            dup = False
+            new_hashes = set()
+            for s in SYMMETRIES:
+                h = self.board_hash(apply_symmetry_feat(s, board_after_move))
+                if h in hashes:
+                    dup = True
+                    # print(f'move %s dup under {s}' % coords.flat_to_gtp(flat_idx))
+                    break
+                new_hashes.add(h)
+            if dup:
+                lmoves[flat_idx] = 0
+            else:
+                hashes.update(new_hashes)
+                # print(f'move %s added' % coords.flat_to_gtp(flat_idx))
+        return lmoves
+
 
 
 def test_empty_const():
@@ -98,6 +131,32 @@ def test_basic():
 
     # test remove stones: a bit contrived, not real capture
 
+
+def test_hash_canonical():
+    ztable = ZobristHash(5)
+    move1 = coords.from_gtp('B3')
+    pos1 = go.Position().play_move(move1)
+    for move in ['C2', 'C4', 'D3']:
+        pos2 = go.Position().play_move(coords.from_gtp(move))
+        assert ztable.board_hash_canonical(pos1.board) == ztable.board_hash_canonical(pos2.board)
+
+
+def test_filter_legal_moves():
+    ztable = ZobristHash(5)
+
+    pos2 = go.Position().play_move(coords.from_gtp('C2')).play_move(coords.from_gtp('C3'))
+    legal_moves = pos2.all_legal_moves()
+    assert sum(legal_moves) - 1 == 23
+    # mirror symmetry
+    legal_moves_sans_s6y = ztable.legal_moves_sans_symmetry(pos2)
+    assert sum(legal_moves_sans_s6y) - 1 == 13
+
+    pos3 = pos2.play_move(coords.from_gtp('D3'))
+    legal_moves = pos3.all_legal_moves()
+    assert sum(legal_moves) - 1 == 22
+    # diagonal symmetry
+    legal_moves_sans_s6y = ztable.legal_moves_sans_symmetry(pos3)
+    assert sum(legal_moves_sans_s6y) - 1 == 13
 
 
 DLGO_ZOBRIST_HASH = {
@@ -1187,3 +1246,7 @@ DLGO_ZOBRIST_HASH = {
 }
 
 EMPTY_BOARD_HASH_19 = 9181944435492932548
+
+
+# singleton
+zobrist_hasher = ZobristHash()  # type: ZobristHash

@@ -63,7 +63,7 @@ def invert_symmetry(s):
     return INVERSES[s]
 
 
-def apply_symmetry_feat(sym, features):
+def apply_symmetry_feat(sym: str, features):
     return IMPLS[sym](features)
 
 
