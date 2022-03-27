@@ -74,8 +74,9 @@ class ZobristHash:
         # hashes can be more efficiently built from start_hash
         # start_hash = self.board_hash(pos.board)
         hashes = set()
-        for flat_idx in np.argwhere(lmoves[:-1] == 1):
-            flat_idx = flat_idx[0]   # why we need this?
+        # lmoves[-1] == 1 is pass, ignore
+        legal_move_flat_indices = np.argwhere(lmoves[:-1] == 1)[:, 0]
+        for flat_idx in legal_move_flat_indices:
             move = coords.from_flat(flat_idx)
             board_after_move = pos.play_move(move).board
             dup = False
@@ -93,7 +94,6 @@ class ZobristHash:
                 hashes.update(new_hashes)
                 # print(f'move %s added' % coords.flat_to_gtp(flat_idx))
         return lmoves
-
 
 
 def test_empty_const():
@@ -144,7 +144,16 @@ def test_hash_canonical():
 def test_filter_legal_moves():
     ztable = ZobristHash(5)
 
-    pos2 = go.Position().play_move(coords.from_gtp('C2')).play_move(coords.from_gtp('C3'))
+    pos0 = go.Position()
+    legal_moves_sans_s6y = ztable.legal_moves_sans_symmetry(pos0)
+    assert sum(legal_moves_sans_s6y) - 1 == 6
+
+    pos1 = pos0.play_move(coords.from_gtp('C2'))
+    legal_moves_sans_s6y = ztable.legal_moves_sans_symmetry(pos1)
+    # mirror symmetry
+    assert sum(legal_moves_sans_s6y) - 1 == 14
+
+    pos2 = pos1.play_move(coords.from_gtp('C3'))
     legal_moves = pos2.all_legal_moves()
     assert sum(legal_moves) - 1 == 23
     # mirror symmetry
