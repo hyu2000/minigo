@@ -8,8 +8,7 @@ from typing import Optional, Iterable, Dict, Tuple, TYPE_CHECKING
 
 import numpy as np
 
-if TYPE_CHECKING:
-    import go
+import go
 
 
 class Player(enum.Enum):
@@ -45,11 +44,9 @@ class ZobristHash:
     def board_hash(self, board: np.ndarray) -> np.uint64:
         """ compute board hash stone by stone """
         h = np.uint64(self.EMPTY_BOARD_HASH)
-        for i in range(board.shape[0]):
-            for j in range(board.shape[1]):
-                color = board[i, j]
-                if color != 0:
-                    h ^= self.ztable[(i, j, color)]
+        for i, j in np.argwhere(board != 0):
+            color = board[i, j]
+            h ^= self.ztable[(i, j, color)]
         return h
 
     def hash_after_move(self, pos: 'go.Position', move: Optional[tuple], captured: Iterable[tuple]) -> np.uint64:

@@ -1,6 +1,7 @@
 import go
 import coords
 from zobrist import DLGO_ZOBRIST_HASH, EMPTY_BOARD_HASH_19, ZobristHash
+from zobrist_util import legal_moves_sans_symmetry, board_hash_canonical
 
 
 def test_empty_const():
@@ -42,23 +43,20 @@ def test_basic():
 
 
 def test_hash_canonical():
-    ztable = ZobristHash(5)
     move1 = coords.from_gtp('B3')
     pos1 = go.Position().play_move(move1)
     for move in ['C2', 'C4', 'D3']:
         pos2 = go.Position().play_move(coords.from_gtp(move))
-        assert ztable.board_hash_canonical(pos1.board) == ztable.board_hash_canonical(pos2.board)
+        assert board_hash_canonical(pos1.board) == board_hash_canonical(pos2.board)
 
 
 def test_filter_legal_moves():
-    ztable = ZobristHash(5)
-
     pos0 = go.Position()
-    legal_moves_sans_s6y = ztable.legal_moves_sans_symmetry(pos0)
+    legal_moves_sans_s6y = legal_moves_sans_symmetry(pos0)
     assert sum(legal_moves_sans_s6y) - 1 == 6
 
     pos1 = pos0.play_move(coords.from_gtp('C2'))
-    legal_moves_sans_s6y = ztable.legal_moves_sans_symmetry(pos1)
+    legal_moves_sans_s6y = legal_moves_sans_symmetry(pos1)
     # mirror symmetry
     assert sum(legal_moves_sans_s6y) - 1 == 14
 
@@ -66,12 +64,12 @@ def test_filter_legal_moves():
     legal_moves = pos2.all_legal_moves()
     assert sum(legal_moves) - 1 == 23
     # mirror symmetry
-    legal_moves_sans_s6y = ztable.legal_moves_sans_symmetry(pos2)
+    legal_moves_sans_s6y = legal_moves_sans_symmetry(pos2)
     assert sum(legal_moves_sans_s6y) - 1 == 13
 
     pos3 = pos2.play_move(coords.from_gtp('D3'))
     legal_moves = pos3.all_legal_moves()
     assert sum(legal_moves) - 1 == 22
     # diagonal symmetry
-    legal_moves_sans_s6y = ztable.legal_moves_sans_symmetry(pos3)
+    legal_moves_sans_s6y = legal_moves_sans_symmetry(pos3)
     assert sum(legal_moves_sans_s6y) - 1 == 13
