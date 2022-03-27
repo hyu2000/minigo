@@ -29,8 +29,10 @@ import numpy as np
 import os
 
 import coords
+import zobrist
 
 N = int(os.environ.get('BOARD_SIZE', 5))  # was 19
+zobrist_hasher = zobrist.ZobristHash(N)
 
 # Position.score() switches from Tromp to Benson after this, for speed reasons
 NUM_MOVES_BEFORE_BENSON = N * N // 2  # this is sensitive to go.N.  40 for 9x9
@@ -446,7 +448,7 @@ class BensonScoreDetail(namedtuple('BensonScoreDetail', ['score', 'final', 'blac
 class Position():
     def __init__(self, board=None, n=0, komi=0.5, caps=(0, 0),
                  lib_tracker=None, ko=None, recent=tuple(),
-                 board_deltas=None, to_play=BLACK):
+                 board_deltas=None, to_play=BLACK, zobrist_hash=None):
         """
         board: a numpy array
         n: an int representing moves played so far
@@ -473,10 +475,16 @@ class Position():
                                                                                    0, N, N], dtype=np.int8)
         self.to_play = to_play
 
+        if zobrist_hash is None:
+            self.zobrist_hash = zobrist_hasher.EMPTY_BOARD_HASH if board is None else zobrist_hasher.board_hash(board)
+        else:
+            self.zobrist_hash = zobrist_hash
+
     def __deepcopy__(self, memodict={}):
         new_board = np.copy(self.board)
         new_lib_tracker = copy.deepcopy(self.lib_tracker)
-        return Position(new_board, self.n, self.komi, self.caps, new_lib_tracker, self.ko, self.recent, self.board_deltas, self.to_play)
+        return Position(new_board, self.n, self.komi, self.caps, new_lib_tracker, self.ko, self.recent,
+                        self.board_deltas, self.to_play, self.zobrist_hash)
 
     def __str__(self, colors=True):
         if colors:
@@ -582,7 +590,7 @@ class Position():
         # and pass is always legal
         return np.concatenate([legal_moves.ravel(), [1]])
 
-    def pass_move(self, mutate=False):
+    def pass_move(self, mutate=False) -> 'Position':
         pos = self if mutate else copy.deepcopy(self)
         pos.n += 1
         pos.recent += (PlayerMove(pos.to_play, None),)
@@ -610,11 +618,11 @@ class Position():
         if color is None:
             color = self.to_play
 
-        pos = self if mutate else copy.deepcopy(self)
-
         if c is None:
-            pos = pos.pass_move(mutate=mutate)
+            pos = self.pass_move(mutate=mutate)
             return pos
+
+        pos = self if mutate else copy.deepcopy(self)
 
         if not self.is_move_legal(c):
             raise IllegalMove("{} move at {} is illegal: \n{}".format(
@@ -647,6 +655,7 @@ class Position():
         pos.caps = new_caps
         pos.ko = new_ko
         pos.recent += (PlayerMove(color, c),)
+        pos.zobrist_hash = zobrist_hasher.play_move(self, c, captured_stones)
 
         # keep a rolling history of last 7 deltas - that's all we'll need to
         # extract the last 8 board states.
