@@ -57,6 +57,7 @@ assert set(IMPLS.keys()) == set(INVERSES.keys())
 
 # A symmetry is just a string describing the transformation.
 SYMMETRIES = list(INVERSES.keys())
+# SYMMETRIES_SANS_IDENTITY = [s for s in SYMMETRIES if s != 'identity']
 
 
 def invert_symmetry(s):

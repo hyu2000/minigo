@@ -655,7 +655,7 @@ class Position():
         pos.caps = new_caps
         pos.ko = new_ko
         pos.recent += (PlayerMove(color, c),)
-        pos.zobrist_hash = zobrist_hasher.play_move(self, c, captured_stones)
+        pos.zobrist_hash = zobrist_hasher.hash_after_move(self, c, captured_stones)
 
         # keep a rolling history of last 7 deltas - that's all we'll need to
         # extract the last 8 board states.

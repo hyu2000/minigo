@@ -22,7 +22,8 @@ def test_basic():
     move0 = coords.from_gtp('C3')
     pos1 = pos0.play_move(move0)
     hash1 = ztable.board_hash(pos1.board)
-    assert hash1 == ztable.play_move(pos0, move0, [])
+    assert hash1 == ztable.hash_after_move(pos0, move0, [])
+    assert pos1.zobrist_hash == hash1
     print(ztable.EMPTY_BOARD_HASH, hash1)
 
     move1 = coords.from_gtp('B3')
@@ -35,7 +36,7 @@ def test_basic():
     pos3 = pos2.play_move(move0)
     new_hash2 = ztable.board_hash(pos3.board)
     assert new_hash2 == hash2
-    assert hash2 == ztable.play_move(pos2, move0, [])
+    assert hash2 == ztable.hash_after_move(pos2, move0, [])
 
     # test remove stones: a bit contrived, not real capture
 

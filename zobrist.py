@@ -42,6 +42,7 @@ class ZobristHash:
         return ztable
 
     def board_hash(self, board: np.ndarray) -> np.uint64:
+        """ compute board hash stone by stone """
         h = np.uint64(self.EMPTY_BOARD_HASH)
         for i in range(board.shape[0]):
             for j in range(board.shape[1]):
@@ -50,7 +51,7 @@ class ZobristHash:
                     h ^= self.ztable[(i, j, color)]
         return h
 
-    def play_move(self, pos: 'go.Position', move: Optional[tuple], captured: Iterable[tuple]) -> np.uint64:
+    def hash_after_move(self, pos: 'go.Position', move: Optional[tuple], captured: Iterable[tuple]) -> np.uint64:
         start_hash = pos.zobrist_hash
         if move is None:
             return start_hash
@@ -63,7 +64,9 @@ class ZobristHash:
         return h
 
     def board_hash_canonical(self, board: np.ndarray) -> np.uint64:
-        """ a unique hash across 8 symmetries """
+        """ a unique hash across 8 symmetries
+        Expensive!
+        """
         from symmetries import apply_symmetry_feat, SYMMETRIES
 
         hashes = [self.board_hash(apply_symmetry_feat(s, board)) for s in SYMMETRIES]
@@ -76,18 +79,19 @@ class ZobristHash:
 
         lmoves = pos.all_legal_moves()
 
-        # hashes can be more efficiently built from start_hash
-        # start_hash = self.board_hash(pos.board)
         hashes = set()
         # lmoves[-1] == 1 is pass, ignore
         legal_move_flat_indices = np.argwhere(lmoves[:-1] == 1)[:, 0]
         for flat_idx in legal_move_flat_indices:
             move = coords.from_flat(flat_idx)
-            board_after_move = pos.play_move(move).board
+            pos_after_move = pos.play_move(move)
             dup = False
             new_hashes = set()
             for s in SYMMETRIES:
-                h = self.board_hash(apply_symmetry_feat(s, board_after_move))
+                if s == 'identity':
+                    h = pos_after_move.zobrist_hash
+                else:
+                    h = self.board_hash(apply_symmetry_feat(s, pos_after_move.board))
                 if h in hashes:
                     dup = True
                     # print(f'move %s dup under {s}' % coords.flat_to_gtp(flat_idx))
@@ -101,6 +105,7 @@ class ZobristHash:
         return lmoves
 
 
+# below is clipped from dlgo zobrist code
 DLGO_ZOBRIST_HASH = {
     (Point(row=1, col=1), None): 6402364705153495313,
     (Point(row=1, col=1), Player.black): 444191475187629924,
