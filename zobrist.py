@@ -28,7 +28,8 @@ class ZobristHash:
     @staticmethod
     def initialize_ztable(hmap: Dict[Tuple[Point, Player], np.uint64], n: int) -> np.ndarray:
         """
-        how to lookup the final table:    ztable[move[0], move[1], to_play]
+        how to lookup the final table:    ztable[move[0], move[1], to_play + 1]
+        ztable[:, :, 0/1/2] is hash for white/empty/black
         """
         PLAYER_MAP = [Player.white, None, Player.black]
         ztable = np.ndarray(shape=(n, n, 3), dtype=np.uint64)
@@ -41,13 +42,20 @@ class ZobristHash:
                 ztable[(i, j, 2)] ^= ztable[(i, j, 1)]
         return ztable
 
-    def board_hash(self, board: np.ndarray) -> np.uint64:
+    def board_hash_slow(self, board: np.ndarray) -> np.uint64:
         """ compute board hash stone by stone """
         h = np.uint64(self.EMPTY_BOARD_HASH)
         for i, j in np.argwhere(board != 0):
             color = board[i, j]
-            h ^= self.ztable[(i, j, color)]
+            h ^= self.ztable[(i, j, 1 + color)]
         return h
+
+    def board_hash(self, board: np.ndarray) -> np.uint64:
+        """ compute board hash array style """
+        h = np.uint64(self.EMPTY_BOARD_HASH)
+        black_hashes = self.ztable[:, :, 2][board == 1]
+        white_hashes = self.ztable[:, :, 0][board == -1]
+        return h ^ np.bitwise_xor.reduce(black_hashes) ^ np.bitwise_xor.reduce(white_hashes)
 
     def hash_after_move(self, pos: 'go.Position', move: Optional[tuple], captured: Iterable[tuple]) -> np.uint64:
         start_hash = pos.zobrist_hash
@@ -56,9 +64,9 @@ class ZobristHash:
 
         to_play = pos.to_play  # -1/1
         h = start_hash
-        h ^= self.ztable[(move[0], move[1], to_play)]
+        h ^= self.ztable[(move[0], move[1], 1 + to_play)]
         for p in captured:
-            h ^= self.ztable[(p[0], p[1], -to_play)]
+            h ^= self.ztable[(p[0], p[1], 1 - to_play)]
         return h
 
 

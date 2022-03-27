@@ -4,6 +4,9 @@ from zobrist import DLGO_ZOBRIST_HASH, EMPTY_BOARD_HASH_19, ZobristHash
 from zobrist_util import legal_moves_sans_symmetry, board_hash_canonical
 
 
+assert go.N == 5
+
+
 def test_empty_const():
     """ EMPTY_BOARD_HASH is based on 19x19 """
     res = 0
