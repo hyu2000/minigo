@@ -1,5 +1,6 @@
-"""
-all tests here assumes go.N == 5
+""" Zobrist hash calculation.
+
+used/imported by go.Position
 """
 import enum
 from collections import namedtuple
@@ -62,47 +63,6 @@ class ZobristHash:
         for p in captured:
             h ^= self.ztable[(p[0], p[1], -to_play)]
         return h
-
-    def board_hash_canonical(self, board: np.ndarray) -> np.uint64:
-        """ a unique hash across 8 symmetries
-        Expensive!
-        """
-        from symmetries import apply_symmetry_feat, SYMMETRIES
-
-        hashes = [self.board_hash(apply_symmetry_feat(s, board)) for s in SYMMETRIES]
-        return min(hashes)
-
-    def legal_moves_sans_symmetry(self, pos: 'go.Position') -> np.ndarray:
-        """ """
-        import coords
-        from symmetries import apply_symmetry_feat, SYMMETRIES
-
-        lmoves = pos.all_legal_moves()
-
-        hashes = set()
-        # lmoves[-1] == 1 is pass, ignore
-        legal_move_flat_indices = np.argwhere(lmoves[:-1] == 1)[:, 0]
-        for flat_idx in legal_move_flat_indices:
-            move = coords.from_flat(flat_idx)
-            pos_after_move = pos.play_move(move)
-            dup = False
-            new_hashes = set()
-            for s in SYMMETRIES:
-                if s == 'identity':
-                    h = pos_after_move.zobrist_hash
-                else:
-                    h = self.board_hash(apply_symmetry_feat(s, pos_after_move.board))
-                if h in hashes:
-                    dup = True
-                    # print(f'move %s dup under {s}' % coords.flat_to_gtp(flat_idx))
-                    break
-                new_hashes.add(h)
-            if dup:
-                lmoves[flat_idx] = 0
-            else:
-                hashes.update(new_hashes)
-                # print(f'move %s added' % coords.flat_to_gtp(flat_idx))
-        return lmoves
 
 
 # below is clipped from dlgo zobrist code
