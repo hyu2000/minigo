@@ -102,11 +102,11 @@ def main_local(argv):
     FLAGS.num_readouts = 100
     FLAGS.parallel_readouts = 16
     FLAGS.holdout_pct = 0
-    FLAGS.softpick_move_cutoff = 4
-    FLAGS.dirichlet_noise_weight = 0.025
+    FLAGS.softpick_move_cutoff = 6
+    FLAGS.dirichlet_noise_weight = 0.25
     FLAGS.resign_threshold = -1.0
-    play_games(num_games=2)
+    play_games(num_games=6)
 
 
 if __name__ == '__main__':
-    app.run(main_local)
+    app.run(main)
