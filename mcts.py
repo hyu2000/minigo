@@ -26,6 +26,7 @@ import numpy as np
 
 import coords
 import go
+import zobrist_util
 
 # 722 moves for 19x19, 162 for 9x9
 flags.DEFINE_integer('max_game_length', int(go.N ** 2 * 2),
@@ -44,6 +45,9 @@ flags.register_validator('dirichlet_noise_alpha', lambda x: 0 <= x < 1)
 flags.DEFINE_float('dirichlet_noise_weight', 0.25,
                    'How much to weight the priors vs. dirichlet noise when mixing')
 flags.register_validator('dirichlet_noise_weight', lambda x: 0 <= x < 1)
+
+flags.DEFINE_bool('reduce_symmetry', False,
+                  'Only explore one variant among all symmetries')
 
 FLAGS = flags.FLAGS
 
@@ -84,7 +88,11 @@ class MCTSNode(object):
         self.is_expanded = False
         self.losses_applied = 0  # number of virtual losses on this node
         # using child_() allows vectorized computation of action score.
-        self.illegal_moves = 1 - self.position.all_legal_moves()
+        if FLAGS.reduce_symmetry:
+            legal_moves = zobrist_util.legal_moves_sans_symmetry(self.position)
+        else:
+            legal_moves = self.position.all_legal_moves()
+        self.illegal_moves = 1 - legal_moves
         self.child_N = np.zeros([go.N * go.N + 1], dtype=np.float32)
         self.child_W = np.zeros([go.N * go.N + 1], dtype=np.float32)
         # save a copy of the original prior before it gets mutated by d-noise.
