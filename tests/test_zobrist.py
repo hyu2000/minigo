@@ -1,3 +1,5 @@
+import numpy as np
+
 import go
 import coords
 from zobrist import DLGO_ZOBRIST_HASH, EMPTY_BOARD_HASH_19, ZobristHash
@@ -33,6 +35,7 @@ def test_basic():
     move1 = coords.from_gtp('B3')
     pos2 = pos1.play_move(move1)
     hash2 = ztable.board_hash(pos2.board)
+    assert ztable.board_hash_slow(pos2.board) == hash2
 
     # tranposition: now play pass, white B3, C3, we should reach the same board & hash
     pos1 = pos0.play_move(None)
@@ -53,15 +56,23 @@ def test_hash_canonical():
         assert board_hash_canonical(pos1.board) == board_hash_canonical(pos2.board)
 
 
+def show_legal_moves(legal_moves_1d: np.ndarray):
+    moves_on_board = legal_moves_1d[:-1].reshape((go.N, go.N))
+    print(moves_on_board)
+
+
 def test_filter_legal_moves():
     pos0 = go.Position()
     legal_moves_sans_s6y = legal_moves_sans_symmetry(pos0)
     assert sum(legal_moves_sans_s6y) - 1 == 6
+    print()
+    show_legal_moves(legal_moves_sans_s6y)
 
     pos1 = pos0.play_move(coords.from_gtp('C2'))
     legal_moves_sans_s6y = legal_moves_sans_symmetry(pos1)
     # mirror symmetry
     assert sum(legal_moves_sans_s6y) - 1 == 14
+    show_legal_moves(legal_moves_sans_s6y)
 
     pos2 = pos1.play_move(coords.from_gtp('C3'))
     legal_moves = pos2.all_legal_moves()
@@ -69,6 +80,7 @@ def test_filter_legal_moves():
     # mirror symmetry
     legal_moves_sans_s6y = legal_moves_sans_symmetry(pos2)
     assert sum(legal_moves_sans_s6y) - 1 == 13
+    show_legal_moves(legal_moves_sans_s6y)
 
     pos3 = pos2.play_move(coords.from_gtp('D3'))
     legal_moves = pos3.all_legal_moves()
@@ -76,3 +88,4 @@ def test_filter_legal_moves():
     # diagonal symmetry
     legal_moves_sans_s6y = legal_moves_sans_symmetry(pos3)
     assert sum(legal_moves_sans_s6y) - 1 == 13
+    show_legal_moves(legal_moves_sans_s6y)

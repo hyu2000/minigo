@@ -69,6 +69,9 @@ def apply_symmetry_feat(sym: str, features):
 
 
 def apply_symmetry_pi(s, pi):
+    """
+    pi: policy head output: 1-d array of size N*N+1 with pass move at end
+    """
     pi = np.copy(pi)
     # rotate all moves except for the pass move at end
     pi[:-1] = IMPLS[s](pi[:-1].reshape([go.N, go.N])).ravel()

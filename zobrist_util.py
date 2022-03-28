@@ -22,13 +22,14 @@ def board_hash_canonical(board: np.ndarray) -> np.uint64:
 
 
 def legal_moves_sans_symmetry(pos: go.Position) -> np.ndarray:
-    """ """
+    """ maybe it's faster if not using board_hash? """
     lmoves = pos.all_legal_moves()
 
     hashes = dict()  # type: Dict[np.uint64, np.ndarray]
     # lmoves[-1] == 1 is pass, ignore
     legal_move_flat_indices = np.argwhere(lmoves[:-1] == 1)[:, 0]
-    for flat_idx in legal_move_flat_indices:
+    # reverse the array to prefer higher indices. Purely my preference for C2/D2, etc.
+    for flat_idx in legal_move_flat_indices[::-1]:
         move = coords.from_flat(flat_idx)
         pos_after_move = pos.play_move(move)
         dup = False
