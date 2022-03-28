@@ -183,8 +183,8 @@ def replay_sgf(sgf_contents):
         current_node = current_node.next
 
 
-def replay_sgf_file(sgf_file: str):
-    with open(sgf_file) as f:
+def replay_sgf_file(sgf_fname: str):
+    with open(sgf_fname) as f:
         s = f.read()
         for pwc in replay_sgf(s):
             yield pwc

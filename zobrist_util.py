@@ -22,7 +22,10 @@ def board_hash_canonical(board: np.ndarray) -> np.uint64:
 
 
 def legal_moves_sans_symmetry(pos: go.Position) -> np.ndarray:
-    """ maybe it's faster if not using board_hash? """
+    """ reduce moves that lead to the same board (under symmetry)
+
+    maybe it's faster if not using board_hash?
+    """
     lmoves = pos.all_legal_moves()
 
     hashes = dict()  # type: Dict[np.uint64, np.ndarray]

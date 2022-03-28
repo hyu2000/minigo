@@ -89,3 +89,27 @@ def test_filter_legal_moves():
     legal_moves_sans_s6y = legal_moves_sans_symmetry(pos3)
     assert sum(legal_moves_sans_s6y) - 1 == 13
     show_legal_moves(legal_moves_sans_s6y)
+
+
+def test_unique_states_in_selfplay():
+    """ count #unique states (bucketed by move#) in a set of selfplay games """
+    import os
+    from sgf_wrapper import replay_sgf_file
+    import myconf
+
+    sgf_dir = f'{myconf.SELFPLAY_DIR}/sgf/full'
+    game_hashes = []
+    game_moves = []
+    # ['0-75634959224.sgf', '1-75639137467.sgf']:
+    sgf_fnames = [x for x in os.listdir(sgf_dir) if x.endswith('.sgf')]
+    print('Found %d sgfs' % len(sgf_fnames))
+    for sgf_fname in sgf_fnames:
+        hashes_in_game = [pwc.position.zobrist_hash for pwc in replay_sgf_file(f'{sgf_dir}/{sgf_fname}')]
+        game_hashes.append(hashes_in_game)
+        game_moves.append([coords.to_gtp(pwc.next_move) for pwc in replay_sgf_file(f'{sgf_dir}/{sgf_fname}')])
+    num_states_per_step = [len({gh[i] for gh in game_hashes}) for i in range(10)]
+    print(num_states_per_step)
+
+    game_moves = [' '.join(x) for x in game_moves]
+    print('\n'.join(game_moves))
+
