@@ -1,3 +1,6 @@
+from numbers import Number
+from typing import List
+
 import numpy as np
 
 import go
@@ -92,24 +95,44 @@ def test_filter_legal_moves():
 
 
 def test_unique_states_in_selfplay():
-    """ count #unique states (bucketed by move#) in a set of selfplay games """
+    """ count #unique states (bucketed by move#) in a set of selfplay games
+    5x5-2021 selfplay9_1, C2 only(?!)
+        40 sgfs
+        #zhash:         [1, 1, 10, 15, 21, 25, 27, 27, 28, 30, 31, 31, 33, 35, 38, 37]
+        #canonical:     [1, 1, 9, 13, 19, 20, 22, 22, 23, 26, 27, 27, 29, 31, 34, 35]
+    model13_2, C2/B2 open, reduce_symmetry: (due to Benson, shortest game has 16 moves)
+        40 sgfs
+        #zhash:         [1, 2, 7, 11, 17, 24, 26, 25, 24, 23, 23, 24, 24, 26, 26, 26]
+        #canonical:     [1, 2, 7, 10, 16, 22, 24, 24, 23, 22, 21, 23, 23, 24, 22, 22]
+        80 sgfs:
+        #zhash:         [1, 2, 9, 15, 23, 38, 45, 44, 44, 44, 43, 44, 44, 47, 47, 48, 50, 48, 48, 47]
+
+    """
     import os
     from sgf_wrapper import replay_sgf_file
     import myconf
 
     sgf_dir = f'{myconf.SELFPLAY_DIR}/sgf/full'
-    game_hashes = []
-    game_moves = []
-    # ['0-75634959224.sgf', '1-75639137467.sgf']:
-    sgf_fnames = [x for x in os.listdir(sgf_dir) if x.endswith('.sgf')]
-    print('Found %d sgfs' % len(sgf_fnames))
+    # sgf_dir = f'{myconf.EXP_HOME}/../5x5-2021/selfplay9_1'
+    game_hashes = []  # type: List[List[Number]]
+    game_moves = []   # type: List[List[str]]
+    NUM_SGFS = 80
+    sgf_fnames = [x for x in os.listdir(sgf_dir)[:NUM_SGFS] if x.endswith('.sgf')]
+    print('Use first %d sgfs' % len(sgf_fnames))
     for sgf_fname in sgf_fnames:
         hashes_in_game = [pwc.position.zobrist_hash for pwc in replay_sgf_file(f'{sgf_dir}/{sgf_fname}')]
+        # hashes_in_game = [board_hash_canonical(pwc.position.board) for pwc in replay_sgf_file(f'{sgf_dir}/{sgf_fname}')]
         game_hashes.append(hashes_in_game)
         game_moves.append([coords.to_gtp(pwc.next_move) for pwc in replay_sgf_file(f'{sgf_dir}/{sgf_fname}')])
-    num_states_per_step = [len({gh[i] for gh in game_hashes}) for i in range(10)]
+
+    num_states_per_step = []
+    NUM_MOVES = 20
+    for imove in range(NUM_MOVES):
+        # if game is shorter than imove, use last hash
+        hash_set = {gh[imove] if imove < len(gh) else gh[-1] for gh in game_hashes}
+        num_states_per_step.append(len(hash_set))
     print(num_states_per_step)
 
-    game_moves = [' '.join(x) for x in game_moves]
-    print('\n'.join(game_moves))
+    game_fmted = [str(len(x)) + ' ' + ' '.join(x) for x in game_moves]
+    print('\n'.join(game_fmted))
 
