@@ -1,3 +1,4 @@
+from collections import Counter
 from numbers import Number
 from typing import List
 
@@ -102,11 +103,16 @@ def test_unique_states_in_selfplay():
         #canonical:     [1, 1, 9, 13, 19, 20, 22, 22, 23, 26, 27, 27, 29, 31, 34, 35]
     model13_2, C2/B2 open, reduce_symmetry: (due to Benson, shortest game has 16 moves)
         40 sgfs
-        #zhash:         [1, 2, 7, 11, 17, 24, 26, 25, 24, 23, 23, 24, 24, 26, 26, 26]
+        #zhash:         [1, 2, 7, 11, 17, 24, 26, 25, 24, 23, 23, 24, 24, 26, 26, 26, 27, 25, 25, 25]
         #canonical:     [1, 2, 7, 10, 16, 22, 24, 24, 23, 22, 21, 23, 23, 24, 22, 22]
         80 sgfs:
         #zhash:         [1, 2, 9, 15, 23, 38, 45, 44, 44, 44, 43, 44, 44, 47, 47, 48, 50, 48, 48, 47]
-
+        100 sgfs        [1, 2, 15, 23, 33, 41, 50, 48, 46, 47, 46, 46, 46, 48, 48, 49, 50, 50, 50, 54]
+        400 sgfs        [1, 2, 26, 45, 71, 103, 128, 122, 120, 123, 120, 128, 128, 134, 134, 139, 144, 138, 138, 130]
+            move #5: total 400 ['0.20', '0.16', '0.07', '0.07', '0.05', '0.04', '0.03', '0.02', '0.02', '0.02']
+            move #10: total 400 ['0.14', '0.12', '0.12', '0.05', '0.04', '0.03', '0.03', '0.03', '0.02', '0.02']
+            move #20: total 309 ['0.16', '0.12', '0.05', '0.04', '0.03', '0.03', '0.03', '0.03', '0.03', '0.03']
+            move #30: total 17 ['0.12', '0.12', '0.06', '0.06', '0.06', '0.06', '0.06', '0.06', '0.06', '0.06']
     """
     import os
     from sgf_wrapper import replay_sgf_file
@@ -116,7 +122,7 @@ def test_unique_states_in_selfplay():
     # sgf_dir = f'{myconf.EXP_HOME}/../5x5-2021/selfplay9_1'
     game_hashes = []  # type: List[List[Number]]
     game_moves = []   # type: List[List[str]]
-    NUM_SGFS = 80
+    NUM_SGFS = 400
     sgf_fnames = [x for x in os.listdir(sgf_dir)[:NUM_SGFS] if x.endswith('.sgf')]
     print('Use first %d sgfs' % len(sgf_fnames))
     for sgf_fname in sgf_fnames:
@@ -128,10 +134,15 @@ def test_unique_states_in_selfplay():
     num_states_per_step = []
     NUM_MOVES = 20
     for imove in range(NUM_MOVES):
-        # if game is shorter than imove, use last hash
-        hash_set = {gh[imove] if imove < len(gh) else gh[-1] for gh in game_hashes}
+        hash_set = {gh[imove] for gh in game_hashes if imove < len(gh)}
         num_states_per_step.append(len(hash_set))
     print(num_states_per_step)
+
+    # detailed distribution at certain move#
+    for imove in [5, 10, 20, 30]:
+        cnter = Counter(gh[imove] for gh in game_hashes if imove < len(gh))
+        total = sum(cnter.values())
+        print(f'move #{imove}: total {total}', ['%.2f' % (cnt / total) for (x, cnt) in cnter.most_common(10)])
 
     game_fmted = [str(len(x)) + ' ' + ' '.join(x) for x in game_moves]
     print('\n'.join(game_fmted))
