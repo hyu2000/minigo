@@ -6,6 +6,7 @@ import numpy as np
 
 import go
 import coords
+from sgf_wrapper import SGFReader
 from zobrist import DLGO_ZOBRIST_HASH, EMPTY_BOARD_HASH_19, ZobristHash
 from zobrist_util import legal_moves_sans_symmetry, board_hash_canonical
 
@@ -101,7 +102,7 @@ def test_unique_states_in_selfplay():
         40 sgfs
         #zhash:         [1, 1, 10, 15, 21, 25, 27, 27, 28, 30, 31, 31, 33, 35, 38, 37]
         #canonical:     [1, 1, 9, 13, 19, 20, 22, 22, 23, 26, 27, 27, 29, 31, 34, 35]
-    model13_2, C2/B2 open, reduce_symmetry: (due to Benson, shortest game has 16 moves)
+    model13_2, C2/B2 open, reduce_symmetry: (due to Benson, shortest game has 16 moves_in_game)
         40 sgfs
         #zhash:         [1, 2, 7, 11, 17, 24, 26, 25, 24, 23, 23, 24, 24, 26, 26, 26, 27, 25, 25, 25]
         #canonical:     [1, 2, 7, 10, 16, 22, 24, 24, 23, 22, 21, 23, 23, 24, 22, 22]
@@ -119,38 +120,52 @@ def test_unique_states_in_selfplay():
             move #15: total 998 ['0.15', '0.10', '0.10', '0.05', '0.03', '0.03', '0.03', '0.02', '0.02', '0.02']
             move #20: total 761 ['0.13', '0.11', '0.05', '0.03', '0.03', '0.03', '0.03', '0.03', '0.03', '0.02']
 
-most common games in 1000 sgfs:
+536 unique games (out of 1000)
 count #moves
- 147  18	 C2 C3 D3 B3 D4 B2 C1 C4 C5 B5 D5 B1 D2 A4 A2 E4 E3 E1
-  31  25	 C2 C3 D3 D2 D1 E2 C4 B3 B2 D4 B4 A3 A2 E3 A4 D3 D5 B5 C5 B1 C1 E4 A1 pass pass
-  24  27	 C2 C3 D3 D2 D1 E2 C4 B3 B2 D4 B4 A3 A2 E3 A4 D3 D5 B5 C5 B1 C1 pass A5 E4 A1 pass pass
-  21  25	 C2 C3 D3 D2 D1 B2 E2 C4 D4 D5 B1 A2 B4 B3 A4 E4 E3 B5 E5 C5 E4 A1 C1 pass pass
-  16  26	 B2 C3 D3 C2 C4 B3 D2 B4 D4 D1 B5 A2 C5 A4 B1 C1 E2 E4 A5 E5 E1 A1 B2 B1 pass pass
-  13  28	 B2 C3 D4 C2 C4 B3 B4 A4 D2 D3 E3 D1 E2 A2 B1 E4 E5 B5 C5 A3 A5 C1 B5 A1 B1 B2 pass pass
-  13  25	 C2 C3 D3 D2 D1 D4 E2 B3 B2 A2 E4 D5 B4 C4 B5 B1 C1 A4 E3 A3 E5 A5 A1 C5 B1
-  11  25	 C2 C3 D3 D2 D1 E2 C4 B3 B2 D4 B4 A3 A2 E3 A4 D3 D5 B5 C5 B1 C1 pass A5 pass pass
-  10  26	 B2 C3 C2 D2 C4 B3 D3 D4 B4 A3 E3 E2 A4 E4 D3 E3 A2 D3 D1 C5 D5 E5 C1 B5 E1 A5
-  10  27	 C2 C3 D3 D2 D1 E2 C4 B3 B2 D4 B4 A3 A2 E3 A4 D3 D5 B5 C5 B1 C1 pass A5 E5 E4 pass pass
-  10  26	 B2 C3 C2 D2 B4 B3 D3 D4 C4 A3 E3 E2 A4 E4 D3 E3 A2 D3 D1 C5 D5 E5 C1 B5 E1 A5
-  10  24	 C2 C3 D3 D2 D1 D4 E2 B3 B2 A2 E4 D5 B4 C4 B5 B1 C1 A4 E3 A3 E5 A1 pass pass
-   9  26	 B2 C3 C2 D2 B4 B3 D3 D4 C4 A3 E3 E2 A4 E4 D3 E3 A2 D3 D1 C5 D5 E5 C1 B5 pass pass
+ 147  18	 B+0.5	C2 C3 D3 B3 D4 B2 C1 C4 C5 B5 D5 B1 D2 A4 A2 E4 E3 E1
+  31  25	 B+1.5	C2 C3 D3 D2 D1 E2 C4 B3 B2 D4 B4 A3 A2 E3 A4 D3 D5 B5 C5 B1 C1 E4 A1 pass pass
+  24  27	 B+4.5	C2 C3 D3 D2 D1 E2 C4 B3 B2 D4 B4 A3 A2 E3 A4 D3 D5 B5 C5 B1 C1 pass A5 E4 A1 pass pass
+  21  25	 B+4.5	C2 C3 D3 D2 D1 B2 E2 C4 D4 D5 B1 A2 B4 B3 A4 E4 E3 B5 E5 C5 E4 A1 C1 pass pass
+  16  26	 W+5.5	B2 C3 D3 C2 C4 B3 D2 B4 D4 D1 B5 A2 C5 A4 B1 C1 E2 E4 A5 E5 E1 A1 B2 B1 pass pass
+  13  28	 W+0.5	B2 C3 D4 C2 C4 B3 B4 A4 D2 D3 E3 D1 E2 A2 B1 E4 E5 B5 C5 A3 A5 C1 B5 A1 B1 B2 pass pass
+  13  25	 B+0.5	C2 C3 D3 D2 D1 D4 E2 B3 B2 A2 E4 D5 B4 C4 B5 B1 C1 A4 E3 A3 E5 A5 A1 C5 B1
+  11  25	 B+2.5	C2 C3 D3 D2 D1 E2 C4 B3 B2 D4 B4 A3 A2 E3 A4 D3 D5 B5 C5 B1 C1 pass A5 pass pass
+  10  26	 W+9.5	B2 C3 C2 D2 C4 B3 D3 D4 B4 A3 E3 E2 A4 E4 D3 E3 A2 D3 D1 C5 D5 E5 C1 B5 E1 A5
+  10  27	 B+4.5	C2 C3 D3 D2 D1 E2 C4 B3 B2 D4 B4 A3 A2 E3 A4 D3 D5 B5 C5 B1 C1 pass A5 E5 E4 pass pass
+  10  26	 W+9.5	B2 C3 C2 D2 B4 B3 D3 D4 C4 A3 E3 E2 A4 E4 D3 E3 A2 D3 D1 C5 D5 E5 C1 B5 E1 A5
+  10  24	 B+2.5	C2 C3 D3 D2 D1 D4 E2 B3 B2 A2 E4 D5 B4 C4 B5 B1 C1 A4 E3 A3 E5 A1 pass pass
+
+preferred game (no noise):
+      18	 B+0.5	C2 C3 D3 B3 D4 B2 C1 C4 C5 B5 D5 B1 D2 A4 A2 E4 E3 E1
+      24	 W+1.5	B2 C3 C2 D2 C4 B3 D3 D4 E3 B4 E4 A2 D1 D5 E2 C5 A3 A4 E5 A3 B1 A1 B5 A5
     """
     import os
-    from sgf_wrapper import replay_sgf_file
     import myconf
 
     sgf_dir = f'{myconf.SELFPLAY_DIR}/sgf/full'
     # sgf_dir = f'{myconf.EXP_HOME}/../5x5-2021/selfplay9_1'
     game_hashes = []  # type: List[List[Number]]
     game_moves = []   # type: List[List[str]]
+    game_results = []  # type: List[str]
     NUM_SGFS = 1000
     sgf_fnames = [x for x in os.listdir(sgf_dir)[:NUM_SGFS] if x.endswith('.sgf')]
     print('Use first %d sgfs' % len(sgf_fnames))
+    void_games = []
     for sgf_fname in sgf_fnames:
-        hashes_in_game = [pwc.position.zobrist_hash for pwc in replay_sgf_file(f'{sgf_dir}/{sgf_fname}')]
+        hashes_in_game, moves_in_game = [], []
+        reader = SGFReader.from_file_compatible(f'{sgf_dir}/{sgf_fname}')
+        if reader.result_str() == 'VOID':
+            void_games.append(sgf_fname)
+            continue
+        for pwc in reader.iter_pwcs():
+            hashes_in_game.append(pwc.position.zobrist_hash)
+            moves_in_game.append(coords.to_gtp(pwc.next_move))
         # hashes_in_game = [board_hash_canonical(pwc.position.board) for pwc in replay_sgf_file(f'{sgf_dir}/{sgf_fname}')]
         game_hashes.append(hashes_in_game)
-        game_moves.append([coords.to_gtp(pwc.next_move) for pwc in replay_sgf_file(f'{sgf_dir}/{sgf_fname}')])
+        game_moves.append(moves_in_game)
+        game_results.append(reader.result_str())
+    if len(void_games) > 0:
+        print('Found void games: %s' % void_games)
 
     num_states_per_step = []
     NUM_MOVES = 20
@@ -166,8 +181,9 @@ count #moves
         print(f'move #{imove}: total {total}', ['%.2f' % (cnt / total) for (x, cnt) in cnter.most_common(10)])
 
     # freq of games played
-    games_fmted = [' '.join(x) for x in game_moves]
+    games_fmted = [f'{result}\t' + ' '.join(moves) for moves, result in zip(game_moves, game_results)]
     cnter = Counter(games_fmted)
+    print(f'%d unique games (out of %d)' % (len(cnter), len(sgf_fnames)))
     for move_str, freq in cnter.most_common():
-        print("%4d %3d\t %s" % (freq, len(move_str.split(' ')), move_str))
+        print("%4d %3d\t %s" % (freq, len(move_str.split()) - 1, move_str))
 
