@@ -113,6 +113,27 @@ def test_unique_states_in_selfplay():
             move #10: total 400 ['0.14', '0.12', '0.12', '0.05', '0.04', '0.03', '0.03', '0.03', '0.02', '0.02']
             move #20: total 309 ['0.16', '0.12', '0.05', '0.04', '0.03', '0.03', '0.03', '0.03', '0.03', '0.03']
             move #30: total 17 ['0.12', '0.12', '0.06', '0.06', '0.06', '0.06', '0.06', '0.06', '0.06', '0.06']
+        1000 sgfs       [1, 2, 28, 67, 139, 213, 268, 263, 260, 262, 256, 266, 268, 280, 281, 290, 300, 295, 293, 272]
+            move #5: total 1000 ['0.19', '0.18', '0.06', '0.06', '0.04', '0.04', '0.03', '0.03', '0.03', '0.02']
+            move #10: total 999 ['0.15', '0.10', '0.10', '0.05', '0.04', '0.03', '0.03', '0.03', '0.03', '0.02']
+            move #15: total 998 ['0.15', '0.10', '0.10', '0.05', '0.03', '0.03', '0.03', '0.02', '0.02', '0.02']
+            move #20: total 761 ['0.13', '0.11', '0.05', '0.03', '0.03', '0.03', '0.03', '0.03', '0.03', '0.02']
+
+most common games in 1000 sgfs:
+count #moves
+ 147  18	 C2 C3 D3 B3 D4 B2 C1 C4 C5 B5 D5 B1 D2 A4 A2 E4 E3 E1
+  31  25	 C2 C3 D3 D2 D1 E2 C4 B3 B2 D4 B4 A3 A2 E3 A4 D3 D5 B5 C5 B1 C1 E4 A1 pass pass
+  24  27	 C2 C3 D3 D2 D1 E2 C4 B3 B2 D4 B4 A3 A2 E3 A4 D3 D5 B5 C5 B1 C1 pass A5 E4 A1 pass pass
+  21  25	 C2 C3 D3 D2 D1 B2 E2 C4 D4 D5 B1 A2 B4 B3 A4 E4 E3 B5 E5 C5 E4 A1 C1 pass pass
+  16  26	 B2 C3 D3 C2 C4 B3 D2 B4 D4 D1 B5 A2 C5 A4 B1 C1 E2 E4 A5 E5 E1 A1 B2 B1 pass pass
+  13  28	 B2 C3 D4 C2 C4 B3 B4 A4 D2 D3 E3 D1 E2 A2 B1 E4 E5 B5 C5 A3 A5 C1 B5 A1 B1 B2 pass pass
+  13  25	 C2 C3 D3 D2 D1 D4 E2 B3 B2 A2 E4 D5 B4 C4 B5 B1 C1 A4 E3 A3 E5 A5 A1 C5 B1
+  11  25	 C2 C3 D3 D2 D1 E2 C4 B3 B2 D4 B4 A3 A2 E3 A4 D3 D5 B5 C5 B1 C1 pass A5 pass pass
+  10  26	 B2 C3 C2 D2 C4 B3 D3 D4 B4 A3 E3 E2 A4 E4 D3 E3 A2 D3 D1 C5 D5 E5 C1 B5 E1 A5
+  10  27	 C2 C3 D3 D2 D1 E2 C4 B3 B2 D4 B4 A3 A2 E3 A4 D3 D5 B5 C5 B1 C1 pass A5 E5 E4 pass pass
+  10  26	 B2 C3 C2 D2 B4 B3 D3 D4 C4 A3 E3 E2 A4 E4 D3 E3 A2 D3 D1 C5 D5 E5 C1 B5 E1 A5
+  10  24	 C2 C3 D3 D2 D1 D4 E2 B3 B2 A2 E4 D5 B4 C4 B5 B1 C1 A4 E3 A3 E5 A1 pass pass
+   9  26	 B2 C3 C2 D2 B4 B3 D3 D4 C4 A3 E3 E2 A4 E4 D3 E3 A2 D3 D1 C5 D5 E5 C1 B5 pass pass
     """
     import os
     from sgf_wrapper import replay_sgf_file
@@ -122,7 +143,7 @@ def test_unique_states_in_selfplay():
     # sgf_dir = f'{myconf.EXP_HOME}/../5x5-2021/selfplay9_1'
     game_hashes = []  # type: List[List[Number]]
     game_moves = []   # type: List[List[str]]
-    NUM_SGFS = 400
+    NUM_SGFS = 1000
     sgf_fnames = [x for x in os.listdir(sgf_dir)[:NUM_SGFS] if x.endswith('.sgf')]
     print('Use first %d sgfs' % len(sgf_fnames))
     for sgf_fname in sgf_fnames:
@@ -139,11 +160,14 @@ def test_unique_states_in_selfplay():
     print(num_states_per_step)
 
     # detailed distribution at certain move#
-    for imove in [5, 10, 20, 30]:
+    for imove in [5, 10, 15, 20]:
         cnter = Counter(gh[imove] for gh in game_hashes if imove < len(gh))
         total = sum(cnter.values())
         print(f'move #{imove}: total {total}', ['%.2f' % (cnt / total) for (x, cnt) in cnter.most_common(10)])
 
-    game_fmted = [str(len(x)) + ' ' + ' '.join(x) for x in game_moves]
-    print('\n'.join(game_fmted))
+    # freq of games played
+    games_fmted = [' '.join(x) for x in game_moves]
+    cnter = Counter(games_fmted)
+    for move_str, freq in cnter.most_common():
+        print("%4d %3d\t %s" % (freq, len(move_str.split(' ')), move_str))
 
