@@ -9,6 +9,7 @@ import coords
 import go
 import sgf_wrapper
 from go import PlayerMove
+import myconf
 
 ANALYSIS_CONFIG = '/Users/hyu/go/analysis_example.cfg'
 MODELS_DIR = '/Users/hyu/go/models'
@@ -175,7 +176,7 @@ def test_selfplay():
     model = MODEL_B20
     proc, stdin, stdout = start_engine(model)
 
-    moves = ['C2', 'C3', 'D3', 'B3', 'B2']
+    moves = ['C2', 'C3']  #, 'D3', 'B3', 'B2']
     moves = [['B' if i % 2 == 0 else 'W', move] for i, move in enumerate(moves)]
     comments = ['init' for x in moves]
     arequest = ARequest(moves, [len(moves)], komi=0)
@@ -194,7 +195,7 @@ def test_selfplay():
         rinfo = RootInfo.from_dict(resp1.rootInfo)
         next_move = [rinfo.currentPlayer, move1.move]
         comment = assemble_comment(move1.move, resp1)
-        print(comment[:20])
+        print(comment[:20], '...')
         arequest.moves.append(next_move)
         comments.append(comment)
 
@@ -203,7 +204,7 @@ def test_selfplay():
 
     player_moves = (PlayerMove(1 if color == 'B' else -1, coords.from_gtp(pos)) for color, pos in moves)
     # TODO RE should be valid, otherwise test_analyze cannot read it in. Use Tromp score?
-    sgf_str = sgf_wrapper.make_sgf(player_moves, 'UNK', komi=arequest.komi,
+    sgf_str = sgf_wrapper.make_sgf(player_moves, 'B+T', komi=arequest.komi,
                                     white_name=model,
                                     black_name=model,
                                     comments=comments)
@@ -254,7 +255,8 @@ def test_analyze_game():
     sgf_fname = '/Users/hyu/Downloads/katago-sgfs/katatrain.b60c320.sgf'
     # sgf_fname = '/Users/hyu/Downloads/optimalC2.5x5.sgf'
     # sgf_fname = '/Users/hyu/Downloads/katago-sgfs/5x5/C2C3D3B3.sgf'
-    model = MODEL_B40
+    sgf_fname = f'{myconf.EXP_HOME}/selfplay13/selfplay-pvs/C2-preferred.sgf'
+    model = MODEL_B20
     reader = sgf_wrapper.SGFReader.from_file_compatible(sgf_fname)
 
     moves = []
