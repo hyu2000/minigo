@@ -8,7 +8,7 @@ mkdir ${SELFPLAY_DIR}
 
 for i in {1..4}
 do
-  python run_selfplay.py \
+  python3 run_selfplay.py \
     --verbose=0 \
     --selfplay_dir="${SELFPLAY_DIR}/train" \
     --holdout_dir="${SELFPLAY_DIR}/val" \
@@ -16,7 +16,7 @@ do
     --softpick_move_cutoff=6 \
     --num_readouts=200 \
     --full_readout_prob=1.0 \
-    --reduce_symmetry=8 \
+    --reduce_symmetry_before_move=8 \
     --parallel_readouts=16 \
     --holdout_pct=0 \
     --dirichlet_noise_weight=0.25 \
