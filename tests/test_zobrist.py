@@ -96,6 +96,13 @@ def test_filter_legal_moves():
     show_legal_moves(legal_moves_sans_s6y)
 
 
+def format_long_array(lst, every=5, istart=0) -> str:
+    """ add index to make long array easier to read """
+    slst = [f'{idx}:{x}' if (idx % every == 0 or idx == istart) else str(x)
+            for idx, x in zip(range(istart, istart+len(lst)), lst)]
+    return '[%s]' % ', '.join(slst)
+
+
 def test_unique_states_in_selfplay():
     """ count #unique states (bucketed by move#) in a set of selfplay games
     5x5-2021 selfplay9_1, C2 only(?!)
@@ -200,10 +207,10 @@ move #20: total 951 ['0.30', '0.11', '0.07', '0.04', '0.02', '0.02', '0.02', '0.
 
     num_states_per_step = []
     NUM_MOVES = 20
-    for imove in range(NUM_MOVES):
+    for imove in range(1, NUM_MOVES):
         hash_set = {gh[imove] for gh in game_hashes if imove < len(gh)}
         num_states_per_step.append(len(hash_set))
-    print(num_states_per_step)
+    print('#unique-states for each move#:\n\t%s' % format_long_array(num_states_per_step, istart=1))
 
     # detailed distribution at certain move#
     for imove in [5, 10, 15, 20]:

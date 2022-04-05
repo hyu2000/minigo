@@ -71,11 +71,10 @@ def play_games(num_games=500):
             # history_str = ' '.join([coords.to_gtp(x.move) for x in moves_history[:8]])
             history_str = ' '.join(player.move_infos[:8])
 
-            ru_rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+            # ru_rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
 
-            logging.info(f'game {i}: %d moves, score %s l1n=%d rss=%.1f\t%s', player.root.position.n,
-                         result_str, len(shared_tree.children), ru_rss / 1e6,
-                         history_str)
+            logging.info(f'game {i}: %d moves, score %s\t%s', player.root.position.n,
+                         result_str, history_str)
 
         del shared_tree
 
