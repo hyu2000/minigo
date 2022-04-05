@@ -46,8 +46,9 @@ flags.DEFINE_float('dirichlet_noise_weight', 0.25,
                    'How much to weight the priors vs. dirichlet noise when mixing')
 flags.register_validator('dirichlet_noise_weight', lambda x: 0 <= x < 1)
 
-flags.DEFINE_bool('reduce_symmetry', False,
-                  'Only explore one variant among all symmetries')
+# symmetry happens in the very early stage of a game. 0 disables this feature
+flags.DEFINE_integer('reduce_symmetry_before_move', 0,
+                     'Only explore one variant among all symmetries, when move# < this')
 
 FLAGS = flags.FLAGS
 
@@ -88,7 +89,7 @@ class MCTSNode(object):
         self.is_expanded = False
         self.losses_applied = 0  # number of virtual losses on this node
         # using child_() allows vectorized computation of action score.
-        if FLAGS.reduce_symmetry:
+        if position.n < FLAGS.reduce_symmetry_before_move:
             legal_moves = zobrist_util.legal_moves_sans_symmetry(self.position)
         else:
             legal_moves = self.position.all_legal_moves()

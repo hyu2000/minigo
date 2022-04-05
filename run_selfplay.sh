@@ -16,7 +16,7 @@ do
     --softpick_move_cutoff=6 \
     --num_readouts=200 \
     --full_readout_prob=1.0 \
-    --reduce_symmetry=True \
+    --reduce_symmetry=8 \
     --parallel_readouts=16 \
     --holdout_pct=0 \
     --dirichlet_noise_weight=0.25 \
