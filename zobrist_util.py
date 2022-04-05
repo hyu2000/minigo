@@ -3,6 +3,7 @@ utils that use Zobrist Hash to
 - count states visited: rough counting, no collision check
 - filter legal moves in MCTS: exact, check for collision
 """
+import logging
 from typing import Dict
 
 import numpy as np
@@ -23,10 +24,12 @@ def board_hash_canonical(board: np.ndarray) -> np.uint64:
 
 def legal_moves_sans_symmetry(pos: go.Position) -> np.ndarray:
     """ reduce moves that lead to the same board (under symmetry)
+    Deterministic: when symmetry happens, we prefer move with higher flat index value
 
     maybe it's faster if not using board_hash?
     """
     lmoves = pos.all_legal_moves()
+    # num_legal_moves = lmoves.sum()
 
     hashes = dict()  # type: Dict[np.uint64, np.ndarray]
     # lmoves[-1] == 1 is pass, ignore
@@ -59,4 +62,5 @@ def legal_moves_sans_symmetry(pos: go.Position) -> np.ndarray:
         else:
             hashes.update(new_hashes)
             # print(f'move %s added' % coords.flat_to_gtp(flat_idx))
+    # logging.info(f'reduce_symmetry move# {pos.n}: {num_legal_moves} -> {lmoves.sum()}')
     return lmoves

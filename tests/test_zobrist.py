@@ -139,6 +139,37 @@ preferred game (no noise):
       18	 B+0.5	C2 C3 D3 B3 D4 B2 C1 C4 C5 B5 D5 B1 D2 A4 A2 E4 E3 E1
       24	 W+1.5	B2 C3 C2 D2 C4 B3 D3 D4 E3 B4 E4 A2 D1 D5 E2 C5 A3 A4 E5 A3 B1 A1 B5 A5
     """
+    """
+  5x5-2021/  selfplay7-sgfs/:  no reduce-symmetry
+test_zobrist.py::test_unique_states_in_selfplay Use first 1000 sgfs
+[1, 2, 46, 122, 259, 414, 474, 610, 633, 707, 734, 804, 819, 862, 873, 890, 912, 926, 947, 962]
+move #5: total 1000 ['0.12', '0.09', '0.07', '0.06', '0.03', '0.02', '0.01', '0.01', '0.01', '0.01']
+move #10: total 1000 ['0.06', '0.03', '0.02', '0.02', '0.02', '0.02', '0.02', '0.01', '0.01', '0.01']
+move #15: total 1000 ['0.01', '0.01', '0.01', '0.01', '0.01', '0.01', '0.01', '0.01', '0.01', '0.01']
+move #20: total 1000 ['0.01', '0.00', '0.00', '0.00', '0.00', '0.00', '0.00', '0.00', '0.00', '0.00']
+999 unique games (out of 1000)
+   2  27	 B+0.5	C2 C3 B3 B2 B1 B4 A2 D3 A4 B5 D2 E2 D4 C4 D5 D1 C1 E3 A3 C5 A5 E4 E1 E5 D1 pass pass
+   1  ...
+   
+   selfplay7: reduce-symmetry
+test_zobrist.py::test_unique_states_in_selfplay Use first 1000 sgfs
+[1, 2, 25, 60, 113, 176, 212, 210, 206, 201, 205, 205, 214, 218, 227, 234, 247, 240, 248, 235]
+move #5: total 1000 ['0.30', '0.26', '0.03', '0.03', '0.02', '0.02', '0.02', '0.02', '0.02', '0.01']
+move #10: total 1000 ['0.29', '0.12', '0.09', '0.04', '0.03', '0.03', '0.03', '0.02', '0.02', '0.02']
+move #15: total 1000 ['0.29', '0.12', '0.09', '0.04', '0.03', '0.02', '0.02', '0.01', '0.01', '0.01']
+move #20: total 951 ['0.30', '0.11', '0.07', '0.04', '0.02', '0.02', '0.02', '0.02', '0.01', '0.01']
+449 unique games (out of 1000)
+ 270  24	 B+0.5	B2 C3 C2 D2 B3 C4 D1 E2 D4 D3 B4 B5 E4 C1 A4 E1 B1 D5 A5 C5 A2 D1 pass pass
+  53  27	 B+24.5	C2 C3 D3 D2 D1 B2 E2 C4 D4 D5 B1 A2 B4 B3 A4 E4 E3 C5 C1 B5 E5 A3 E4 A5 A4 B4 A1
+  41  25	 B+0.5	C2 C3 D3 D2 D1 E2 C4 B3 B2 D4 B4 A3 A4 E3 A2 D3 D5 B1 C1 B5 C5 pass E5 pass pass
+  32  27	 B+24.5	C2 C3 D3 D2 D1 B2 E2 C4 D4 D5 B1 A2 B4 B3 A4 E4 E3 C5 C1 B5 E5 A5 E4 A3 A4 B4 A1
+  19  27	 B+24.5	C2 C3 D3 D2 D1 B2 E2 C4 D4 D5 B1 A2 B4 B3 A4 E4 E3 C5 C1 A5 E5 B5 E4 A3 A4 B4 A1
+  13  25	 B+0.5	C2 C3 D3 D2 D1 D4 E2 B3 E4 D5 B4 C4 B2 A2 B5 B1 C1 A3 E3 A5 E5 C5 A1 A4 B1
+  13  25	 B+0.5	C2 C3 D3 D2 D1 E2 C4 B3 B2 D4 B4 A3 A4 E3 A2 D3 D5 B5 C5 B1 C1 pass E5 pass pass
+  12  28	 B+24.5	B2 C3 C2 D2 B3 C4 D1 E2 D4 D3 B4 B5 E4 C1 A4 E1 B1 D5 A5 C5 A2 E3 D1 E5 C1 pass D4 E4
+  12  25	 B+0.5	C2 C3 D3 D2 D1 D4 E2 B3 E4 D5 B4 C4 B2 A2 B5 B1 C1 A3 E3 A5 A1 A4 B1 C5 E5
+  11  24	 W+1.5	C2 C3 C4 D3 B3 B2 B1 B4 A2 D4 D2 E2 A4 B5 D1 C5 E3 E4 A3 A5 D5 E5 E1 E3
+      """
     import os
     import myconf
 
