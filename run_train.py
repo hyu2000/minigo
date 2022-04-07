@@ -86,7 +86,7 @@ def compile_dual():
     # SAI: 1e-4
     # KataGo: per-sample learning rate of 6e-5, except 2e-5 for the first 5mm samples
     # 1e-3 / 64 = 1.6e-5
-    opt = keras.optimizers.Adam(learning_rate=0.005)
+    opt = keras.optimizers.Adam(learning_rate=0.0005)
     model.compile(optimizer=opt,
                   loss={
                       'policy': 'categorical_crossentropy',
@@ -146,21 +146,6 @@ def test_update_model():
     model = load_model(fname)
     model.summary()
     # model.save(f'{myconf.EXP_HOME}/checkpoints/model3_epoch_5.new.h5')
-
-
-def test_eval_model():
-    """ on my MBP, loading TF full model works, but still needs to provide custom_objects dict """
-    model = keras.models.load_model(f'{FEATURES_DIR}/../checkpoints/model0_epoch_3.h5',
-                                    custom_objects={'custom_MSE_loss': custom_MSE_loss})
-    fkeys = [f'beg-{i}' for i in range(1, 5)]
-    fkeys.append('mid')
-    fkeys.extend([f'end-{i}' for i in range(4, 0, -1)])
-    for fkey in fkeys:
-        ds_val = load_dataset(fkey)
-        print(fkey)
-        results = model.evaluate(ds_val.batch(64), return_dict=True)
-        # prediction = model.predict(ds_val.batch(64))
-        # print(fkey, results)
 
 
 def label_top50():
@@ -258,9 +243,24 @@ dataset = dataset.prefetch(buffer_size=batch_size)
     return dataset
 
 
+def test_eval_model_on_selfplay13():
+    """ eval various model on policy/value target from selfplay13 """
+    # model = keras.models.load_model(f'{FEATURES_DIR}/../checkpoints/model0_epoch_3.h5',
+    #                                 custom_objects={'custom_MSE_loss': custom_MSE_loss})
+    ds_val = load_selfplay_data(f'{myconf.EXP_HOME}/exps-on-old-models/selfplay13/train', 'full')
+    for i_gen in range(1, 2):
+        for epoch in range(1, 4):
+            model_id = f'model{i_gen}_epoch{epoch}'
+            print('='*10, model_id)
+            model = load_model(f'{myconf.EXP_HOME}/checkpoints/{model_id}.h5')
+            results = model.evaluate(ds_val.batch(64), return_dict=True)
+            # prediction = model.predict(ds_val.batch(64))
+            # print(results)
+
+
 def train_local():
     # model = compile_dual()
-    model = load_model(f'{myconf.MODELS_DIR}/model7_epoch2.h5')
+    model = load_model(f'{myconf.MODELS_DIR}/model13_epoch2.h5')
 
     data_dir = myconf.SELFPLAY_DIR
     data_dir = myconf.FEATURES_DIR
@@ -280,7 +280,7 @@ def train(argv: List):
     train_dir  = argv[1]  # can be a dir pattern, e.g. "tfrecords/enhance*/train"
     model_dir  = argv[2]
     start_iter = int(argv[3])
-    val_dir = argv[4] if len(argv) > 4 else None
+    val_dir = argv[4] if len(argv) > 4 else f'{myconf.EXP_HOME}/exps-on-old-models/selfplay13/train'
 
     new_iter = start_iter + 1
     START_EPOCH = 1
@@ -292,18 +292,23 @@ def train(argv: List):
         model = compile_dual()
     else:
         model = load_model(model_file)
-    ds_train = load_selfplay_data(train_dir)
+    ds_train = load_selfplay_data(train_dir, 'full')
     if val_dir:
-        ds_val = load_selfplay_data(val_dir)
+        ds_val = load_selfplay_data(val_dir, 'full')
+        print('val data size = ', ds_val.cardinality().numpy())
 
     callbacks = [
         keras.callbacks.ModelCheckpoint(f'{model_dir}/model{new_iter}_epoch{{epoch}}.h5'),
         # keras.callbacks.EarlyStopping(monitor='val_loss', patience=2)
     ]
     if val_dir:
-        history = model.fit(ds_train.shuffle(2000).batch(64), epochs=4, callbacks=callbacks, validation_data=ds_val.batch(64))
+        # ds_train = ds_train.repeat(3)
+        # history = model.fit(ds_train.shuffle(4000).batch(64), epochs=24, steps_per_epoch=700,
+        #                     validation_data=ds_val.batch(64), callbacks=callbacks, verbose=2)
+        history = model.fit(ds_train.shuffle(4000).batch(64), epochs=3, steps_per_epoch=None,
+                            validation_data=ds_val.batch(64), callbacks=callbacks, verbose=2)
     else:
-        history = model.fit(ds_train.shuffle(2000).batch(64), epochs=4, callbacks=callbacks)
+        history = model.fit(ds_train.shuffle(4000).batch(64), epochs=4, callbacks=callbacks, verbose=2)
     print(history.history)
 
 
