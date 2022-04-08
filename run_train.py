@@ -4,6 +4,7 @@
 """
 import collections
 import os.path
+import random
 import sys
 from typing import List
 
@@ -275,6 +276,19 @@ def train_local():
     print(history.history)
 
 
+def _ds_size(dataset: tf.data.Dataset):
+    # does it have to be difficult?
+    num_samples = dataset.reduce(np.int64(0), lambda x, _: x + 1).numpy()
+    return num_samples
+
+
+def _ds_take_every(dataset: tf.data.Dataset, n):
+    # why is random sampling so hard!
+    # why can't I chain these two ops together!
+    ds_train = dataset.enumerate().filter(lambda i, x: i % n == 0)
+    return ds_train.map(lambda i, x: x)
+
+
 def train(argv: List):
     assert len(argv) >= 4
     train_dir  = argv[1]  # can be a dir pattern, e.g. "tfrecords/enhance*/train"
@@ -295,17 +309,22 @@ def train(argv: List):
     ds_train = load_selfplay_data(train_dir, 'full')
     if val_dir:
         ds_val = load_selfplay_data(val_dir, 'full')
-        print('val data size = ', ds_val.cardinality().numpy())
 
     callbacks = [
         keras.callbacks.ModelCheckpoint(f'{model_dir}/model{new_iter}_epoch{{epoch}}.h5'),
         # keras.callbacks.EarlyStopping(monitor='val_loss', patience=2)
     ]
     if val_dir:
-        # ds_train = ds_train.repeat(3)
-        # history = model.fit(ds_train.shuffle(4000).batch(64), epochs=24, steps_per_epoch=700,
+        # SYMMETRIES_USED = 8
+        # if SYMMETRIES_USED < 8:
+        #     ds_train = _ds_take_every(ds_train, 8 / SYMMETRIES_USED)
+        # batches_without_symmetry = _ds_size(ds_train) // (SYMMETRIES_USED * 64)
+        # NUM_PASSES_OVER_DATA = 4
+        # ds_train = ds_train.repeat(NUM_PASSES_OVER_DATA)
+        # history = model.fit(ds_train.shuffle(4000).batch(64),
+        #                     epochs=NUM_PASSES_OVER_DATA * SYMMETRIES_USED, steps_per_epoch=batches_without_symmetry,
         #                     validation_data=ds_val.batch(64), callbacks=callbacks, verbose=2)
-        history = model.fit(ds_train.shuffle(4000).batch(64), epochs=3, steps_per_epoch=None,
+        history = model.fit(ds_train.shuffle(4000).batch(64), epochs=4, steps_per_epoch=None,
                             validation_data=ds_val.batch(64), callbacks=callbacks, verbose=2)
     else:
         history = model.fit(ds_train.shuffle(4000).batch(64), epochs=4, callbacks=callbacks, verbose=2)
