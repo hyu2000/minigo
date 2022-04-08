@@ -297,7 +297,7 @@ def train(argv: List):
     val_dir = argv[4] if len(argv) > 4 else f'{myconf.EXP_HOME}/exps-on-old-models/selfplay13/train'
 
     new_iter = start_iter + 1
-    START_EPOCH = 1
+    START_EPOCH = 2
     print(f'train on {train_dir}: {start_iter} -> {new_iter}')
 
     model_file = f'{model_dir}/model{start_iter}_epoch{START_EPOCH}.h5'

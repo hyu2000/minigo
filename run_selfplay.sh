@@ -14,14 +14,14 @@ do
     --holdout_dir="${SELFPLAY_DIR}/val" \
     --sgf_dir="${SELFPLAY_DIR}/sgf" \
     --softpick_move_cutoff=6 \
+    --dirichlet_noise_weight=0.25 \
     --num_readouts=200 \
     --full_readout_prob=1.0 \
     --reduce_symmetry_before_move=8 \
     --parallel_readouts=16 \
     --holdout_pct=0 \
-    --dirichlet_noise_weight=0.25 \
-    --num_games=20 \
-    --load_file="${DRIVE_HOME}/checkpoints/model13_epoch2.h5" \
+    --num_games=300 \
+    --load_file="${DRIVE_HOME}/checkpoints/model3_epoch2.h5" \
     --resign_threshold=-1 \
     2>&1 | tee "${SELFPLAY_DIR}/run_selfplay${i}.log" &
 

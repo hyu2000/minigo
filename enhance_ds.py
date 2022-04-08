@@ -85,7 +85,7 @@ def sample_generator(ds):
         x_org  = tf.cast(x_tensor, tf.uint8).numpy()
         pi_org = y_dict['policy'].numpy()
         v_org  = y_dict['value'].numpy()
-        x_new, pi_new, outcome_new = apply_symmetry_dual(x_org, pi_org, v_org, num_symmetries=4)
+        x_new, pi_new, outcome_new = apply_symmetry_dual(x_org, pi_org, v_org, num_symmetries=8)
         for x, pi, value in zip(x_new, pi_new, outcome_new):
             yield preprocessing.make_tf_example(x, pi, value)
 
