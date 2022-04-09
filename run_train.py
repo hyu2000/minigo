@@ -244,19 +244,28 @@ dataset = dataset.prefetch(buffer_size=batch_size)
     return dataset
 
 
+def test_eval_model13_on_selfplay():
+    """ the opposite of eval_model_on_selfplay13: we try to assess selfplay data quality """
+    model_path = f'{myconf.EXP_HOME}/models-old/model13_epoch2.h5'
+    model = load_model(model_path)
+
+    for selfplay_iter in range(0, 5):
+        print(f'====== evaluating on selfplay {selfplay_iter}')
+        ds_val = load_selfplay_data(f'{myconf.EXP_HOME}/selfplay{selfplay_iter}/train', 'full')
+        results = model.evaluate(ds_val.batch(64), return_dict=True, verbose=2)
+
+
 def test_eval_model_on_selfplay13():
     """ eval various model on policy/value target from selfplay13 """
     # model = keras.models.load_model(f'{FEATURES_DIR}/../checkpoints/model0_epoch_3.h5',
     #                                 custom_objects={'custom_MSE_loss': custom_MSE_loss})
     ds_val = load_selfplay_data(f'{myconf.EXP_HOME}/exps-on-old-models/selfplay13/train', 'full')
-    for i_gen in range(1, 2):
-        for epoch in range(1, 4):
+    for i_gen in range(5, 6):
+        for epoch in range(2, 3):
             model_id = f'model{i_gen}_epoch{epoch}'
             print('='*10, model_id)
             model = load_model(f'{myconf.EXP_HOME}/checkpoints/{model_id}.h5')
-            results = model.evaluate(ds_val.batch(64), return_dict=True)
-            # prediction = model.predict(ds_val.batch(64))
-            # print(results)
+            results = model.evaluate(ds_val.batch(64), return_dict=True, verbose=2)
 
 
 def train_local():
