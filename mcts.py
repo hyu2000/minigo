@@ -357,3 +357,37 @@ class MCTSNode(object):
                 'm=%.1f' % self.children[i].raw_margin if i in self.children else ''
             ))
         return ''.join(output)
+
+    def describe_less_details(self, max_children=10, target_move: int = -1):
+        """ less details, test_kata:assemble_comment()
+
+        Node-level:
+        0.98 - 1015 path=0
+
+        rank move win% score-lead visits (%) prior pv
+        0 B3 0.98 - 849 (0.84) 0.33 D4 B2 D1 E2 D2 C4 C5 B5 D5
+        """
+        ranked_children = self.rank_children()
+        assert self.N == sum(self.child_N) + 1
+        soft_n = self.child_N / max(1, sum(self.child_N))
+
+        lines = []
+        # todo #winning-paths for current player w/ enough visits
+        good_moves = '-'
+        lines.append("Q=%.2f - N=%d path=%s" % (self.Q, self.N, good_moves))
+
+        lines.append("move win% lead visits (%) prior pv")
+        for rank, idx_flat in enumerate(ranked_children[:max_children]):
+            # if self.child_N[idx_flat] == 0:
+            #     break
+            marker = '*' if idx_flat == target_move else ' '
+            s = f'{marker}{rank} %s %5.2f - %4d (%.2f) %.2f -' % (
+                coords.to_gtp(coords.from_flat(idx_flat)),
+                self.child_Q[idx_flat],
+                int(self.child_N[idx_flat]),
+                soft_n[idx_flat],
+                self.original_prior[idx_flat]
+            )
+            lines.append(s)
+
+        return '\n'.join(lines)

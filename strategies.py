@@ -182,7 +182,7 @@ class MCTSPlayer(MCTSPlayerInterface):
                 self.searches_pi.append(None)
         else:
             self.searches_pi.append(None)
-        self.comments.append(self.root.describe())
+        self.comments.append(self.root.describe_less_details())
         try:
             self.root = self.root.maybe_add_child(coords.to_flat(c))
         except go.IllegalMove:
