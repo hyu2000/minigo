@@ -1,45 +1,49 @@
-DRIVE_HOME=/content/drive/MyDrive/dlgo
-#DRIVE_HOME=/Users/hyu/PycharmProjects/dlgo/9x9
+# DRIVE_HOME=/content/drive/MyDrive/dlgo
+DRIVE_HOME=/Users/hyu/PycharmProjects/dlgo/5x5
+PYTHON3=/Users/hyu/anaconda/envs/tf2/bin/python
 
-export BOARD_SIZE=9
+export BOARD_SIZE=5
 
-LOCAL_HOME=/tmp
 MODEL_DIR="${DRIVE_HOME}/checkpoints"
-LOG_DIR="${DRIVE_HOME}/logs"
-SGF_DIR="${DRIVE_HOME}/sgfs"
 
-# bash 3 supports range
-for i in {4..4}
+
+# main selfplay iterations
+for i in {8..8}
 do
-  SELFPLAY_DIR="${DRIVE_HOME}/selfplay/selfplay${i}"
-  TFRECORD_DIR="${DRIVE_HOME}/selfplay/enhance${i}"
+  SELFPLAY_DIR="${DRIVE_HOME}/selfplay${i}"
+  ENHANCED_DIR="${DRIVE_HOME}/selfplay${i}/enhance"
   echo "selfplay: ${SELFPLAY_DIR}"
 
-  rm -rf ${SELFPLAY_DIR}
+  # rm -rf ${SELFPLAY_DIR}
   mkdir -p ${SELFPLAY_DIR}
 
-  python3 run_selfplay.py \
-  --verbose=0 \
-  --load_file="${MODEL_DIR}/model${i}_epoch2.h5" \
-  --selfplay_dir="${SELFPLAY_DIR}/train" \
-  --holdout_dir="${SELFPLAY_DIR}/val" \
-  --sgf_dir="${SGF_DIR}/sgf${i}" \
-  --holdout_pct=0 \
-  --softpick_move_cutoff=6 \
-  --dirichlet_noise_weight=0.25 \
-  --num_games_share_tree=1 \
-  --num_readouts=200 \
-  --parallel_readouts=16 \
-  --num_games=1000 \
-  2>&1 | tee "${LOG_DIR}/selfplay${i}.log"
+  for worker in {1..4}
+  do
+    $PYTHON run_selfplay.py \
+      --verbose=0 \
+      --selfplay_dir="${SELFPLAY_DIR}/train" \
+      --holdout_dir="${SELFPLAY_DIR}/val" \
+      --sgf_dir="${SELFPLAY_DIR}/sgf" \
+      --softpick_move_cutoff=6 \
+      --dirichlet_noise_weight=0.25 \
+      --num_readouts=200 \
+      --full_readout_prob=1.0 \
+      --reduce_symmetry_before_move=8 \
+      --parallel_readouts=16 \
+      --holdout_pct=0 \
+      --num_games=300 \
+      --load_file="${MODEL_DIR}/model${i}_epoch2.h5" \
+      --resign_threshold=-1 \
+      2>&1 | tee "${SELFPLAY_DIR}/run_selfplay${worker}.log" &
 
+  wait
 
   if [ $? -ne 0 ]; then
       echo "run_selfplay ${i} failed"
       break
   fi
 
-  python3 enhance_ds.py ${SELFPLAY_DIR} ${TFRECORD_DIR} 2>&1 | tee "${LOG_DIR}/enhance${i}.log"
+  $PYTHON enhance_ds.py ${SELFPLAY_DIR} ${ENHANCED_DIR} 2>&1 | tee "${SELFPLAY_DIR}/enhance${i}.log"
 
   # save data to drive?
   if [ $? -ne 0 ]; then
@@ -47,7 +51,7 @@ do
       break
   fi
 
-  python3 run_train.py "${TFRECORD_DIR}/train" ${MODEL_DIR} $i 2>&1 | tee "${LOG_DIR}/train${i}.log"
+  $PYTHON run_train.py "${ENHANCED_DIR}/train" ${MODEL_DIR} $i 2>&1 | tee "${SELFPLAY_DIR}/train${i}.log"
 
   if [ $? -ne 0 ]; then
       echo "run_train ${i} failed"
