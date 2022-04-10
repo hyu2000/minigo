@@ -1,6 +1,9 @@
+#!/bin/bash
+
 # DRIVE_HOME=/content/drive/MyDrive/dlgo
 DRIVE_HOME=/Users/hyu/PycharmProjects/dlgo/5x5
-PYTHON3=/Users/hyu/anaconda/envs/tf2/bin/python
+PYTHON=/Users/hyu/anaconda/envs/tf2/bin/python3
+MINIGO=/Users/hyu/PycharmProjects/dlgo/minigo
 
 export BOARD_SIZE=5
 
@@ -19,7 +22,7 @@ do
 
   for worker in {1..4}
   do
-    $PYTHON run_selfplay.py \
+    ${PYTHON} ${MINIGO}/run_selfplay.py \
       --verbose=0 \
       --selfplay_dir="${SELFPLAY_DIR}/train" \
       --holdout_dir="${SELFPLAY_DIR}/val" \
@@ -35,6 +38,7 @@ do
       --load_file="${MODEL_DIR}/model${i}_epoch2.h5" \
       --resign_threshold=-1 \
       2>&1 | tee "${SELFPLAY_DIR}/run_selfplay${worker}.log" &
+    done
 
   wait
 
@@ -43,7 +47,7 @@ do
       break
   fi
 
-  $PYTHON enhance_ds.py ${SELFPLAY_DIR} ${ENHANCED_DIR} 2>&1 | tee "${SELFPLAY_DIR}/enhance${i}.log"
+  ${PYTHON} ${MINIGO}/enhance_ds.py ${SELFPLAY_DIR} ${ENHANCED_DIR} 2>&1 | tee "${SELFPLAY_DIR}/enhance${i}.log"
 
   # save data to drive?
   if [ $? -ne 0 ]; then
@@ -51,7 +55,7 @@ do
       break
   fi
 
-  $PYTHON run_train.py "${ENHANCED_DIR}/train" ${MODEL_DIR} $i 2>&1 | tee "${SELFPLAY_DIR}/train${i}.log"
+  ${PYTHON} ${MINIGO}/run_train.py "${ENHANCED_DIR}/train" ${MODEL_DIR} $i 2>&1 | tee "${SELFPLAY_DIR}/train${i}.log"
 
   if [ $? -ne 0 ]; then
       echo "run_train ${i} failed"
@@ -59,4 +63,3 @@ do
   fi
 
 done
-
