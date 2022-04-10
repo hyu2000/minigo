@@ -110,19 +110,21 @@ def test_unique_states_in_selfplay():
     import myconf
 
     sgf_dir = f'{myconf.SELFPLAY_DIR}/sgf/full'
-    # sgf_dir = f'{myconf.EXP_HOME}/../5x5-2021/selfplay9_1'
+    # sgf_dir = f'{myconf.EXP_HOME}/exps-on-old-models/selfplay13/sgf/full'
     game_hashes = []  # type: List[List[Number]]
     game_moves = []   # type: List[List[str]]
     game_results = []  # type: List[str]
+    game_fnames = []   # type: List[str]
     NUM_SGFS = 1000
-    sgf_fnames = [x for x in os.listdir(sgf_dir)[:NUM_SGFS] if x.endswith('.sgf')]
+    sgf_fnames = [x for x in os.listdir(sgf_dir) if x.endswith('.sgf')]
+    sgf_fnames = sgf_fnames[:NUM_SGFS]
     print('Use first %d sgfs' % len(sgf_fnames))
-    void_games = []
+    num_void_games = 0
     for sgf_fname in sgf_fnames:
         hashes_in_game, moves_in_game = [], []
         reader = SGFReader.from_file_compatible(f'{sgf_dir}/{sgf_fname}')
         if reader.result_str() == 'VOID':
-            void_games.append(sgf_fname)
+            num_void_games += 1
             continue
         for pwc in reader.iter_pwcs():
             hashes_in_game.append(pwc.position.zobrist_hash)
@@ -131,8 +133,9 @@ def test_unique_states_in_selfplay():
         game_hashes.append(hashes_in_game)
         game_moves.append(moves_in_game)
         game_results.append(reader.result_str())
-    if len(void_games) > 0:
-        print('Found void games: %s' % void_games)
+        game_fnames.append(sgf_fname)
+    if num_void_games > 0:
+        print(f'Found void games: {num_void_games}')
 
     num_states_per_step = []
     NUM_MOVES = 20
@@ -150,9 +153,10 @@ def test_unique_states_in_selfplay():
     # freq of games played
     games_fmted = [f'{result}\t' + ' '.join(moves) for moves, result in zip(game_moves, game_results)]
     cnter = Counter(games_fmted)
+    sample_game_lookup = {game_fmted: sgf_fname for sgf_fname, game_fmted in zip(game_fnames, games_fmted)}
     print(f'%d unique games (out of %d)' % (len(cnter), len(sgf_fnames)))
     for move_str, freq in cnter.most_common():
-        print("%4d %3d\t %s" % (freq, len(move_str.split()) - 1, move_str))
+        print("%4d %3d\t %s   %s" % (freq, len(move_str.split()) - 1, move_str, sample_game_lookup[move_str]))
 
     """
     5x5-2021 selfplay9_1, C2 only(?!)
