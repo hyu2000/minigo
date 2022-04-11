@@ -2,6 +2,8 @@ from collections import Counter
 from numbers import Number
 from typing import List
 
+import os
+import sys
 import numpy as np
 
 import go
@@ -9,7 +11,7 @@ import coords
 from sgf_wrapper import SGFReader
 from zobrist import DLGO_ZOBRIST_HASH, EMPTY_BOARD_HASH_19, ZobristHash
 from zobrist_util import legal_moves_sans_symmetry, board_hash_canonical
-
+import myconf
 
 assert go.N == 5
 
@@ -103,14 +105,22 @@ def format_long_array(lst, every=5, istart=0) -> str:
     return '[%s]' % ', '.join(slst)
 
 
-def test_unique_states_in_selfplay():
+def test_distribution_shift():
+    """ visualize visited states distribution shift across self-play generations
+
+    - overlap between sequential self-plays; compare to an anchor (selfplay13)
+    - bucket by move#?  also weighted by freq of visits (for each unique state)
+    """
+
+
+def test_game_tree():
+    """ visualize game tree explored (freq paths), and show how it changes across self-play generations
+    """
+
+
+def _show_unique_states_in_selfplay(sgf_dir):
     """ count #unique states (bucketed by move#) in a set of selfplay games
     """
-    import os
-    import myconf
-
-    sgf_dir = f'{myconf.SELFPLAY_DIR}/sgf/full'
-    # sgf_dir = f'{myconf.EXP_HOME}/exps-on-old-models/selfplay13/sgf/full'
     game_hashes = []  # type: List[List[Number]]
     game_moves = []   # type: List[List[str]]
     game_results = []  # type: List[str]
@@ -158,6 +168,33 @@ def test_unique_states_in_selfplay():
     print(f'%d unique games (out of %d)' % (len(cnter), len(sgf_fnames)))
     for move_str, freq in cnter.most_common():
         print("%4d %3d   %-90s %s" % (freq, len(move_str.split()) - 1, move_str, sample_game_lookup[move_str]))
+
+
+def test_unique_states_in_selfplay():
+    sgf_dir = f'{myconf.SELFPLAY_DIR}5/sgf/full'
+    # sgf_dir = f'{myconf.EXP_HOME}/exps-on-old-models/selfplay13/sgf/full'
+    _show_unique_states_in_selfplay(sgf_dir)
+
+
+def test_selfplay_stats_all():
+    """ batch-generate stats for all selfplay dirs
+
+    thanks to the easiness to swap stdout
+    """
+    org_stdout = sys.stdout
+    for i in range(2, 11):
+        selfplay_dir = f'{myconf.SELFPLAY_DIR}{i}'
+        if not os.path.isdir(selfplay_dir):
+            print(f'Skip {selfplay_dir}, non-existent...')
+            continue
+
+        print(f'processing {selfplay_dir}...')
+
+        sgf_dir = f'{selfplay_dir}/sgf/full'
+        with open(f'{selfplay_dir}/zstats.txt', 'w') as f:
+            sys.stdout = f  # Change the standard output to the file we created.
+            _show_unique_states_in_selfplay(sgf_dir)
+        sys.stdout = org_stdout
 
     """
     5x5-2021 selfplay9_1, C2 only(?!)
