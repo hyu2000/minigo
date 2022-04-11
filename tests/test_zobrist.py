@@ -118,7 +118,7 @@ def test_unique_states_in_selfplay():
     NUM_SGFS = 1000
     sgf_fnames = [x for x in os.listdir(sgf_dir) if x.endswith('.sgf')]
     sgf_fnames = sgf_fnames[:NUM_SGFS]
-    print('Use first %d sgfs' % len(sgf_fnames))
+    print(f'Use first %d sgfs in {sgf_dir}' % len(sgf_fnames))
     num_void_games = 0
     for sgf_fname in sgf_fnames:
         hashes_in_game, moves_in_game = [], []
@@ -145,10 +145,11 @@ def test_unique_states_in_selfplay():
     print('#unique-states for each move#:\n\t%s' % format_long_array(num_states_per_step, istart=1))
 
     # detailed distribution at certain move#
-    for imove in [5, 10, 15, 20]:
+    for imove in [1, 3, 4, 5, 6, 7, 8, 10, 15, 20]:
         cnter = Counter(gh[imove] for gh in game_hashes if imove < len(gh))
         total = sum(cnter.values())
-        print(f'move #{imove}: total {total}', ['%.2f' % (cnt / total) for (x, cnt) in cnter.most_common(10)])
+        print(f'move#%2d: u/t=%3d/%3d  [%s]' % (imove, len(cnter), total,
+              ', '.join(['%.2f' % (cnt / total) for (x, cnt) in cnter.most_common(10)])))
 
     # freq of games played
     games_fmted = [f'{result}\t' + ' '.join(moves) for moves, result in zip(game_moves, game_results)]
@@ -156,7 +157,7 @@ def test_unique_states_in_selfplay():
     sample_game_lookup = {game_fmted: sgf_fname for sgf_fname, game_fmted in zip(game_fnames, games_fmted)}
     print(f'%d unique games (out of %d)' % (len(cnter), len(sgf_fnames)))
     for move_str, freq in cnter.most_common():
-        print("%4d %3d\t %s   %s" % (freq, len(move_str.split()) - 1, move_str, sample_game_lookup[move_str]))
+        print("%4d %3d   %-90s %s" % (freq, len(move_str.split()) - 1, move_str, sample_game_lookup[move_str]))
 
     """
     5x5-2021 selfplay9_1, C2 only(?!)
