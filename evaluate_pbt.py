@@ -82,9 +82,10 @@ def scan_results(sgfs_dir: str) -> Tuple[RawGameCount, pd.DataFrame]:
 def verify_and_fold(raw_game_counts: RawGameCount, df_blackwins: pd.DataFrame) -> pd.DataFrame:
     """ verify black/white parity, and that a minimum number of games has been played
 
-    Example: two models played each other 16 games total, equally as black/white (we check parity)
+    Example: two models playing each other 16 games total, equally as black/white (we check parity)
     df_blackwin: row-id is black, column-id is white
                 model1  model2
+    black_id
     model1      0       8  (model1 as black won all 8 games)
     model2      4       0
 
@@ -109,7 +110,6 @@ def verify_and_fold(raw_game_counts: RawGameCount, df_blackwins: pd.DataFrame) -
     df_wrate2 = (df_totalwins / df_counts2).fillna('-')
     dfw = pd.concat([df_totalwins, df_counts2, df_wrate2], axis=1, keys=['nwin', 'total', 'wrate'])
     dfw = dfw.swaplevel(axis=1).sort_index(axis=1)
-    dfw.index.name = 'black_id'
     return dfw
 
 
@@ -136,14 +136,15 @@ def start_games(black_id, white_id, num_games: int) -> subprocess.Popen:
 
 
 def main_two_sided_eval():
-    model1, model2, num_games = 'model13_epoch2.h5', 'model10_epoch2.h5', 8
+    """ play two models against each other for n games, then switch sides """
+    model1, model2, num_games_per_side = 'model13_epoch2.h5', 'model10_epoch2.h5', 8
     sgfs_dir = f'{myconf.EXP_HOME}/eval_bots/sgfs'
     utils.ensure_dir_exists(sgfs_dir)
     raw_game_count, _ = scan_results(sgfs_dir)
 
     procs = []
     for black, white in [(model1, model2), (model2, model1)]:
-        games_to_run = num_games - raw_game_count.count(black, white)
+        games_to_run = num_games_per_side - raw_game_count.count(black, white)
         if games_to_run <= 0:
             continue
         elif games_to_run <= 3:
