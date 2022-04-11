@@ -232,7 +232,7 @@ class RunOneSided:
         result_str = active.result_string
 
         self._create_sgf(game_idx, init_position.n)
-        self._make_tfrecords(game_idx)
+        # self._make_tfrecords(game_idx)
 
         game_history = active.position.recent
         move_history_head = ' '.join([coords.to_gtp(game_history[i].move) for i in range(5)])

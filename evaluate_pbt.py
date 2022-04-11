@@ -75,11 +75,24 @@ def scan_results(sgfs_dir: str) -> Tuple[RawGameCount, pd.DataFrame]:
     df_counts_raw = pd.DataFrame(game_counts, index=models, columns=models)
     df_counts = df_counts_raw.T.fillna(0).astype(int)
     df_blackwins = pd.DataFrame(black_wins, index=models, columns=models).T.fillna(0).astype(int)
+    df_blackwins.index.name = 'black_id'
     return RawGameCount(df_counts), df_blackwins
 
 
 def verify_and_fold(raw_game_counts: RawGameCount, df_blackwins: pd.DataFrame) -> pd.DataFrame:
     """ verify black/white parity, and that a minimum number of games has been played
+
+    Example: two models played each other 16 games total, equally as black/white (we check parity)
+    df_blackwin: row-id is black, column-id is white
+                model1  model2
+    model1      0       8  (model1 as black won all 8 games)
+    model2      4       0
+
+    dfw: this sums up a model's total win (both as black and white). Again, it's row-major
+                model1              model2
+                nwin total wrate    nwin total wrate
+    model1                          12   16     0.75
+    model2      4    16    0.25
     """
     df_counts = raw_game_counts.df
     df_eye = raw_game_counts.eye() * MIN_NUM_GAMES_SIDED
@@ -94,8 +107,9 @@ def verify_and_fold(raw_game_counts: RawGameCount, df_blackwins: pd.DataFrame) -
     # totalwin: #wins playing black + #wins as white
     df_totalwins = df_blackwins + (df_counts - df_blackwins).T
     df_wrate2 = (df_totalwins / df_counts2).fillna('-')
-    dfw = pd.concat([df_totalwins, df_counts2, df_wrate2], axis=1, keys=['bwin', 'total', 'wrate'])
+    dfw = pd.concat([df_totalwins, df_counts2, df_wrate2], axis=1, keys=['nwin', 'total', 'wrate'])
     dfw = dfw.swaplevel(axis=1).sort_index(axis=1)
+    dfw.index.name = 'black_id'
     return dfw
 
 
@@ -107,10 +121,11 @@ def start_games(black_id, white_id, num_games: int) -> subprocess.Popen:
     """
     python evaluate.py
     """
-    cmdline = """/Users/hyu/anaconda/envs/tf/bin/python /Users/hyu/PycharmProjects/dlgo/minigo/evaluate.py
+    cmdline = """/Users/hyu/anaconda/envs/tf2/bin/python /Users/hyu/PycharmProjects/dlgo/minigo/evaluate.py
                 --softpick_move_cutoff=6
+                --dirichlet_noise_weight=0
                 --parallel_readouts=16
-                --num_readouts=400
+                --num_readouts=200
                 --resign_threshold=-1
                 %s %s %d
     """ % (black_id, white_id, num_games)
@@ -121,7 +136,7 @@ def start_games(black_id, white_id, num_games: int) -> subprocess.Popen:
 
 
 def main_two_sided_eval():
-    model1, model2, num_games = 'model4_epoch3.h5', 'model17_epoch6.h5', 8
+    model1, model2, num_games = 'model13_epoch2.h5', 'model10_epoch2.h5', 8
     sgfs_dir = f'{myconf.EXP_HOME}/eval_bots/sgfs'
     utils.ensure_dir_exists(sgfs_dir)
     raw_game_count, _ = scan_results(sgfs_dir)
