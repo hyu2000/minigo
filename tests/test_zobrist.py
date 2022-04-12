@@ -98,7 +98,7 @@ def test_filter_legal_moves():
     show_legal_moves(legal_moves_sans_s6y)
 
 
-def format_long_array(lst, every=5, istart=0) -> str:
+def _format_long_array(lst, every=5, istart=0) -> str:
     """ add index to make long array easier to read """
     slst = [f'{idx}:{x}' if (idx % every == 0 or idx == istart) else str(x)
             for idx, x in zip(range(istart, istart+len(lst)), lst)]
@@ -118,16 +118,34 @@ def test_game_tree():
     """
 
 
-def _show_unique_states_in_selfplay(sgf_dir):
-    """ count #unique states (bucketed by move#) in a set of selfplay games
-    """
+def test_hashes_growth():
+    """ show growth of hashes over generations, bucket by move# """
+    moves_of_interest = [1, 2, 3, 4, 5, 10, 15, 20, 25, 30]
+    print('moves to analyze: %s' % list(moves_of_interest))
+
+    cnters = [Counter() for i in moves_of_interest]    # one counter per move#
+    cnter_all = Counter()   # all moves in a game, not limited by moves_of_interest
+    for i_gen in range(0, 10):
+        sgf_dir = f'{myconf.SELFPLAY_DIR}{i_gen}/sgf/full'
+
+        game_hashes, _, _, _ = _read_sgfs_in_dir(sgf_dir, 1000)
+
+        for i, imove in enumerate(moves_of_interest):
+            cnters[i].update(gh[imove] for gh in game_hashes if imove < len(gh))
+        cnter_all.update([h for gh in game_hashes for h in gh])
+
+        print(f'selfplay {i_gen}: %s \t %s' % ([len(x) for x in cnters], len(cnter_all)))
+
+
+def _read_sgfs_in_dir(sgf_dir, num_sgfs: int):
+    """ read a number of sgfs, skip over VOID games """
     game_hashes = []  # type: List[List[Number]]
     game_moves = []   # type: List[List[str]]
     game_results = []  # type: List[str]
     game_fnames = []   # type: List[str]
-    NUM_SGFS = 1000
+
     sgf_fnames = [x for x in os.listdir(sgf_dir) if x.endswith('.sgf')]
-    sgf_fnames = sgf_fnames[:NUM_SGFS]
+    sgf_fnames = sgf_fnames[:num_sgfs]
     print(f'Use first %d sgfs in {sgf_dir}' % len(sgf_fnames))
     num_void_games = 0
     for sgf_fname in sgf_fnames:
@@ -144,15 +162,24 @@ def _show_unique_states_in_selfplay(sgf_dir):
         game_moves.append(moves_in_game)
         game_results.append(reader.result_str())
         game_fnames.append(sgf_fname)
+
     if num_void_games > 0:
         print(f'Found void games: {num_void_games}')
+
+    return game_hashes, game_moves, game_results, game_fnames
+
+
+def _show_unique_states_in_selfplay(sgf_dir):
+    """ count #unique states (bucketed by move#) in a set of selfplay games
+    """
+    game_hashes, game_moves, game_results, game_fnames = _read_sgfs_in_dir(sgf_dir, 1000)
 
     num_states_per_step = []
     NUM_MOVES = 20
     for imove in range(1, NUM_MOVES):
         hash_set = {gh[imove] for gh in game_hashes if imove < len(gh)}
         num_states_per_step.append(len(hash_set))
-    print('#unique-states for each move#:\n\t%s' % format_long_array(num_states_per_step, istart=1))
+    print('#unique-states for each move#:\n\t%s' % _format_long_array(num_states_per_step, istart=1))
 
     # detailed distribution at certain move#
     for imove in [1, 3, 4, 5, 6, 7, 8, 10, 15, 20]:
@@ -165,7 +192,7 @@ def _show_unique_states_in_selfplay(sgf_dir):
     games_fmted = [f'{result}\t' + ' '.join(moves) for moves, result in zip(game_moves, game_results)]
     cnter = Counter(games_fmted)
     sample_game_lookup = {game_fmted: sgf_fname for sgf_fname, game_fmted in zip(game_fnames, games_fmted)}
-    print(f'%d unique games (out of %d)' % (len(cnter), len(sgf_fnames)))
+    print(f'%d unique games (out of %d)' % (len(cnter), len(game_fnames)))
     for move_str, freq in cnter.most_common():
         print("%4d %3d   %-90s %s" % (freq, len(move_str.split()) - 1, move_str, sample_game_lookup[move_str]))
 
