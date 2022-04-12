@@ -92,7 +92,7 @@ Total                      8                     12
             results_dict[model] = pd.Series(d)
         df = pd.DataFrame(results_dict).sort_index(axis=1)
         # df.index.name = '#wins'
-        print(df)
+        # print(df)
         return df
 
 

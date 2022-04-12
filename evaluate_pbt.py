@@ -1,6 +1,8 @@
 """ evaluate round-robin fashion among a set of models
 
-                lr=0.1_vw=1     lr=0.1_vw=1.5   lr=0.2_vw=1     lr=0.2_vw=1.5
+All tables should be read row-wise.
+
+     opponent   lr=0.1_vw=1     lr=0.1_vw=1.5   lr=0.2_vw=1     lr=0.2_vw=1.5
 lr=0.1_vw=1     -               b2/3, w1/3      b1/3,w1/3       b1/2(*),w2/3
                                 0.5             0.33
 lr=0.1_vw=1.5                   -               ...             ...
@@ -25,6 +27,8 @@ import pandas as pd
 import utils
 from sgf_wrapper import SGFReader
 import myconf
+pd.set_option('display.max_columns', None)
+pd.set_option('display.width', 200)
 
 
 MIN_NUM_GAMES_SIDED = 3
@@ -123,7 +127,7 @@ def start_games(black_id, white_id, num_games: int) -> subprocess.Popen:
     """
     cmdline = """/Users/hyu/anaconda/envs/tf2/bin/python /Users/hyu/PycharmProjects/dlgo/minigo/evaluate.py
                 --softpick_move_cutoff=6
-                --dirichlet_noise_weight=0
+                --dirichlet_noise_weight=0.25
                 --parallel_readouts=16
                 --num_readouts=200
                 --resign_threshold=-1
@@ -137,7 +141,7 @@ def start_games(black_id, white_id, num_games: int) -> subprocess.Popen:
 
 def main_two_sided_eval():
     """ play two models against each other for n games, then switch sides """
-    model1, model2, num_games_per_side = 'model13_epoch2.h5', 'model10_epoch2.h5', 8
+    model1, model2, num_games_per_side = 'model11_epoch2.h5', 'model10_epoch2.h5', 16
     sgfs_dir = f'{myconf.EXP_HOME}/eval_bots/sgfs'
     utils.ensure_dir_exists(sgfs_dir)
     raw_game_count, _ = scan_results(sgfs_dir)
@@ -188,7 +192,10 @@ def main_pbt_eval():
 
 def state_of_the_world():
     raw_game_count, df_blackwins = scan_results(f'{myconf.EXP_HOME}/eval_bots/sgfs')
+    print('black_wins:')
+    print(df_blackwins)
     dfw = verify_and_fold(raw_game_count, df_blackwins)
+    print(dfw.swaplevel(axis=1)['wrate'])
     pickle_fpath = '/tmp/df.pkl'
     dfw.to_pickle(pickle_fpath)
     print(f'dfw saved to {pickle_fpath}')
