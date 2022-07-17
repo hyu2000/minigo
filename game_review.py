@@ -1,16 +1,19 @@
 """
 given a game, annotate what bot will do, same way a human reviews a game
+
+Similar to test_kata analyze_game()
 """
-from typing import List
+from typing import List, Iterable
 
 from absl import logging
 from absl import app as abslapp
 import numpy as np
 import go
 import coords
+import sgf_wrapper
 from k2net import DualNetwork
 import myconf
-from sgf_wrapper import replay_sgf
+from sgf_wrapper import replay_sgf, SGFReader
 from strategies import MCTSPlayer
 import go
 import coords
@@ -52,22 +55,25 @@ class BotAnalyzer(object):
         first_node = player.root.select_leaf()
         prob, val = player.network.run(first_node.position)
         first_node.incorporate_results(prob, val, first_node)
-
+        # carry out MCTS searches
         move_bot = player.suggest_move(pos)
 
         root = player.root
         idx_move = coords.to_flat(move)
-        q_move = root.child_Q[idx_move]
-        s = '' if np.sign(q_move) == np.sign(outcome) else ' *'
-        if move_bot == move:
-            print('move #%d: %s %.1f%s' % (1 + pos.n, coords.to_gtp(move), root.child_Q[idx_move], s))
-        else:
-            idx_bot_move = coords.to_flat(move_bot)
-            q_bot = root.child_Q[idx_bot_move]
-            print('move #%d: mcts best: %s %.1f, \tactual: %s %.1f%s' % (1 + pos.n,
-                  coords.to_gtp(move_bot), q_bot, coords.to_gtp(move), q_move, s))
-            # print(root.describe(max_children=5))
-        return
+        comment = root.describe_less_details(target_move=idx_move)
+        return comment
+
+        # q_move = root.child_Q[idx_move]
+        # s = '' if np.sign(q_move) == np.sign(outcome) else ' *'
+        # if move_bot == move:
+        #     print('move #%d: %s %.1f%s' % (1 + pos.n, coords.to_gtp(move), q_move, s))
+        # else:
+        #     idx_bot_move = coords.to_flat(move_bot)
+        #     q_bot = root.child_Q[idx_bot_move]
+        #     print('move #%d: mcts best: %s %.1f, \tactual: %s %.1f%s' % (1 + pos.n,
+        #           coords.to_gtp(move_bot), q_bot, coords.to_gtp(move), q_move, s))
+        #     # print(root.describe(max_children=5))
+        # return
 
     def construct_game_state(self, moves_history: List[str]) -> go.Position:
         """ moves are in gtp format """
@@ -85,45 +91,52 @@ class BotAnalyzer(object):
         return pos
 
 
-def probe_along_game(bot: BotAnalyzer, sgf_moves_str, outcome: float):
-    moves = sgf_moves_str.split(';')
-    cur_pos = go.Position()
+def probe_along_game(bot: BotAnalyzer, pwcs: Iterable[go.PositionWithContext], outcome: float):
+    comments = []
 
-    for i, sgf_move in enumerate(moves):
-        color, sgf_coords = sgf_move[0], sgf_move[2:4]
-        assert color == COLOR_ARRAY[cur_pos.to_play]
-        move = coords.from_sgf(sgf_coords)
-        bot.evaluate_move(cur_pos, move, outcome)
+    cur_pos = go.Position()
+    for i, pwc in enumerate(pwcs):
+        assert cur_pos.n == pwc.position.n
+        move = pwc.next_move
+        comment = bot.evaluate_move(cur_pos, move, outcome)
+        comments.append(comment)
 
         cur_pos = cur_pos.play_move(move)
 
-    return cur_pos
+    player_moves = cur_pos.recent
+    return player_moves, comments
 
 
-def probe_along_sgf(bot: BotAnalyzer, sgf_fname: str):
-    with open(sgf_fname) as f:
-        for position_w_context in replay_sgf(f.read()):
-            pos = position_w_context.position
-            result = position_w_context.result
-            if pos.n > 0:
-                move = pos.recent[-1]
-                # print(cur_pos.n, coords.to_gtp(move.move))
-                bot.evaluate_move(cur_pos, move.move, result)
-            cur_pos = pos
-
-        return cur_pos
-
-
-def run_game():
-    model_id = 'model1_epoch2'
+def run_hand_crafted_game():
+    model_id = 'model4_epoch2'
     logging.info('loading %s', model_id)
     dnn = DualNetwork(f'{myconf.EXP_HOME}/checkpoints/{model_id}.h5')
     player = BotAnalyzer(dnn)
-    # probe_along_game(player, BEST_C2_GAME, 1.0)
-    sgf_fname = '/Users/hyu/PycharmProjects/dlgo/5x5/logs/selfplay7-sgfs/0-1633047668.sgf'
-    sgf_fname = '/Users/hyu/PycharmProjects/dlgo/9x9/games-sample/871010.sgf'
+
+    sgf_moves_str = BEST_C2_GAME
+    sgf_str = sgf_wrapper.make_sgf_from_move_str(sgf_moves_str, 'B+R')
+    reader = SGFReader.from_string(sgf_str)
+    player_moves, comments = probe_along_game(player, reader.iter_pwcs(), 1.0)
+
+
+def run_game():
+    model_id = 'model4_epoch2'
+    logging.info('loading %s', model_id)
+    dnn = DualNetwork(f'{myconf.EXP_HOME}/checkpoints/{model_id}.h5')
+    player = BotAnalyzer(dnn)
+
+    sgf_fname = '/Users/hyu/PycharmProjects/dlgo/5x5/selfplay4/sgf/full/133-54927012350.sgf'
     logging.info('Reviewing %s', sgf_fname)
-    probe_along_sgf(player, sgf_fname)
+    reader = SGFReader.from_file_compatible(sgf_fname)
+    player_moves, comments = probe_along_game(player, reader.iter_pwcs(), reader.result())
+    sgf_str = sgf_wrapper.make_sgf(player_moves, reader.result_str(), komi=reader.komi(),
+                                   white_name=reader.white_name(),
+                                   black_name=reader.black_name(),
+                                   game_comment=f'analyzed by: {model_id}',
+                                   comments=comments)
+    with open(f'/Users/hyu/Downloads/test_annotate.sgf', 'w') as f:
+        f.write(sgf_str)
+    return
 
 
 def main(argv):

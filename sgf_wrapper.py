@@ -56,7 +56,7 @@ def translate_sgf_move(player_move, comment):
 
 
 def make_sgf(
-    move_history,
+    move_history: Iterable,
     result_string,
     ruleset="Chinese",
     komi=7.5,
@@ -79,6 +79,26 @@ def make_sgf(
     boardsize = go.N
     game_moves = ''.join(translate_sgf_move(*z)
                          for z in itertools.zip_longest(move_history, comments))
+    result = result_string
+    return SGF_TEMPLATE.format(**locals())
+
+
+def make_sgf_from_move_str(
+    sgf_move_str: str,
+    result_string,
+    ruleset="Chinese",
+    komi=7.5,
+    white_name=PROGRAM_IDENTIFIER,
+    black_name=PROGRAM_IDENTIFIER,
+    game_comment=' ',
+    comments=[]
+):
+    """ convenience method: add headers to sgf_move_str """
+    boardsize = go.N
+    if sgf_move_str[0] == ';':
+        game_moves = sgf_move_str
+    else:
+        game_moves = f';{sgf_move_str}'
     result = result_string
     return SGF_TEMPLATE.format(**locals())
 
