@@ -13,11 +13,11 @@ import myconf
 
 ANALYSIS_CONFIG = '/Users/hyu/go/analysis_example.cfg'
 MODELS_DIR = '/Users/hyu/go/models'
+MODEL_B6C96 = 'g170-b6c96-s175395328-d26788732.bin.gz'
 MODEL_B6_10k = 'kata1-b6c96-s175395328-d26788732.txt.elo10k.gz'
 MODEL_B6_5k  = 'kata1-b6c96-s24455424-d3879081.txt.elo5k.gz'
 MODEL_B40 = 'kata1-b40c256-s11101799168-d2715431527.bin.gz'
-MODEL_B20 = 'g170e-b20c256x2-s5303129600-d1228401921.bin.gz' \
-            ''
+MODEL_B20 = 'g170e-b20c256x2-s5303129600-d1228401921.bin.gz'
 CMDLINE_TEMPLATE = '/opt/homebrew/bin/katago analysis -config {config} -model {model}'
 
 MIN_VISITS = 5
@@ -255,8 +255,8 @@ def test_analyze_game():
     sgf_fname = '/Users/hyu/Downloads/katago-sgfs/katatrain.b60c320.sgf'
     # sgf_fname = '/Users/hyu/Downloads/optimalC2.5x5.sgf'
     # sgf_fname = '/Users/hyu/Downloads/katago-sgfs/5x5/C2C3D3B3.sgf'
-    sgf_fname = f'{myconf.EXP_HOME}/selfplay13/selfplay-pvs/C2-preferred.sgf'
-    model = MODEL_B20
+    sgf_fname = f'{myconf.EXP_HOME}/selfplay6/sgf/full/211-54526899914.sgf'
+    model = MODEL_B6C96
     reader = sgf_wrapper.SGFReader.from_file_compatible(sgf_fname)
 
     moves = []
