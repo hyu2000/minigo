@@ -31,7 +31,7 @@ import os
 import coords
 import zobrist
 
-N = int(os.environ.get('BOARD_SIZE', 5))  # was 19
+N = int(os.environ.get('BOARD_SIZE', 9))  # was 19
 zobrist_hasher = zobrist.ZobristHash(N)
 
 # Position.score() switches from Tromp to Benson after this, for speed reasons

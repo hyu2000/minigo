@@ -12,11 +12,11 @@ import myconf
 
 
 def get_features():
-    return features_lib.DLGO_FEATURES
+    return features_lib.REDUX_FEATURES  # DLGO_FEATURES
 
 
 def get_features_planes():
-    return features_lib.DLGO_FEATURES_PLANES
+    return features_lib.REDUX_FEATURES_PLANES  # DLGO_FEATURES_PLANES
 
 
 Conv2D = keras.layers.Conv2D

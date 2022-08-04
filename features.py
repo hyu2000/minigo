@@ -139,7 +139,7 @@ def recent_move_feature(position):
 @planes(3)
 def recent_move_feature3(position):
     onehot_features = np.zeros([go.N, go.N, 3], dtype=np.uint8)
-    for i, player_move in enumerate(reversed(position.recent[-P:])):
+    for i, player_move in enumerate(reversed(position.recent[-3:])):
         _, move = player_move  # unpack the info from position.recent
         if move is not None:
             onehot_features[move[0], move[1], i] = 1
