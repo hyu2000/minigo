@@ -4,14 +4,17 @@ import json
 from typing import List, Dict
 
 import attr
+import numpy as np
 
 import coords
 import go
 import sgf_wrapper
 from go import PlayerMove
 import myconf
-from katago.analysis_engine import ARequest, AResponse, MoveInfo, RootInfo, start_engine, KataModels
-
+from katago.analysis_engine import ARequest, AResponse, MoveInfo, RootInfo, KataModels, read_multi_responses, \
+    KataEngine, start_engine
+from preprocessing import calc_feature_from_pos, make_tf_example
+from run_kata_preprocess import assemble_train_target
 
 MIN_VISITS = 5
 
@@ -156,20 +159,6 @@ def assemble_comment(actual_move, resp1: AResponse) -> str:
     return '\n'.join(lines)
 
 
-def read_multi_responses(stdout, nmoves):
-    """ process multiple responses (which could arrive out-of-order), sort by turns """
-    responses = []
-    for i in range(nmoves):
-        output = stdout.readline()
-        jdict = json.loads(output)
-        if 'error' in jdict:
-            print(f'Found error in {i}: %s', jdict)
-            break
-        responses.append(AResponse(**jdict))
-
-    return sorted(responses, key=lambda x: x.turnNumber)
-
-
 def test_analyze_game():
     """ analyze & annotate existing game """
     sgf_fname = '/Users/hyu/Downloads/katago-sgfs/katatrain.b60c320.sgf'
@@ -220,42 +209,42 @@ def test_analyze_game():
 
 def test_gen_data():
     """ query Kata for policy / value targets along an existing game """
-    sgf_fname = '/Users/hyu/Downloads/katago-sgfs/katatrain.b60c320.sgf'
-    # sgf_fname = '/Users/hyu/Downloads/optimalC2.5x5.sgf'
-    # sgf_fname = '/Users/hyu/Downloads/katago-sgfs/5x5/C2C3D3B3.sgf'
     sgf_fname = f'{myconf.EXP_HOME}/selfplay6/sgf/full/211-54526899914.sgf'
+    sgf_fname = '/Users/hyu/go/g170archive/sgfs-9x9-try1/s174479360.1.sgf'
     model = KataModels.MODEL_B6C96
     reader = sgf_wrapper.SGFReader.from_file_compatible(sgf_fname)
 
+    positions = []
     moves = []
     player_moves = []  # type: List[PlayerMove]
     for pwc in reader.iter_pwcs():
+        positions.append(pwc.position)
         player_moves.append(PlayerMove(pwc.position.to_play, pwc.next_move))
         move = [go.color_str(pwc.position.to_play)[0], coords.to_gtp(pwc.next_move)]
         moves.append(move)
 
-    proc, stdin, stdout = start_engine(model)
+    engine = KataEngine(model).start()
 
     # moves = moves[:5]  # test only
     turns_to_analyze = list(range(len(moves)))
     arequest = ARequest(moves, turns_to_analyze, komi=reader.komi())
 
-    request1 = json.dumps(attr.asdict(arequest))
-    # ask engine
-    stdin.write(f'{request1}\n')
-    responses = read_multi_responses(stdout, len(moves))
+    responses = engine.analyze(arequest)
 
     comments = []
-    for i, (move, resp1) in enumerate(zip(moves, responses)):
+    for i, (position, move, resp1) in enumerate(zip(positions, moves, responses)):
         assert resp1.turnNumber == i
+
+        pi, v = assemble_train_target(resp1)
+        features = calc_feature_from_pos(position)
+        tf_sample = make_tf_example(features, pi, v)
 
         # assemble debug info in comment
         comment = assemble_comment(move[1], resp1)
         comments.append(comment)
-        print(i, len(resp1.moveInfos))
+        # print(i, len(resp1.moveInfos))
 
-    remainder = proc.communicate()[0].decode('utf-8')
-    print('remainder:\n', remainder)
+    engine.stop()
 
     sgf_str = sgf_wrapper.make_sgf(player_moves, reader.result_str(), komi=arequest.komi,
                                    white_name=reader.white_name(),

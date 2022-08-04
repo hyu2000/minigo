@@ -91,3 +91,42 @@ def start_engine(model=KataModels.MODEL_B6_10k):
         encoding='utf-8',
     )
     return proc, stdin, stdout
+
+
+def read_multi_responses(stdout, nmoves):
+    """ process multiple responses (which could arrive out-of-order), sort by turns """
+    responses = []
+    for i in range(nmoves):
+        output = stdout.readline()
+        jdict = json.loads(output)
+        if 'error' in jdict:
+            print(f'Found error in {i}: %s', jdict)
+            break
+        responses.append(AResponse(**jdict))
+
+    return sorted(responses, key=lambda x: x.turnNumber)
+
+
+class KataEngine:
+    def __init__(self, model=KataModels.MODEL_B6C96):
+        self.model_fname = model
+
+    def start(self) -> 'KataEngine':
+        self._proc, self._pipe_in, self._pipe_out = start_engine(self.model_fname)
+        return self
+
+    def analyze(self, arequest: ARequest):
+        request1 = json.dumps(attr.asdict(arequest))
+        # ask engine
+        self._pipe_in.write(f'{request1}\n')
+
+        nturns = len(arequest.analyzeTurns)
+        responses = read_multi_responses(self._pipe_out, nturns)
+        assert len(responses) == nturns
+
+        return responses
+
+    def stop(self):
+        # verify no extra data to read
+        remainder = self._proc.communicate()[0].decode('utf-8')
+        assert len(remainder) == 0
