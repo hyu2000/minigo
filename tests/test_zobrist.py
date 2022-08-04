@@ -118,6 +118,32 @@ def test_game_tree():
     """
 
 
+def test_successive_common():
+    """ how much successive runs differ in #states visited """
+    moves_of_interest = [1, 2, 3, 4, 5, 10, 15, 20, 25, 30]
+    print('moves to analyze: %s' % list(moves_of_interest))
+
+    cnters = [Counter() for i in moves_of_interest]    # one counter per move#
+    for i_gen in range(10):
+        sgf_dir = f'{myconf.SELFPLAY_DIR}{i_gen}/sgf/full'
+
+        game_hashes, _, _, _ = _read_sgfs_in_dir(sgf_dir, 1000)
+
+        num_common = []
+        for i, imove in enumerate(moves_of_interest):
+            new_cnter = Counter(gh[imove] for gh in game_hashes if imove < len(gh))
+            hashes_common = set(new_cnter.keys()).intersection(cnters[i].keys())
+            num_common.append(len(hashes_common))
+
+            cnters[i] = new_cnter
+
+        cnter_all = Counter(h for gh in game_hashes for h in gh)
+
+        print(f'selfplay {i_gen}: %s  %d' % (',  '.join(
+            [f'{imove}:{len(cnter)} ({x})' for imove, cnter, x in zip(moves_of_interest, cnters, num_common)]),
+            len(cnter_all)))
+
+
 def test_hashes_growth():
     """ show growth of hashes over generations, bucket by move# """
     moves_of_interest = [1, 2, 3, 4, 5, 10, 15, 20, 25, 30]
@@ -125,7 +151,7 @@ def test_hashes_growth():
 
     cnters = [Counter() for i in moves_of_interest]    # one counter per move#
     cnter_all = Counter()   # all moves in a game, not limited by moves_of_interest
-    for i_gen in range(0, 10):
+    for i_gen in range(9, -1, -1):
         sgf_dir = f'{myconf.SELFPLAY_DIR}{i_gen}/sgf/full'
 
         game_hashes, _, _, _ = _read_sgfs_in_dir(sgf_dir, 1000)

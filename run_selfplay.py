@@ -67,9 +67,9 @@ def play_games(num_games=500):
                               )
             margin_est = player.black_margin_no_komi
             result_str = player.result_string
-            # moves_history = player.root.position.recent
-            # history_str = ' '.join([coords.to_gtp(x.move) for x in moves_history[:8]])
-            history_str = ' '.join(player.move_infos[:8])
+            moves_history = player.root.position.recent
+            history_str = ' '.join([coords.to_gtp(x.move) for x in moves_history[:8]])
+            # history_str = ' '.join(player.move_infos[:8])
 
             # ru_rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
 

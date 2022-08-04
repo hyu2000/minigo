@@ -41,6 +41,7 @@ do
     done
 
   wait
+  # if any process stalled, we will not reach here
 
   if [ $? -ne 0 ]; then
       echo "run_selfplay ${i} failed"

@@ -128,7 +128,7 @@ class RunOneSided:
         self.black_player = MCTSPlayer(self.black_net)
         self.white_player = MCTSPlayer(self.white_net)
 
-        self.init_positions = InitPositions(None, None)
+        self.init_positions = InitPositions(['C2'], [1.0])
 
         self._num_games_so_far = 0
 
