@@ -230,3 +230,34 @@ class GameStore(object):
         if filter_game:
             it = filter(lambda x: TarDataSet.basic_filter(x[1], x[0]), it)
         return it
+
+
+class KataG170DataSet:
+    """ KataGo g170 run selfplay games are in the order of increasing strength
+
+    - *.sgfs in a dir pattern
+    - TODO: iterate thru *.sgfs following the order in index.txt
+    - a game is one line in .sgfs
+    """
+    def __init__(self, sgfs_root_dir: str):
+        self.sgfs_root_dir = sgfs_root_dir
+
+    def game_iter(self, shuffle=False, board_size=9):
+        flist = glob.glob(f'{self.sgfs_root_dir}/*/sgfs/*.sgfs')
+        if shuffle:
+            random.shuffle(flist)
+        num_games = 0
+        for i, fname in enumerate(flist):
+            if not fname.endswith('.sgfs'):
+                continue
+            if i % 10 == 0:
+                logging.info(f'game_iter: {i}th file, produced {num_games} games...')
+            fname_trunk = fname[(len(self.sgfs_root_dir) + 1):]
+            file_id = os.path.splitext(fname_trunk)[0]
+            for iline, line in enumerate(open(fname)):
+                reader = SGFReader.from_string(line)
+                if reader.board_size() != board_size:
+                    continue
+                num_games += 1
+                game_id = f'{file_id}-{iline}'
+                yield game_id, reader

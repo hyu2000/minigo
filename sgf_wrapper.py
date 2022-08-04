@@ -333,9 +333,9 @@ class SGFReader(object):
 
     @staticmethod
     def _parse_result_str(s: str) -> Tuple[int, float]:
-        """ B+R B+2.5 B+T   DRAW """
+        """ B+R B+2.5 B+T   DRAW|0 """
         s = s.upper()
-        if s == 'DRAW':
+        if s == 'DRAW' or s == '0' or s == 'VOID':
             return 0, 0
 
         winner = s[0]
