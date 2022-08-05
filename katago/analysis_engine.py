@@ -6,7 +6,7 @@ from typing import List, Dict
 import go
 
 MODELS_DIR = '/Users/hyu/go/models'
-ANALYSIS_CONFIG = '/Users/hyu/go/analysis_example.cfg'
+ANALYSIS_CONFIG = '/Users/hyu/PycharmProjects/minigo/katago/analysis_example.cfg'
 CMDLINE_TEMPLATE = '/opt/homebrew/bin/katago analysis -config {config} -model {model}'
 
 
