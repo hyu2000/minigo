@@ -12,8 +12,8 @@ CMDLINE_TEMPLATE = '/opt/homebrew/bin/katago analysis -config {config} -model {m
 
 class KataModels:
     # g170 run
-    MODEL_B6C96 = f'{MODELS_DIR}/g170-b6c96-s175395328-d26788732.bin.gz'  # a bit below my level
-    MODEL_B20 = f'{MODELS_DIR}/g170e-b20c256x2-s5303129600-d1228401921.bin.gz'
+    G170_B6C96 = f'{MODELS_DIR}/g170-b6c96-s175395328-d26788732.bin.gz'  # a bit below my level
+    G170_B20 = f'{MODELS_DIR}/g170e-b20c256x2-s5303129600-d1228401921.bin.gz'
     # new run
     MODEL_B6_10k = f'{MODELS_DIR}/kata1-b6c96-s175395328-d26788732.txt.elo10k.gz'
     MODEL_B6_5k  = f'{MODELS_DIR}/kata1-b6c96-s24455424-d3879081.txt.elo5k.gz'
@@ -108,7 +108,7 @@ def read_multi_responses(stdout, nmoves):
 
 
 class KataEngine:
-    def __init__(self, model=KataModels.MODEL_B6C96):
+    def __init__(self, model=KataModels.G170_B6C96):
         self.model_fname = model
 
     def start(self) -> 'KataEngine':

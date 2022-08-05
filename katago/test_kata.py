@@ -96,7 +96,7 @@ def count_good_moves(rinfo: RootInfo, move_infos: List[Dict]) -> int:
 
 def test_selfplay():
     """ play a game using top move suggested by Kata """
-    model = KataModels.MODEL_B20
+    model = KataModels.G170_B20
     proc, stdin, stdout = start_engine(model)
 
     moves = ['C2', 'C3']  #, 'D3', 'B3', 'B2']
@@ -165,7 +165,7 @@ def test_analyze_game():
     # sgf_fname = '/Users/hyu/Downloads/optimalC2.5x5.sgf'
     # sgf_fname = '/Users/hyu/Downloads/katago-sgfs/5x5/C2C3D3B3.sgf'
     sgf_fname = f'{myconf.EXP_HOME}/selfplay6/sgf/full/211-54526899914.sgf'
-    model = KataModels.MODEL_B6C96
+    model = KataModels.G170_B6C96
     reader = sgf_wrapper.SGFReader.from_file_compatible(sgf_fname)
 
     moves = []
@@ -211,7 +211,7 @@ def test_gen_data():
     """ query Kata for policy / value targets along an existing game """
     sgf_fname = f'{myconf.EXP_HOME}/selfplay6/sgf/full/211-54526899914.sgf'
     sgf_fname = '/Users/hyu/go/g170archive/sgfs-9x9-try1/s174479360.1.sgf'
-    model = KataModels.MODEL_B6C96
+    model = KataModels.G170_B6C96
     reader = sgf_wrapper.SGFReader.from_file_compatible(sgf_fname)
 
     positions = []

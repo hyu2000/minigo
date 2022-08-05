@@ -22,10 +22,7 @@ def assemble_train_target(resp1: AResponse):
     rinfo = RootInfo.from_dict(resp1.rootInfo)
     # my vnet activation is tanh: win_rate * 2 - 1
     v_tanh = rinfo.winrate * 2 - 1
-    s = f'%.2f %.2f {rinfo.visits}' % (rinfo.winrate, rinfo.scoreLead)
 
-    lines = [s]
-    lines.append('move win% lead visits (%) prior pv')
     pi = np.zeros([go.N * go.N + 1], dtype=np.float32)
     for move_info in resp1.moveInfos:
         minfo = MoveInfo.from_dict(move_info)
@@ -70,35 +67,42 @@ def write_batch(fname, samples_batch: List):
     preprocessing.write_tf_examples(fname, samples_batch)
 
 
-def preprocess(train_val_split=0.9, games_in_batch=1000):
+def preprocess(train_val_split=0.9, samples_in_batch=1e5):
     data_dir = '/Users/hyu/go/g170archive/sgfs-9x9'
     ds = KataG170DataSet(data_dir)
 
-    model = KataModels.MODEL_B6C96
+    model = KataModels.G170_B6C96
     engine = KataEngine(model)
     engine.start()
 
-    i_batch = 0
-    samples_batch = []
+    i_batch_train, i_batch_val = 0, 0
+    samples_train, samples_val = [], []
     for i_game, (game_id, reader) in enumerate(ds.game_iter()):
         samples = process_one_game(engine, reader)
-        samples_batch.extend(samples)
+        if random.random() < train_val_split:
+            samples_train.extend(samples)
+        else:
+            samples_val.extend(samples)
 
-        if (i_game + 1) % games_in_batch == 0:
-            fname = f'{myconf.FEATURES_DIR}/train/train-{i_batch}.tfrecord.zz'
-            write_batch(fname, samples_batch)
+        if len(samples_train) >= samples_in_batch:
+            fname = f'{myconf.FEATURES_DIR}/train/train-{i_batch_train}.tfrecord.zz'
+            write_batch(fname, samples_train)
 
-            samples_batch = []
-            i_batch += 1
+            samples_train = []
+            i_batch_train += 1
 
-    fname = f'{myconf.FEATURES_DIR}/train/train-{i_batch}.tfrecord.zz'
-    write_batch(fname, samples_batch)
+        # ditto for val
+
+    fname = f'{myconf.FEATURES_DIR}/train/train-{i_batch_train}.tfrecord.zz'
+    write_batch(fname, samples_train)
+    fname = f'{myconf.FEATURES_DIR}/val/val-{i_batch_val}.tfrecord.zz'
+    write_batch(fname, samples_val)
 
     engine.stop()
 
 
 def nottest_gen_data():
-    model = KataModels.MODEL_B6C96
+    model = KataModels.G170_B6C96
     engine = KataEngine(model)
     engine.start()
 
