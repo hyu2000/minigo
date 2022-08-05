@@ -12,12 +12,12 @@ CMDLINE_TEMPLATE = '/opt/homebrew/bin/katago analysis -config {config} -model {m
 
 class KataModels:
     # g170 run
-    MODEL_B6C96 = 'g170-b6c96-s175395328-d26788732.bin.gz'  # a bit below my level
-    MODEL_B20 = 'g170e-b20c256x2-s5303129600-d1228401921.bin.gz'
+    MODEL_B6C96 = f'{MODELS_DIR}/g170-b6c96-s175395328-d26788732.bin.gz'  # a bit below my level
+    MODEL_B20 = f'{MODELS_DIR}/g170e-b20c256x2-s5303129600-d1228401921.bin.gz'
     # new run
-    MODEL_B6_10k = 'kata1-b6c96-s175395328-d26788732.txt.elo10k.gz'
-    MODEL_B6_5k  = 'kata1-b6c96-s24455424-d3879081.txt.elo5k.gz'
-    MODEL_B40 = 'kata1-b40c256-s11101799168-d2715431527.bin.gz'
+    MODEL_B6_10k = f'{MODELS_DIR}/kata1-b6c96-s175395328-d26788732.txt.elo10k.gz'
+    MODEL_B6_5k  = f'{MODELS_DIR}/kata1-b6c96-s24455424-d3879081.txt.elo5k.gz'
+    MODEL_B40 = f'{MODELS_DIR}/kata1-b40c256-s11101799168-d2715431527.bin.gz'
 
 
 @attr.s
@@ -74,8 +74,8 @@ class MoveInfo(object):
                         pv=d['pv'], prior=d['prior'], scoreLead=d['scoreLead'])
 
 
-def start_engine(model=KataModels.MODEL_B6_10k):
-    cmdline = CMDLINE_TEMPLATE.format(config=ANALYSIS_CONFIG, model=f'{MODELS_DIR}/{model}')
+def start_engine(model_path=KataModels.MODEL_B6_10k):
+    cmdline = CMDLINE_TEMPLATE.format(config=ANALYSIS_CONFIG, model=model_path)
     proc = subprocess.Popen(
         cmdline.split(),
         stdin=subprocess.PIPE,
