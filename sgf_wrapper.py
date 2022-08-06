@@ -263,7 +263,7 @@ class SGFReader(object):
     def not_handicap(self) -> bool:
         """ HA """
         handicap = sgf_prop(self.props.get('HA'))
-        if handicap is None or handicap == 0:
+        if handicap is None or int(handicap) == 0:
             return True
         return False
 

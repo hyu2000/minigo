@@ -236,28 +236,36 @@ class KataG170DataSet:
     """ KataGo g170 run selfplay games are in the order of increasing strength
 
     - *.sgfs in a dir pattern
-    - TODO: iterate thru *.sgfs following the order in index.txt
     - a game is one line in .sgfs
     """
-    def __init__(self, sgfs_root_dir: str):
+    def __init__(self, sgfs_root_dir: str, zip_lst_fname: str):
         self.sgfs_root_dir = sgfs_root_dir
+        self.dir_lst = self._read_zip_lst(f'{sgfs_root_dir}/{zip_lst_fname}')
 
-    def game_iter(self, shuffle=False, board_size=9):
-        flist = glob.glob(f'{self.sgfs_root_dir}/*/sgfs/*.sgfs')
-        if shuffle:
-            random.shuffle(flist)
+    def _read_zip_lst(self, zip_lst_fname):
+        zip_list = open(zip_lst_fname).readlines()
+        assert len(zip_list) == 143
+        return [x.rstrip().removesuffix('.zip') for x in zip_list]
+
+    def game_iter(self, start=0, stop=None, board_size=9):
+        """ start/stop allow iterating on a subset of zips """
+        # flist = glob.glob(f'{self.sgfs_root_dir}/*/sgfs/*.sgfs')
+        if stop is None:
+            stop = len(self.dir_lst)
         num_games = 0
-        for i, fname in enumerate(flist):
-            if not fname.endswith('.sgfs'):
-                continue
-            if i % 10 == 0:
-                logging.info(f'game_iter: {i}th file, produced {num_games} games...')
-            fname_trunk = fname[(len(self.sgfs_root_dir) + 1):]
-            file_id = os.path.splitext(fname_trunk)[0]
-            for iline, line in enumerate(open(fname)):
-                reader = SGFReader.from_string(line)
-                if reader.board_size() != board_size:
-                    continue
-                num_games += 1
-                game_id = f'{file_id}-{iline}'
-                yield game_id, reader
+        for i_dir, dirname in enumerate(self.dir_lst[start:stop]):
+            if i_dir % 10 == 0:
+                logging.info(f'game_iter: {i_dir}th zip, produced {num_games} games...')
+            for fname in glob.glob(f'{self.sgfs_root_dir}/{dirname}/sgfs/*.sgfs'):
+                fname_trunk = fname[(len(self.sgfs_root_dir) + 1):]
+                file_id = os.path.splitext(fname_trunk)[0]
+                for iline, line in enumerate(open(fname)):
+                    reader = SGFReader.from_string(line)
+                    if reader.board_size() != board_size:
+                        continue
+                    num_games += 1
+                    game_id = f'{file_id}-{iline}'
+                    yield game_id, reader
+
+        logging.info(f'game_iter: total {i_dir} zip, produced {num_games} games...')
+
