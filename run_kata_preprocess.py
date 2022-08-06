@@ -47,7 +47,10 @@ def process_one_game(engine: KataEngine, reader: SGFReader) -> List:
     turns_to_analyze = list(range(len(moves)))
     # ignore komi in the actual game: we only care about the default 5.5
     arequest = ARequest(moves, turns_to_analyze)
-    responses = engine.analyze(arequest)
+    try:
+        responses = engine.analyze(arequest)
+    except:
+        return []
 
     samples = []
     for i, (position, move, resp1) in enumerate(zip(positions, moves, responses)):
@@ -88,7 +91,8 @@ def scan_for_next_batch_number(feature_dir, init: bool) -> int:
 
 
 def preprocess(init=False, samples_in_batch=1e5):
-    """
+    """ due to long runtime for the entire 22k games, we try to make it easy to run in batches:
+
     init=True: batch starts with 0
     init=False: pick up from where we left
     """
@@ -106,7 +110,7 @@ def preprocess(init=False, samples_in_batch=1e5):
     for i_game, (game_id, reader) in enumerate(ds.game_iter(stop=10)):
         samples = process_one_game(engine, reader)
         samples_train.extend(samples)
-        logging.info(f'{i_game}th game: %d samples', len(samples))
+        logging.info(f'{i_game}th game: %d samples \t\t{game_id}', len(samples))
 
         if len(samples_train) >= samples_in_batch:
             print(f'progress: {i_game}th game ...')

@@ -255,7 +255,7 @@ class KataG170DataSet:
             stop = len(self.dir_lst)
         num_games = 0
         for i_dir, dirname in enumerate(self.dir_lst[start:stop]):
-            if i_dir % 10 == 0:
+            if i_dir + 1 % 10 == 0:
                 logging.info(f'game_iter: {i_dir}th zip, produced {num_games} games...')
             for fname in glob.glob(f'{self.sgfs_root_dir}/{dirname}/sgfs/*.sgfs'):
                 fname_trunk = fname[(len(self.sgfs_root_dir) + 1):]

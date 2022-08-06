@@ -103,7 +103,7 @@ def read_multi_responses(stdout, nmoves):
         output = stdout.readline()
         jdict = json.loads(output)
         if 'error' in jdict or 'warning' in jdict:
-            print(f'Found error in {i}: %s', jdict)
+            print(f'Found error in {i}: %s' % jdict)
             break
         responses.append(AResponse(**jdict))
 
@@ -125,7 +125,7 @@ class KataEngine:
 
         nturns = len(arequest.analyzeTurns)
         responses = read_multi_responses(self._pipe_out, nturns)
-        assert len(responses) == nturns
+        assert len(responses) == nturns, f'expecting {nturns} turns, got %d' % len(responses)
 
         return responses
 
