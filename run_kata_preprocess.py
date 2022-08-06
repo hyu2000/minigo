@@ -1,5 +1,7 @@
 """ generate TFrecord files from KataGo analyzed games; train/val split """
+import glob
 import itertools
+import os
 import random
 from collections import Counter, defaultdict
 from typing import List, Iterable
@@ -56,7 +58,6 @@ def process_one_game(engine: KataEngine, reader: SGFReader) -> List:
         tf_sample = preprocessing.make_tf_example(features, pi, v)
         samples.append(tf_sample)
 
-    print('Got %d samples' % len(samples))
     return samples
 
 
@@ -67,36 +68,56 @@ def write_batch(fname, samples_batch: List):
     preprocessing.write_tf_examples(fname, samples_batch)
 
 
-def preprocess(train_val_split=0.9, samples_in_batch=1e5):
+def scan_for_next_batch_number(feature_dir, init: bool) -> int:
+    if not os.path.exists(feature_dir):
+        logging.info(f'mkdir {feature_dir}')
+        os.mkdir(feature_dir)
+        return 0
+    flist = glob.glob(f'{feature_dir}/train*.tfrecord.zz')
+    if init:
+        # clean up
+        if len(flist) > 0:
+            logging.info('Found %d batches and init=True, should clean up', len(flist))
+            # todo
+        return 0
+    if len(flist) == 0:
+        return 0
+    batches = [x.removeprefix(f'{feature_dir}/train').removesuffix('.tfrecord.zz') for x in flist]
+    # todo check it's contiguous
+    return 1 + max([int(x) for x in batches])
+
+
+def preprocess(init=False, samples_in_batch=1e5):
+    """
+    init=True: batch starts with 0
+    init=False: pick up from where we left
+    """
     data_dir = '/Users/hyu/go/g170archive/sgfs-9x9'
     ds = KataG170DataSet(data_dir)
+
+    feature_dir = f'{myconf.FEATURES_DIR}/g170'
+    i_batch_train = scan_for_next_batch_number(feature_dir, init)
 
     model = KataModels.G170_B6C96
     engine = KataEngine(model)
     engine.start()
 
-    i_batch_train, i_batch_val = 0, 0
-    samples_train, samples_val = [], []
-    for i_game, (game_id, reader) in enumerate(ds.game_iter()):
+    samples_train = []
+    for i_game, (game_id, reader) in enumerate(ds.game_iter(stop=10)):
         samples = process_one_game(engine, reader)
-        if random.random() < train_val_split:
-            samples_train.extend(samples)
-        else:
-            samples_val.extend(samples)
+        samples_train.extend(samples)
+        logging.info(f'{i_game}th game: %d samples', len(samples))
 
         if len(samples_train) >= samples_in_batch:
-            fname = f'{myconf.FEATURES_DIR}/train/train-{i_batch_train}.tfrecord.zz'
+            print(f'progress: {i_game}th game ...')
+            fname = f'{feature_dir}/train-{i_batch_train}.tfrecord.zz'
             write_batch(fname, samples_train)
 
             samples_train = []
             i_batch_train += 1
 
-        # ditto for val
-
-    fname = f'{myconf.FEATURES_DIR}/train/train-{i_batch_train}.tfrecord.zz'
+    fname = f'{feature_dir}/train-{i_batch_train}.tfrecord.zz'
     write_batch(fname, samples_train)
-    fname = f'{myconf.FEATURES_DIR}/val/val-{i_batch_val}.tfrecord.zz'
-    write_batch(fname, samples_val)
 
     engine.stop()
 
@@ -116,6 +137,12 @@ def nottest_gen_data():
     process_one_game(engine, reader)
 
     engine.stop()
+
+
+def nottest_scan_batch():
+    feature_dir = f'{myconf.FEATURES_DIR}/g170'
+    i_batch = scan_for_next_batch_number(feature_dir, init=False)
+    assert i_batch == 0
 
 
 if __name__ == '__main__':

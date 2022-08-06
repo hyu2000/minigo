@@ -238,7 +238,7 @@ class KataG170DataSet:
     - *.sgfs in a dir pattern
     - a game is one line in .sgfs
     """
-    def __init__(self, sgfs_root_dir: str, zip_lst_fname: str):
+    def __init__(self, sgfs_root_dir: str, zip_lst_fname='zipfiles.lst'):
         self.sgfs_root_dir = sgfs_root_dir
         self.dir_lst = self._read_zip_lst(f'{sgfs_root_dir}/{zip_lst_fname}')
 
@@ -248,7 +248,8 @@ class KataG170DataSet:
         return [x.rstrip().removesuffix('.zip') for x in zip_list]
 
     def game_iter(self, start=0, stop=None, board_size=9):
-        """ start/stop allow iterating on a subset of zips """
+        """ start/stop allow iterating on a subset of zips. Total 143 zips
+        """
         # flist = glob.glob(f'{self.sgfs_root_dir}/*/sgfs/*.sgfs')
         if stop is None:
             stop = len(self.dir_lst)
@@ -267,5 +268,5 @@ class KataG170DataSet:
                     game_id = f'{file_id}-{iline}'
                     yield game_id, reader
 
-        logging.info(f'game_iter: total {i_dir} zip, produced {num_games} games...')
+        logging.info(f'game_iter: total {i_dir + 1} zip, produced {num_games} games...')
 

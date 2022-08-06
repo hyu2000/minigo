@@ -1,3 +1,6 @@
+"""
+https://github.com/lightvector/KataGo/blob/master/docs/Analysis_Engine.md
+"""
 import attr
 import io
 import subprocess
@@ -6,7 +9,7 @@ from typing import List, Dict
 import go
 
 MODELS_DIR = '/Users/hyu/go/models'
-ANALYSIS_CONFIG = '/Users/hyu/PycharmProjects/minigo/katago/analysis_example.cfg'
+ANALYSIS_CONFIG = '/Users/hyu/PycharmProjects/dlgo/minigo/katago/analysis_example.cfg'
 CMDLINE_TEMPLATE = '/opt/homebrew/bin/katago analysis -config {config} -model {model}'
 
 
@@ -99,7 +102,7 @@ def read_multi_responses(stdout, nmoves):
     for i in range(nmoves):
         output = stdout.readline()
         jdict = json.loads(output)
-        if 'error' in jdict:
+        if 'error' in jdict or 'warning' in jdict:
             print(f'Found error in {i}: %s', jdict)
             break
         responses.append(AResponse(**jdict))
