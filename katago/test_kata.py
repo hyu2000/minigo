@@ -135,6 +135,50 @@ def test_selfplay():
         f.write(sgf_str)
 
 
+def test_match():
+    """ play a game between two Kata engines
+    """
+    engines = []
+    model_ids = []
+    for model_fname in [KataModels.G170_B6C96, KataModels.MODEL_B6_10k]:
+        engines.append(KataEngine(model_fname).start())
+        model_ids.append(KataModels.model_id(model_fname))
+
+    moves = []
+    moves = [['B' if i % 2 == 0 else 'W', move] for i, move in enumerate(moves)]
+    comments = ['init' for x in moves]
+    arequest = ARequest(moves, [len(moves)], komi=5.5)
+    for i in range(100):
+        arequest.analyzeTurns = [len(moves)]
+
+        # ask engine
+        player = engines[i % 2]
+        responses = player.analyze(arequest)
+        assert len(responses) == 1
+        resp1 = responses[0]
+
+        move1 = MoveInfo.from_dict(resp1.moveInfos[0])
+        assert move1.order == 0
+        rinfo = RootInfo.from_dict(resp1.rootInfo)
+        next_move = [rinfo.currentPlayer, move1.move]
+        comment = assemble_comment(move1.move, resp1)
+        print(comment[:20], '...')
+        arequest.moves.append(next_move)
+        comments.append(comment)
+
+    for engine in engines:
+        engine.stop()
+
+    player_moves = (PlayerMove(1 if color == 'B' else -1, coords.from_gtp(pos)) for color, pos in moves)
+    # TODO RE should be valid, otherwise test_analyze cannot read it in. Use Tromp score?
+    sgf_str = sgf_wrapper.make_sgf(player_moves, 'B+T', komi=arequest.komi,
+                                   white_name=model_ids[1],
+                                   black_name=model_ids[0],
+                                   comments=comments)
+    with open(f'/Users/hyu/Downloads/test_match.sgf', 'w') as f:
+        f.write(sgf_str)
+
+
 def _format_pv(move_info: MoveInfo) -> str:
     moves = move_info.pv[1:10]
     return ' '.join(moves).replace('pass', 'x')

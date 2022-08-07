@@ -49,7 +49,8 @@ def process_one_game(engine: KataEngine, reader: SGFReader) -> List:
     arequest = ARequest(moves, turns_to_analyze)
     try:
         responses = engine.analyze(arequest)
-    except:
+    except Exception as e:
+        logging.error(str(e))
         return []
 
     samples = []
@@ -107,7 +108,7 @@ def preprocess(init=False, samples_in_batch=1e5):
     engine.start()
 
     samples_train = []
-    for i_game, (game_id, reader) in enumerate(ds.game_iter(stop=10)):
+    for i_game, (game_id, reader) in enumerate(ds.game_iter(stop=5)):
         samples = process_one_game(engine, reader)
         samples_train.extend(samples)
         logging.info(f'{i_game}th game: %d samples \t\t{game_id}', len(samples))
