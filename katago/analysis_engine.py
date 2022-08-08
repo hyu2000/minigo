@@ -18,8 +18,9 @@ class KataModels:
     G170_B6C96 = f'{MODELS_DIR}/g170-b6c96-s175395328-d26788732.bin.gz'  # the only b6 model in g170 archive
     G170_B20 = f'{MODELS_DIR}/g170e-b20c256x2-s5303129600-d1228401921.bin.gz'
     # new run
-    MODEL_B6_10k = f'{MODELS_DIR}/kata1-b6c96-s175395328-d26788732.txt.elo10k.gz'
+    MODEL_B6_10k = f'{MODELS_DIR}/kata1-b6c96-s175395328-d26788732.txt.elo10k.gz'  # last kata1 b6c96 model. same as G170_B6C96!
     MODEL_B6_5k  = f'{MODELS_DIR}/kata1-b6c96-s24455424-d3879081.txt.elo5k.gz'
+    MODEL_B6_4k  = f'{MODELS_DIR}/kata1-b6c96-s18429184-d3197121.txt.elo4k.gz'
     MODEL_B40 = f'{MODELS_DIR}/kata1-b40c256-s11101799168-d2715431527.bin.gz'
 
     @staticmethod
@@ -139,3 +140,6 @@ class KataEngine:
         # verify no extra data to read
         remainder = self._proc.communicate()[0].decode('utf-8')
         assert len(remainder) == 0
+
+    def model_id(self):
+        return KataModels.model_id(self.model_fname)

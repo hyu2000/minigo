@@ -135,15 +135,9 @@ def test_selfplay():
         f.write(sgf_str)
 
 
-def test_match():
+def play_match(engine_black: KataEngine, engine_white: KataEngine) -> str:
     """ play a game between two Kata engines
     """
-    engines = []
-    model_ids = []
-    for model_fname in [KataModels.G170_B6C96, KataModels.MODEL_B6_10k]:
-        engines.append(KataEngine(model_fname).start())
-        model_ids.append(KataModels.model_id(model_fname))
-
     moves = []
     moves = [['B' if i % 2 == 0 else 'W', move] for i, move in enumerate(moves)]
     comments = ['init' for x in moves]
@@ -152,7 +146,7 @@ def test_match():
         arequest.analyzeTurns = [len(moves)]
 
         # ask engine
-        player = engines[i % 2]
+        player = engine_black if i % 2 == 0 else engine_white
         responses = player.analyze(arequest)
         assert len(responses) == 1
         resp1 = responses[0]
@@ -162,21 +156,33 @@ def test_match():
         rinfo = RootInfo.from_dict(resp1.rootInfo)
         next_move = [rinfo.currentPlayer, move1.move]
         comment = assemble_comment(move1.move, resp1)
-        print(comment[:20], '...')
+        print(comment[:40], '...')
         arequest.moves.append(next_move)
         comments.append(comment)
-
-    for engine in engines:
-        engine.stop()
 
     player_moves = (PlayerMove(1 if color == 'B' else -1, coords.from_gtp(pos)) for color, pos in moves)
     # TODO RE should be valid, otherwise test_analyze cannot read it in. Use Tromp score?
     sgf_str = sgf_wrapper.make_sgf(player_moves, 'B+T', komi=arequest.komi,
-                                   white_name=model_ids[1],
-                                   black_name=model_ids[0],
+                                   white_name=engine_white.model_id(),
+                                   black_name=engine_black.model_id(),
                                    comments=comments)
-    with open(f'/Users/hyu/Downloads/test_match.sgf', 'w') as f:
+    return sgf_str
+
+
+def test_paired_match():
+    engines = []
+    for model_fname in [KataModels.MODEL_B6_5k, KataModels.MODEL_B6_4k]:
+        engines.append(KataEngine(model_fname).start())
+
+    sgf_str = play_match(engines[0], engines[1])
+    with open(f'/Users/hyu/Downloads/test_match0.sgf', 'w') as f:
         f.write(sgf_str)
+    sgf_str = play_match(engines[1], engines[0])
+    with open(f'/Users/hyu/Downloads/test_match1.sgf', 'w') as f:
+        f.write(sgf_str)
+
+    for engine in engines:
+        engine.stop()
 
 
 def _format_pv(move_info: MoveInfo) -> str:

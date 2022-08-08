@@ -102,13 +102,15 @@ def preprocess(init=False, samples_in_batch=1e5):
 
     feature_dir = f'{myconf.FEATURES_DIR}/g170'
     i_batch_train = scan_for_next_batch_number(feature_dir, init)
+    if i_batch_train > 0:
+        logging.info(f'#### continuing, next_batch={i_batch_train} #####')
 
-    model = KataModels.G170_B6C96
+    model = KataModels.MODEL_B6_4k
     engine = KataEngine(model)
     engine.start()
 
     samples_train = []
-    for i_game, (game_id, reader) in enumerate(ds.game_iter(stop=5)):
+    for i_game, (game_id, reader) in enumerate(ds.game_iter(start=5, stop=10)):
         samples = process_one_game(engine, reader)
         samples_train.extend(samples)
         logging.info(f'{i_game}th game: %d samples \t\t{game_id}', len(samples))
@@ -128,7 +130,7 @@ def preprocess(init=False, samples_in_batch=1e5):
 
 
 def nottest_gen_data():
-    model = KataModels.G170_B6C96
+    model = KataModels.MODEL_B6_4k
     engine = KataEngine(model)
     engine.start()
 
