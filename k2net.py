@@ -49,6 +49,55 @@ def build_model(input_shape):
     """
     Trainable params: 72k
     2nd round: 125k
+    6-block 9x9: 396k
+    """
+    inputs = keras.Input(shape=input_shape)
+    # add "ones" feature plain
+    x = tf.pad(inputs, [[0, 0], [0, 0], [0, 0], [0, 1]], 'CONSTANT', constant_values=1)
+
+    # block 1
+    x = residual_module(x, 32, (5, 5))
+    for i in range(5):
+        x = residual_module(x, 64, (3, 3))
+
+    features_common = x
+
+    # value head
+    x = Conv2D(1, (1, 1), **conv2d_kwargs)(features_common)
+    x = keras.layers.BatchNormalization()(x)
+    x = keras.layers.Activation('relu')(x)
+    x = keras.layers.Flatten()(x)
+    x = keras.layers.Dense(64, activation='relu', kernel_regularizer=keras.regularizers.l2(0.01))(x)
+    # predicting win/loss now
+    output_value = keras.layers.Dense(1, activation='tanh', kernel_regularizer=keras.regularizers.l2(0.01),
+                                      name='value')(x)
+
+    # policy head
+    # final conv, to get down to 1 filter (for score)
+    x = Conv2D(1, (1, 1), **conv2d_kwargs)(features_common)
+    move_prob = keras.layers.Flatten()(x)
+    # x = tf.pad(x, [(0, 0), (0, 1)], mode='constant', constant_values=-1e6)
+    pass_inputs = tf.stack([
+        tf.reduce_mean(move_prob, axis=1),
+        tf.reduce_max(move_prob, axis=1),
+        tf.math.reduce_std(move_prob, axis=1),
+        tf.squeeze(output_value, axis=1)
+    ], axis=1)
+    pass_prob = keras.layers.Dense(1, activation=None)(pass_inputs)
+    x = tf.concat([move_prob, pass_prob], axis=1)
+    output_policy = keras.layers.Activation('softmax', name='policy')(x)
+    # somehow a dense layer makes it harder to train
+    # output_policy = keras.layers.Dense(82, activation='softmax', name='policy')(x)
+
+    model = keras.Model(inputs, [output_policy, output_value])
+
+    return model
+
+
+def build_model_v1(input_shape):
+    """
+    Trainable params: 72k
+    2nd round: 125k
     6-block 9x9: 392k
     """
     inputs = keras.Input(shape=input_shape)

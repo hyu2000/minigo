@@ -94,7 +94,7 @@ def compile_dual():
                       'value':  custom_BCE_loss},
                   loss_weights={
                       'policy': 0.50,
-                      'value':  0.75},
+                      'value':  0.50},
                   metrics={
                       'policy': keras.metrics.CategoricalAccuracy(name="move_acc"),
                       # 'value': custom_value_accuracy,
@@ -269,19 +269,20 @@ def test_eval_model_on_selfplay13():
 
 
 def train_local():
-    # model = compile_dual()
-    model = load_model(f'{myconf.MODELS_DIR}/model13_epoch2.h5')
+    model = compile_dual()
+    # model = load_model(f'{myconf.MODELS_DIR}/model13_epoch2.h5')
 
     data_dir = myconf.SELFPLAY_DIR
-    data_dir = myconf.FEATURES_DIR
-    ds_train = load_selfplay_data(f'{data_dir}/train')
-    ds_val = load_selfplay_data(f'{data_dir}/val')
+    data_dir = f'{myconf.FEATURES_DIR}/g170'
+    ds_train = load_selfplay_data(f'{data_dir}')
+    # ds_val = load_selfplay_data(f'{data_dir}/val')
     callbacks = [
-        keras.callbacks.ModelCheckpoint(f'{myconf.MODELS_DIR}/model8_epoch{{epoch}}.h5'),
+        keras.callbacks.ModelCheckpoint(f'{myconf.MODELS_DIR}/model0_epoch{{epoch}}.h5'),
         # keras.callbacks.EarlyStopping(monitor='val_loss', patience=2)
     ]
-    history = model.fit(ds_train.shuffle(1000).batch(64), validation_data=ds_val.batch(64),
-                        epochs=4, callbacks=callbacks)
+    history = model.fit(ds_train.shuffle(1000).batch(64),
+                        # validation_data=ds_val.batch(64),
+                        epochs=5, callbacks=callbacks)
     print(history.history)
 
 
@@ -341,7 +342,8 @@ def train(argv: List):
 
 
 if __name__ == '__main__':
-    train(sys.argv)
+    # train(sys.argv)
+    train_local()
     # test_save_model()
     # test_eval_model()
     # label_top50()
