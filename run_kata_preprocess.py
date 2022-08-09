@@ -86,7 +86,7 @@ def scan_for_next_batch_number(feature_dir, init: bool) -> int:
         return 0
     if len(flist) == 0:
         return 0
-    batches = [x.removeprefix(f'{feature_dir}/train').removesuffix('.tfrecord.zz') for x in flist]
+    batches = [x.removeprefix(f'{feature_dir}/train-').removesuffix('.tfrecord.zz') for x in flist]
     # todo check it's contiguous
     return 1 + max([int(x) for x in batches])
 
@@ -110,7 +110,7 @@ def preprocess(init=False, samples_in_batch=1e5):
     engine.start()
 
     samples_train = []
-    for i_game, (game_id, reader) in enumerate(ds.game_iter(start=5, stop=10)):
+    for i_game, (game_id, reader) in enumerate(ds.game_iter(start=0, stop=5)):
         samples = process_one_game(engine, reader)
         samples_train.extend(samples)
         logging.info(f'{i_game}th game: %d samples \t\t{game_id}', len(samples))
