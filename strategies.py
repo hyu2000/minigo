@@ -296,9 +296,9 @@ class MCTSPlayer(MCTSPlayerInterface):
             comments = []
         return sgf_wrapper.make_sgf(pos.recent, self.result_string, komi=pos.komi,
                                     white_name=os.path.basename(
-                                        self.network.save_file) or "Unknown",
+                                        self.network.model_id) or "Unknown",
                                     black_name=os.path.basename(
-                                        self.network.save_file) or "Unknown",
+                                        self.network.model_id) or "Unknown",
                                     comments=comments)
 
     def extract_data(self):

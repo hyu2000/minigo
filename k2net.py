@@ -146,7 +146,7 @@ def build_model_v1(input_shape):
 
 class DualNetwork(object):
     def __init__(self, save_file):
-        self.save_file = save_file
+        self.model_id = save_file
         self.model = keras.models.load_model(save_file,
                                              custom_objects={'custom_BCE_loss': None})
 
@@ -174,8 +174,7 @@ class DNNCache:
 class DummyNetwork(object):
     """ same interface as DualNetwork. Flat policy, Tromp score as value """
     def __init__(self):
-        # this is more a model-id
-        self.save_file = 'dummy'
+        self.model_id = 'dummy'
 
     def run(self, position):
         probs, values = self.run_many([position])

@@ -182,7 +182,7 @@ class KataDualNetwork:
         self.engine = KataEngine(model_path)
         self.engine.start()
 
-        self.save_file = KataModels.model_id(model_path)
+        self.model_id = KataModels.model_id(model_path)
 
     def run(self, position: go.Position):
         arequest = ARequest.from_position(position)
