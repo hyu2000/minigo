@@ -6,7 +6,7 @@ import collections
 import os.path
 import random
 import sys
-from typing import List
+from typing import List, Tuple
 
 import numpy as np
 import tensorflow as tf
@@ -268,20 +268,31 @@ def test_eval_model_on_selfplay13():
             results = model.evaluate(ds_val.batch(64), return_dict=True, verbose=2)
 
 
+def dataset_split(ds: tf.data.Dataset, train_val_ratio: int = 9) -> Tuple:
+    """ this split on sample level, probably better on the game level?
+    https://stackoverflow.com/questions/48213766/split-a-dataset-created-by-tensorflow-dataset-api-in-to-train-and-test
+    https://www.tensorflow.org/api_docs/python/tf/data/Dataset#window
+    """
+    f_flatmap = lambda *ds: ds[0] if len(ds) == 1 else tf.data.Dataset.zip(ds)
+    ds_train = ds.window(train_val_ratio, train_val_ratio + 1).flat_map(f_flatmap)
+    ds_val = ds.skip(train_val_ratio).window(1, train_val_ratio + 1).flat_map(f_flatmap)
+    return ds_train, ds_val
+
+
 def train_local():
-    model = compile_dual()
-    # model = load_model(f'{myconf.MODELS_DIR}/model13_epoch2.h5')
+    # model = compile_dual()
+    model = load_model(f'{myconf.MODELS_DIR}/model1_epoch3.h5')
 
     data_dir = myconf.SELFPLAY_DIR
     data_dir = f'{myconf.FEATURES_DIR}/g170'
-    ds_train = load_selfplay_data(f'{data_dir}')
+    ds_all = load_selfplay_data(f'{data_dir}')
     # ds_val = load_selfplay_data(f'{data_dir}/val')
     callbacks = [
-        keras.callbacks.ModelCheckpoint(f'{myconf.MODELS_DIR}/model0_epoch{{epoch}}.h5'),
+        keras.callbacks.ModelCheckpoint(f'{myconf.MODELS_DIR}/model1_epoch{{epoch}}.h5'),
         # keras.callbacks.EarlyStopping(monitor='val_loss', patience=2)
     ]
-    history = model.fit(ds_train.shuffle(1000).batch(64),
-                        # validation_data=ds_val.batch(64),
+    ds_train, ds_val = dataset_split(ds_all.shuffle(1000))
+    history = model.fit(ds_train.batch(64), validation_data=ds_val.batch(64),
                         epochs=5, callbacks=callbacks)
     print(history.history)
 
