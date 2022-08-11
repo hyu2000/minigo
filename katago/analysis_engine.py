@@ -174,10 +174,15 @@ def assemble_train_target(resp1: AResponse):
 
 
 class KataDualNetwork:
-    """ kata masquerade as k2net """
+    """ kata masquerade as k2net
+
+    Since we do MCTS on our end, #visits should be reduced in kata analysis config
+    """
     def __init__(self, model_path):
         self.engine = KataEngine(model_path)
         self.engine.start()
+
+        self.save_file = KataModels.model_id(model_path)
 
     def run(self, position: go.Position):
         arequest = ARequest.from_position(position)
@@ -187,7 +192,7 @@ class KataDualNetwork:
 
     def run_many(self, positions: List[go.Position]) -> Tuple[np.ndarray, np.ndarray]:
         num_positions = len(positions)
-        pis, v = np.zeros(num_positions, go.N * go.N + 1), np.zeros(num_positions, dtype=np.float32)
+        pis, v = np.zeros((num_positions, go.N * go.N + 1), dtype=np.float32), np.zeros(num_positions, dtype=np.float32)
         for i, pos in enumerate(positions):
             pis[i], v[i] = self.run(pos)
         return pis, v
