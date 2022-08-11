@@ -12,27 +12,11 @@ import go
 import preprocessing
 import myconf
 import sgf_wrapper
-from katago.analysis_engine import AResponse, RootInfo, MoveInfo, KataModels, start_engine, ARequest, KataEngine
+from katago.analysis_engine import AResponse, KataModels, start_engine, ARequest, KataEngine, assemble_train_target
 from sgf_wrapper import SGFReader
 from absl import logging
 
 from tar_dataset import KataG170DataSet
-
-
-def assemble_train_target(resp1: AResponse):
-    """ tf training target: pi, value """
-    rinfo = RootInfo.from_dict(resp1.rootInfo)
-    # my vnet activation is tanh: win_rate * 2 - 1
-    v_tanh = rinfo.winrate * 2 - 1
-
-    pi = np.zeros([go.N * go.N + 1], dtype=np.float32)
-    for move_info in resp1.moveInfos:
-        minfo = MoveInfo.from_dict(move_info)
-        midx = coords.to_flat(coords.from_gtp(minfo.move))
-        pi[midx] = minfo.visits
-    # kata applies symmetry to minfo.visits, which may not sum up to rinfo.visits. Normalize here
-    pi = pi / pi.sum()
-    return pi, v_tanh
 
 
 def process_one_game(engine: KataEngine, reader: SGFReader) -> List:

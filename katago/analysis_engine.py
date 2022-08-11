@@ -5,7 +5,11 @@ import attr
 import io
 import subprocess
 import json
-from typing import List, Dict
+from typing import List, Dict, Tuple
+
+import numpy as np
+
+import coords
 import go
 
 MODELS_DIR = '/Users/hyu/go/models'
@@ -33,12 +37,20 @@ class KataModels:
 class ARequest(object):
     moves = attr.ib(type=list)
     analyzeTurns = attr.ib(type=list)
+
     id = attr.ib(type=str, default='foo')
     boardXSize = attr.ib(type=int, default=go.N)
     boardYSize = attr.ib(type=int, default=go.N)
     komi = attr.ib(type=float, default=5.5)
 
     rules = attr.ib(type=str, default='chinese')
+
+    @staticmethod
+    def from_position(pos: go.Position):
+        """ request to ask for next move """
+        moves = [[go.color_str(x.color)[0], coords.to_gtp(x.move)] for x in pos.recent]
+        assert len(moves) == pos.n
+        return ARequest(moves, [pos.n])
 
 
 @attr.s
@@ -143,3 +155,39 @@ class KataEngine:
 
     def model_id(self):
         return KataModels.model_id(self.model_fname)
+
+
+def assemble_train_target(resp1: AResponse):
+    """ tf training target: pi, value """
+    rinfo = RootInfo.from_dict(resp1.rootInfo)
+    # my vnet activation is tanh: win_rate * 2 - 1
+    v_tanh = rinfo.winrate * 2 - 1
+
+    pi = np.zeros([go.N * go.N + 1], dtype=np.float32)
+    for move_info in resp1.moveInfos:
+        minfo = MoveInfo.from_dict(move_info)
+        midx = coords.to_flat(coords.from_gtp(minfo.move))
+        pi[midx] = minfo.visits
+    # kata applies symmetry to minfo.visits, which may not sum up to rinfo.visits. Normalize here
+    pi = pi / pi.sum()
+    return pi, v_tanh
+
+
+class KataDualNetwork:
+    """ kata masquerade as k2net """
+    def __init__(self, model_path):
+        self.engine = KataEngine(model_path)
+        self.engine.start()
+
+    def run(self, position: go.Position):
+        arequest = ARequest.from_position(position)
+        responses = self.engine.analyze(arequest)
+        pi, v = assemble_train_target(responses[0])
+        return pi, v
+
+    def run_many(self, positions: List[go.Position]) -> Tuple[np.ndarray, np.ndarray]:
+        num_positions = len(positions)
+        pis, v = np.zeros(num_positions, go.N * go.N + 1), np.zeros(num_positions, dtype=np.float32)
+        for i, pos in enumerate(positions):
+            pis[i], v[i] = self.run(pos)
+        return pis, v
