@@ -14,7 +14,7 @@ import myconf
 from katago.analysis_engine import ARequest, AResponse, MoveInfo, RootInfo, KataModels, read_multi_responses, \
     KataEngine, start_engine
 from preprocessing import calc_feature_from_pos, make_tf_example
-from run_kata_preprocess import assemble_train_target
+from run_kata_preprocess import extract_policy_value
 
 MIN_VISITS = 5
 
@@ -285,7 +285,7 @@ def test_gen_data():
     for i, (position, move, resp1) in enumerate(zip(positions, moves, responses)):
         assert resp1.turnNumber == i
 
-        pi, v = assemble_train_target(resp1)
+        pi, v = extract_policy_value(resp1)
         features = calc_feature_from_pos(position)
         tf_sample = make_tf_example(features, pi, v)
 

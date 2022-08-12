@@ -12,7 +12,7 @@ import go
 import preprocessing
 import myconf
 import sgf_wrapper
-from katago.analysis_engine import AResponse, KataModels, start_engine, ARequest, KataEngine, assemble_train_target
+from katago.analysis_engine import AResponse, KataModels, start_engine, ARequest, KataEngine, extract_policy_value
 from sgf_wrapper import SGFReader
 from absl import logging
 
@@ -41,7 +41,7 @@ def process_one_game(engine: KataEngine, reader: SGFReader) -> List:
     for i, (position, move, resp1) in enumerate(zip(positions, moves, responses)):
         assert resp1.turnNumber == i
 
-        pi, v = assemble_train_target(resp1)
+        pi, v = extract_policy_value(resp1)
         features = preprocessing.calc_feature_from_pos(position)
         tf_sample = preprocessing.make_tf_example(features, pi, v)
         samples.append(tf_sample)

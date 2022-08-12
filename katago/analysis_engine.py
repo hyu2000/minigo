@@ -157,7 +157,7 @@ class KataEngine:
         return KataModels.model_id(self.model_fname)
 
 
-def assemble_train_target(resp1: AResponse):
+def extract_policy_value(resp1: AResponse):
     """ tf training target: pi, value """
     rinfo = RootInfo.from_dict(resp1.rootInfo)
     # my vnet activation is tanh: win_rate * 2 - 1
@@ -176,7 +176,9 @@ def assemble_train_target(resp1: AResponse):
 class KataDualNetwork:
     """ kata masquerade as k2net
 
-    Since we do MCTS on our end, #visits should be reduced in kata analysis config
+    This is quite slow.
+    Since we do MCTS on our end, #visits should be reduced in kata analysis config.
+    We could even just get Kata policy, no MCTS needed on kata side.
     """
     def __init__(self, model_path):
         self.engine = KataEngine(model_path)
@@ -187,7 +189,7 @@ class KataDualNetwork:
     def run(self, position: go.Position):
         arequest = ARequest.from_position(position)
         responses = self.engine.analyze(arequest)
-        pi, v = assemble_train_target(responses[0])
+        pi, v = extract_policy_value(responses[0])
         return pi, v
 
     def run_many(self, positions: List[go.Position]) -> Tuple[np.ndarray, np.ndarray]:
