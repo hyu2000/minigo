@@ -111,24 +111,73 @@ def test_ledger(argv):
     ledger.report()
 
 
+class ModelConfig:
+    """ to encapsulate model_id,
+
+    model_config can include #readouts, e.g.
+    /path/to/model1_epoch16.h5#200
+    """
+
+    def __init__(self, config_str: str):
+        self._model_path, self.num_readouts = self._split_model_config(config_str)
+
+    def model_id(self) -> str:
+        """ no dir, no .h5 --> model_id#200 """
+        return self._get_model_id(self._model_path, self.num_readouts)
+
+    def model_path(self) -> str:
+        """ abs path """
+        if self._model_path.startswith('/'):
+            return self._model_path
+
+        default_model_dir = f'{myconf.MODELS_DIR}'
+        return f'{default_model_dir}/{self._model_path}'
+
+    def __str__(self):
+        return self.model_id()
+
+    @staticmethod
+    def _get_model_id(model_path: str, num_readouts: int) -> str:
+        basename = os.path.basename(model_path)
+        model_id, _ = os.path.splitext(basename)
+        return f'{model_id}#{num_readouts}'
+
+    @staticmethod
+    def _split_model_config(model_config: str) -> Tuple[str, int]:
+        """ model_config can include #readouts, e.g.
+        /path/to/model1_epoch16.h5#200
+        """
+        model_split = model_config.split('#')
+        if len(model_split) == 2:
+            model_path, num_readouts = model_split[0], int(model_split[1])
+        else:
+            assert len(model_split) == 1
+            model_path, num_readouts = model_config, FLAGS.num_readouts
+
+        if not model_path.endswith('.h5'):
+            model_path = f'{model_path}.h5'
+        return model_path, num_readouts
+
+
 class RunOneSided:
-    def __init__(self, black_model: str, white_model: str, sgf_dir: str):
-        self.black_model = black_model
-        self.white_model = white_model
+    def __init__(self, black_config: ModelConfig, white_config: ModelConfig, sgf_dir: str):
+        # self.black_model = black_model
+        # self.white_model = white_model
         self.sgf_dir = sgf_dir
 
         utils.ensure_dir_exists(sgf_dir)
         utils.ensure_dir_exists(FLAGS.eval_data_dir)
 
-        self.black_model_id, self.white_model_id = get_model_id(black_model), get_model_id(white_model)
+        self.black_model_id = black_config.model_id()
+        self.white_model_id = white_config.model_id()
 
         with utils.logged_timer("Loading weights"):
-            self.black_net = dual_net.DualNetwork(black_model)
-            self.white_net = dual_net.DualNetwork(white_model)
-        self.black_player = MCTSPlayer(self.black_net)
-        self.white_player = MCTSPlayer(self.white_net)
+            self.black_net = dual_net.DualNetwork(black_config.model_path())
+            self.white_net = dual_net.DualNetwork(white_config.model_path())
+        self.black_player = MCTSPlayer(self.black_net, num_readouts=black_config.num_readouts)
+        self.white_player = MCTSPlayer(self.white_net, num_readouts=white_config.num_readouts)
 
-        self.init_positions = InitPositions(['C2'], [1.0])
+        self.init_positions = InitPositions(None, None)  #['C2'], [1.0])
 
         self._num_games_so_far = 0
 
@@ -240,12 +289,6 @@ class RunOneSided:
         return result_str
 
 
-def get_model_id(model_path: str) -> str:
-    basename = os.path.basename(model_path)
-    model_id, _ = os.path.splitext(basename)
-    return model_id
-
-
 def setup_common(argv):
     _, black_model, white_model, num_games = argv
     models_dir = f'{myconf.MODELS_DIR}'
@@ -255,6 +298,13 @@ def setup_common(argv):
         white_model = f'{models_dir}/{white_model}'
     utils.ensure_dir_exists(FLAGS.eval_sgf_dir)
     return black_model, white_model, int(num_games)
+
+
+def setup_oneside(argv):
+    _, black_config, white_config, num_games = argv
+
+    utils.ensure_dir_exists(FLAGS.eval_sgf_dir)
+    return ModelConfig(black_config), ModelConfig(white_config), int(num_games)
 
 
 def main_twosided(argv):
@@ -275,10 +325,10 @@ def main_twosided(argv):
 
 def main_oneside(argv) -> int:
     """ play a number of games between black and white """
-    black_model, white_model, num_games = setup_common(argv)
+    black_config, white_config, num_games = setup_oneside(argv)
 
     ledger = Ledger()
-    runner1 = RunOneSided(black_model, white_model, FLAGS.eval_sgf_dir)
+    runner1 = RunOneSided(black_config, white_config, FLAGS.eval_sgf_dir)
     logging.info('Tournament: %s vs %s, %d games', runner1.black_model_id, runner1.white_model_id, num_games)
     for i in range(num_games):
         result_str = runner1.play_a_game()

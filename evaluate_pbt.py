@@ -25,6 +25,7 @@ import numpy as np
 import pandas as pd
 
 import utils
+from evaluate import ModelConfig
 from sgf_wrapper import SGFReader
 import myconf
 pd.set_option('display.max_columns', None)
@@ -42,10 +43,10 @@ class RawGameCount:
 
     def count(self, black: str, white: str):
         """ black/white should be model_id, but we handle model_id.h5 as well """
-        if black.endswith('.h5'):
-            black = black[:-3]
-        if white.endswith('.h5'):
-            white = white[:-3]
+        # if black.endswith('.h5'):
+        #     black = black[:-3]
+        # if white.endswith('.h5'):
+        #     white = white[:-3]
         try:
             return self.df.loc[black, white]
         except KeyError:
@@ -127,9 +128,9 @@ def start_games(black_id, white_id, num_games: int) -> subprocess.Popen:
     """
     cmdline = """/Users/hyu/anaconda/envs/tf2/bin/python /Users/hyu/PycharmProjects/dlgo/minigo/evaluate.py
                 --softpick_move_cutoff=6
-                --dirichlet_noise_weight=0.25
+                --dirichlet_noise_weight=0.0125
                 --parallel_readouts=16
-                --num_readouts=200
+                --num_readouts=50
                 --resign_threshold=-1
                 %s %s %d
     """ % (black_id, white_id, num_games)
@@ -141,14 +142,16 @@ def start_games(black_id, white_id, num_games: int) -> subprocess.Popen:
 
 def main_two_sided_eval():
     """ play two models against each other for n games, then switch sides """
-    model1, model2, num_games_per_side = 'model11_epoch2.h5', 'model10_epoch2.h5', 16
+    model1, model2, num_games_per_side = 'model1_epoch16.h5#200', 'model1_epoch16.h5#400', 16
     sgfs_dir = f'{myconf.EXP_HOME}/eval_bots/sgfs'
     utils.ensure_dir_exists(sgfs_dir)
     raw_game_count, _ = scan_results(sgfs_dir)
 
+    model1, model2 = ModelConfig(model1), ModelConfig(model2)
+
     procs = []
     for black, white in [(model1, model2), (model2, model1)]:
-        games_to_run = num_games_per_side - raw_game_count.count(black, white)
+        games_to_run = num_games_per_side - raw_game_count.count(black.model_id(), white.model_id())
         if games_to_run <= 0:
             continue
         elif games_to_run <= 3:
