@@ -53,8 +53,9 @@ class RawGameCount:
                             index=self.df.index, columns=self.df.columns)
 
     def format_black_wins(self, df_blackwins: pd.DataFrame) -> pd.DataFrame:
-        """ format black_wins print out to include game count """
-        return df_blackwins.astype(str) + '/' + self.df.astype(str)
+        """ format black_wins to include game count """
+        df = df_blackwins.astype(str) + '/' + self.df.astype(str)
+        return df.replace('0/0', '-')
 
 
 def scan_results(sgfs_dir: str) -> Tuple[RawGameCount, pd.DataFrame]:
