@@ -112,7 +112,7 @@ def test_ledger(argv):
 
 
 class ModelConfig:
-    """ to encapsulate model_id,
+    """ to encapsulate model_id + #readouts
 
     model_config can include #readouts, e.g.
     /path/to/model1_epoch16.h5#200

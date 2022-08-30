@@ -42,11 +42,7 @@ class RawGameCount:
         self.df = df
 
     def count(self, black: str, white: str):
-        """ black/white should be model_id, but we handle model_id.h5 as well """
-        # if black.endswith('.h5'):
-        #     black = black[:-3]
-        # if white.endswith('.h5'):
-        #     white = white[:-3]
+        """ black/white should be model_id """
         try:
             return self.df.loc[black, white]
         except KeyError:
@@ -55,6 +51,10 @@ class RawGameCount:
     def eye(self):
         return pd.DataFrame(np.eye(len(self.df), len(self.df)),
                             index=self.df.index, columns=self.df.columns)
+
+    def format_black_wins(self, df_blackwins: pd.DataFrame) -> pd.DataFrame:
+        """ format black_wins print out to include game count """
+        return df_blackwins.astype(str) + '/' + self.df.astype(str)
 
 
 def scan_results(sgfs_dir: str) -> Tuple[RawGameCount, pd.DataFrame]:
@@ -101,7 +101,7 @@ def verify_and_fold(raw_game_counts: RawGameCount, df_blackwins: pd.DataFrame) -
     model2      4    16    0.25
     """
     df_counts = raw_game_counts.df
-    df_eye = raw_game_counts.eye() * MIN_NUM_GAMES_SIDED
+    # df_eye = raw_game_counts.eye() * MIN_NUM_GAMES_SIDED
     # assert (df_counts + df_eye >= MIN_NUM_GAMES_SIDED).all().all()
     # make sure df_counts == df_counts.T for black/white parity, as well as min #games is played
     pd.testing.assert_frame_equal(df_counts, df_counts.T)
@@ -196,7 +196,7 @@ def main_pbt_eval():
 def state_of_the_world():
     raw_game_count, df_blackwins = scan_results(f'{myconf.EXP_HOME}/eval_bots/sgfs')
     print('black_wins:')
-    print(df_blackwins)
+    print(raw_game_count.format_black_wins(df_blackwins))
     dfw = verify_and_fold(raw_game_count, df_blackwins)
     print(dfw.swaplevel(axis=1)['wrate'])
     pickle_fpath = '/tmp/df.pkl'
