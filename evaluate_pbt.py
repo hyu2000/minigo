@@ -140,7 +140,7 @@ def start_games(black_id, white_id, num_games: int) -> subprocess.Popen:
     return p
 
 
-def main_two_sided_eval():
+def main_two_sided_eval(sgfs_dir):
     """ play two models against each other for n games, then switch sides """
     model1, model2, num_games_per_side = 'model1_epoch16.h5#200', 'model1_epoch16.h5#400', 16
     sgfs_dir = f'{myconf.EXP_HOME}/eval_bots/sgfs'
@@ -168,8 +168,8 @@ def main_two_sided_eval():
     print('done')
 
 
-def main_pbt_eval():
-    raw_game_count, _ = scan_results(f'{myconf.EXP_HOME}/eval_bots/sgfs')
+def main_pbt_eval(sgfs_dir):
+    raw_game_count, _ = scan_results(sgfs_dir)
 
     num_target_games = 5
     gen_idx = 14
@@ -193,8 +193,8 @@ def main_pbt_eval():
             p.wait()
 
 
-def state_of_the_world():
-    raw_game_count, df_blackwins = scan_results(f'{myconf.EXP_HOME}/eval_bots/sgfs')
+def state_of_the_world(sgfs_dir):
+    raw_game_count, df_blackwins = scan_results(sgfs_dir)
     print('black_wins:')
     print(raw_game_count.format_black_wins(df_blackwins))
     dfw = verify_and_fold(raw_game_count, df_blackwins)
@@ -204,7 +204,13 @@ def state_of_the_world():
     print(f'dfw saved to {pickle_fpath}')
 
 
+def main():
+    sgfs_dir = f'{myconf.EXP_HOME}/eval_bots/sgfs'
+
+    # main_pbt_eval(sgfs_dir)
+    main_two_sided_eval(sgfs_dir)
+    state_of_the_world(sgfs_dir)
+
+
 if __name__ == '__main__':
-    # main_pbt_eval()
-    main_two_sided_eval()
-    state_of_the_world()
+    main()

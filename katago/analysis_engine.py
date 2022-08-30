@@ -176,9 +176,10 @@ def extract_policy_value(resp1: AResponse):
 class KataDualNetwork:
     """ kata masquerade as k2net
 
-    This is quite slow.
-    Since we do MCTS on our end, #visits should be reduced in kata analysis config.
-    We could even just get Kata policy, no MCTS needed on kata side.
+    This is quite slow. To improve,
+    1. Since we do MCTS on our end, #visits should be reduced in kata analysis config, but we do use visit dist as pi.
+        We could even just get Kata policy, no MCTS needed on kata side.
+    2. run_many() could send parallel requests to Kata...
     """
     def __init__(self, model_path):
         self.engine = KataEngine(model_path)
