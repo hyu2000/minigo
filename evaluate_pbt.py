@@ -16,10 +16,11 @@ lr=0.2_vw=1.5                                                   -
 - it's ok if more games are played in certain pairs. We only care about win-rate in the end.
 - should construct the table from eval-sgfs, so that we can tolerate failures, reruns, parallel runs
 """
+import itertools
 import os
 from collections import defaultdict
 import subprocess, shlex
-from typing import Tuple
+from typing import Tuple, List
 
 import numpy as np
 import pandas as pd
@@ -123,94 +124,110 @@ def model_fname(i: int, lr, vw) -> str:
     return f'model{i}.lr={lr}_vw={vw}.h5'
 
 
-def start_games(black_id, white_id, num_games: int) -> subprocess.Popen:
-    """
-    python evaluate.py
-    """
-    cmdline = """/Users/hyu/anaconda/envs/tf2/bin/python /Users/hyu/PycharmProjects/dlgo/minigo/evaluate.py
-                --softpick_move_cutoff=6
-                --dirichlet_noise_weight=0.0125
-                --parallel_readouts=16
-                --num_readouts=50
-                --resign_threshold=-1
-                %s %s %d
-    """ % (black_id, white_id, num_games)
-    args = shlex.split(cmdline)
-    p = subprocess.Popen(args)
-    # p.wait()
-    return p
+class Evaluator:
+    """ encapsulate various eval related settings, so we don't need to pass them around """
+    
+    def __init__(self, sgfs_dir, num_games_per_side: int = 32):
+        self.sgfs_dir = sgfs_dir
+        self.num_games_per_side = num_games_per_side
 
-
-def main_two_sided_eval(sgfs_dir):
-    """ play two models against each other for n games, then switch sides """
-    model1, model2, num_games_per_side = 'model1_epoch16.h5#200', 'model1_epoch16.h5#400', 16
-    sgfs_dir = f'{myconf.EXP_HOME}/eval_bots/sgfs'
-    utils.ensure_dir_exists(sgfs_dir)
-    raw_game_count, _ = scan_results(sgfs_dir)
-
-    model1, model2 = ModelConfig(model1), ModelConfig(model2)
-
-    procs = []
-    for black, white in [(model1, model2), (model2, model1)]:
-        games_to_run = num_games_per_side - raw_game_count.count(black.model_id(), white.model_id())
-        if games_to_run <= 0:
-            continue
-        elif games_to_run <= 3:
-            print(f'starting {black} vs {white}: {games_to_run} games')
-            procs.append(start_games(black, white, games_to_run))
-        else:
-            print(f'starting {black} vs {white}: {games_to_run} games, 2 processes')
-            procs.append(start_games(black, white, games_to_run // 2))
-            procs.append(start_games(black, white, games_to_run - games_to_run // 2))
-    print(f'started all...')
-
-    for p in procs:
-        p.wait()
-    print('done')
-
-
-def main_pbt_eval(sgfs_dir):
-    raw_game_count, _ = scan_results(sgfs_dir)
-
-    num_target_games = 5
-    gen_idx = 14
-    lrs = [0.003, 0.005, 0.006, 0.008]
-    vws = [0.6, 0.8, 1, 1.2]
-    lr_ref, vw_ref = 0.005, 1
-    # for lr in set(lrs) - {lr_ref}:
-    #     model1 = model_fname(gen_idx, lr, vw_ref)
-    #     modelr = model_fname(gen_idx, lr_ref, vw_ref)
-    for vw in set(vws) - {vw_ref}:
-        model1 = model_fname(gen_idx, lr_ref, vw)
-        modelr = model_fname(gen_idx, lr_ref, vw_ref)
+    def start_games(self, black_id, white_id, num_games: int) -> subprocess.Popen:
+        """
+        python evaluate.py
+        """
+        cmdline = """/Users/hyu/anaconda/envs/tf2/bin/python /Users/hyu/PycharmProjects/dlgo/minigo/evaluate.py
+                    --softpick_move_cutoff=6
+                    --dirichlet_noise_weight=0.0125
+                    --parallel_readouts=16
+                    --num_readouts=50
+                    --resign_threshold=-1
+                    %s %s %d
+        """ % (black_id, white_id, num_games)
+        args = shlex.split(cmdline)
+        p = subprocess.Popen(args)
+        # p.wait()
+        return p
+    
+    def run_two_sided_eval(self, model1_str, model2_str):
+        """ play two models against each other for n games, then switch sides """
+        utils.ensure_dir_exists(self.sgfs_dir)
+        raw_game_count, _ = scan_results(self.sgfs_dir)
+    
+        model1, model2 = ModelConfig(model1_str), ModelConfig(model2_str)
+    
         procs = []
-        for black, white in [(model1, modelr), (modelr, model1)]:
-            games_to_run = num_target_games - raw_game_count.count(black, white)
+        for black, white in [(model1, model2), (model2, model1)]:
+            games_to_run = self.num_games_per_side - raw_game_count.count(black.model_id(), white.model_id())
             if games_to_run <= 0:
                 continue
-            p = start_games(black, white, games_to_run)
-            procs.append(p)
+            elif games_to_run <= 3:
+                print(f'starting {black} vs {white}: {games_to_run} games')
+                procs.append(self.start_games(black, white, games_to_run))
+            else:
+                print(f'starting {black} vs {white}: {games_to_run} games, 2 processes')
+                procs.append(self.start_games(black, white, games_to_run // 2))
+                procs.append(self.start_games(black, white, games_to_run - games_to_run // 2))
+        print(f'started all...')
+    
         for p in procs:
             p.wait()
+        print('done')
+    
+    def main_multi_eval(self, models: List[str], band_size=1):
+        """ eval multiple pairs of models, based on two_sided_eval
 
-
-def state_of_the_world(sgfs_dir):
-    raw_game_count, df_blackwins = scan_results(sgfs_dir)
-    print('black_wins:')
-    print(raw_game_count.format_black_wins(df_blackwins))
-    dfw = verify_and_fold(raw_game_count, df_blackwins)
-    print(dfw.swaplevel(axis=1)['wrate'])
-    pickle_fpath = '/tmp/df.pkl'
-    dfw.to_pickle(pickle_fpath)
-    print(f'dfw saved to {pickle_fpath}')
+        models: ordered by (hypothesized) strength, strongest first
+        todo:
+        - try to be smart in figuring out actual ranking
+        """
+        for model1, model2 in itertools.pairwise(models):
+            self.run_two_sided_eval(model1, model2)
+    
+    def main_pbt_eval(self):
+        raw_game_count, _ = scan_results(self.sgfs_dir)
+    
+        num_target_games = 5
+        gen_idx = 14
+        lrs = [0.003, 0.005, 0.006, 0.008]
+        vws = [0.6, 0.8, 1, 1.2]
+        lr_ref, vw_ref = 0.005, 1
+        # for lr in set(lrs) - {lr_ref}:
+        #     model1 = model_fname(gen_idx, lr, vw_ref)
+        #     modelr = model_fname(gen_idx, lr_ref, vw_ref)
+        for vw in set(vws) - {vw_ref}:
+            model1 = model_fname(gen_idx, lr_ref, vw)
+            modelr = model_fname(gen_idx, lr_ref, vw_ref)
+            procs = []
+            for black, white in [(model1, modelr), (modelr, model1)]:
+                games_to_run = num_target_games - raw_game_count.count(black, white)
+                if games_to_run <= 0:
+                    continue
+                p = self.start_games(black, white, games_to_run)
+                procs.append(p)
+            for p in procs:
+                p.wait()
+    
+    def state_of_the_world(self):
+        raw_game_count, df_blackwins = scan_results(self.sgfs_dir)
+        print('black_wins:')
+        print(raw_game_count.format_black_wins(df_blackwins))
+        dfw = verify_and_fold(raw_game_count, df_blackwins)
+        print(dfw.swaplevel(axis=1)['wrate'])
+        pickle_fpath = '/tmp/df.pkl'
+        dfw.to_pickle(pickle_fpath)
+        print(f'dfw saved to {pickle_fpath}')
 
 
 def main():
     sgfs_dir = f'{myconf.EXP_HOME}/eval_bots/sgfs'
 
     # main_pbt_eval(sgfs_dir)
-    main_two_sided_eval(sgfs_dir)
-    state_of_the_world(sgfs_dir)
+    models = [f'model1_epoch16.h5#{x}' for x in (10, 50, 100, 200, 400)]
+    evaluator = Evaluator(sgfs_dir, 32)
+    # model1, model2 = 'model1_epoch16.h5#50', 'model1_epoch16.h5#10'
+    # evaluator.run_two_sided_eval(model1, model2)
+    evaluator.run_two_sided_eval(models[0], models[1])
+    evaluator.state_of_the_world()
 
 
 if __name__ == '__main__':
