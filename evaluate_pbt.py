@@ -21,7 +21,7 @@ import os
 from collections import defaultdict
 import subprocess, shlex
 from typing import Tuple, List
-
+import logging
 import numpy as np
 import pandas as pd
 
@@ -29,6 +29,7 @@ import utils
 from evaluate import ModelConfig
 from sgf_wrapper import SGFReader
 import myconf
+
 pd.set_option('display.max_columns', None)
 pd.set_option('display.width', 200)
 
@@ -59,7 +60,7 @@ class RawGameCount:
         return df.replace('0/0', '-')
 
 
-def scan_results(sgfs_dir: str) -> Tuple[RawGameCount, pd.DataFrame]:
+def scan_results(sgfs_dir: str, order=None) -> Tuple[RawGameCount, pd.DataFrame]:
     """ scan sgfs, build the raw sided stats dfs """
     game_counts = defaultdict(lambda: defaultdict(int))
     black_wins  = defaultdict(lambda: defaultdict(int))
@@ -78,7 +79,7 @@ def scan_results(sgfs_dir: str) -> Tuple[RawGameCount, pd.DataFrame]:
         black_wins[black_id][white_id] += result_sign == 1
 
     # construct df: sided first
-    models = sorted(models)
+    models = sorted(models) if order is None else order
     df_counts_raw = pd.DataFrame(game_counts, index=models, columns=models)
     df_counts = df_counts_raw.T.fillna(0).astype(int)
     df_blackwins = pd.DataFrame(black_wins, index=models, columns=models).T.fillna(0).astype(int)
@@ -116,7 +117,7 @@ def verify_and_fold(raw_game_counts: RawGameCount, df_blackwins: pd.DataFrame) -
     df_totalwins = df_blackwins + (df_counts - df_blackwins).T
     df_wrate2 = (df_totalwins / df_counts2).fillna('-')
     dfw = pd.concat([df_totalwins, df_counts2, df_wrate2], axis=1, keys=['nwin', 'total', 'wrate'])
-    dfw = dfw.swaplevel(axis=1).sort_index(axis=1)
+    dfw = dfw.swaplevel(axis=1)  #.sort_index(axis=1)
     return dfw
 
 
@@ -161,27 +162,34 @@ class Evaluator:
             if games_to_run <= 0:
                 continue
             elif games_to_run <= 3:
-                print(f'starting {black} vs {white}: {games_to_run} games')
+                logging.info(f'starting {black} vs {white}: {games_to_run} games')
                 procs.append(self.start_games(black, white, games_to_run))
             else:
-                print(f'starting {black} vs {white}: {games_to_run} games, 2 processes')
+                logging.info(f'starting {black} vs {white}: {games_to_run} games, 2 processes')
                 procs.append(self.start_games(black, white, games_to_run // 2))
                 procs.append(self.start_games(black, white, games_to_run - games_to_run // 2))
-        print(f'started all...')
-    
+
         for p in procs:
             p.wait()
-        print('done')
+        logging.info(f'Done two-sided: {model1} vs {model2}')
     
-    def main_multi_eval(self, models: List[str], band_size=1):
+    def run_multi_models(self, models: List[str], band_size=1):
         """ eval multiple pairs of models, based on two_sided_eval
 
         models: ordered by (hypothesized) strength, strongest first
         todo:
         - try to be smart in figuring out actual ranking
         """
-        for model1, model2 in itertools.pairwise(models):
-            self.run_two_sided_eval(model1, model2)
+        # all pairs:
+        # itertools.permutations(models, 2)
+
+        for band in range(1, 1 + band_size):
+            print(f'\n\n=====  band {band}')
+            it_a, it_b = itertools.tee(models)
+            for _ in range(band):
+                next(it_b, None)
+            for model1, model2 in zip(it_a, it_b):
+                self.run_two_sided_eval(model1, model2)
     
     def main_pbt_eval(self):
         raw_game_count, _ = scan_results(self.sgfs_dir)
@@ -207,8 +215,8 @@ class Evaluator:
             for p in procs:
                 p.wait()
     
-    def state_of_the_world(self):
-        raw_game_count, df_blackwins = scan_results(self.sgfs_dir)
+    def state_of_the_world(self, order=None):
+        raw_game_count, df_blackwins = scan_results(self.sgfs_dir, order=order)
         print('black_wins:')
         print(raw_game_count.format_black_wins(df_blackwins))
         dfw = verify_and_fold(raw_game_count, df_blackwins)
@@ -221,13 +229,12 @@ class Evaluator:
 def main():
     sgfs_dir = f'{myconf.EXP_HOME}/eval_bots/sgfs'
 
-    # main_pbt_eval(sgfs_dir)
-    models = [f'model1_epoch16.h5#{x}' for x in (10, 50, 100, 200, 400)]
+    models = [f'model1_epoch16#{x}' for x in (10, 50, 100, 200, 400)]
     evaluator = Evaluator(sgfs_dir, 32)
     # model1, model2 = 'model1_epoch16.h5#50', 'model1_epoch16.h5#10'
     # evaluator.run_two_sided_eval(model1, model2)
-    evaluator.run_two_sided_eval(models[0], models[1])
-    evaluator.state_of_the_world()
+    evaluator.run_multi_models(models[::-1], band_size=2)
+    evaluator.state_of_the_world(order=models)
 
 
 if __name__ == '__main__':
