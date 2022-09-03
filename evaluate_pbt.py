@@ -15,6 +15,8 @@ lr=0.2_vw=1.5                                                   -
 - each pair needs to play the same number of games as white/black
 - it's ok if more games are played in certain pairs. We only care about win-rate in the end.
 - should construct the table from eval-sgfs, so that we can tolerate failures, reruns, parallel runs
+
+- tf hangs in metal occasionally, so batch runs need to tolerate this
 """
 import itertools
 import os
@@ -136,9 +138,10 @@ class Evaluator:
         """
         python evaluate.py
         """
-        cmdline = """/Users/hyu/anaconda/envs/tf2/bin/python /Users/hyu/PycharmProjects/dlgo/minigo/evaluate.py
+        # evaluate doesn't inject noise, so no need to specify  --dirichlet_noise_weight = 0.0125
+        cmdline = f"""/Users/hyu/anaconda/envs/tf2/bin/python /Users/hyu/PycharmProjects/dlgo/minigo/evaluate.py
+                    --eval_sgf_dir={self.sgfs_dir}
                     --softpick_move_cutoff=6
-                    --dirichlet_noise_weight=0.0125
                     --parallel_readouts=16
                     --num_readouts=50
                     --resign_threshold=-1
@@ -151,7 +154,6 @@ class Evaluator:
     
     def run_two_sided_eval(self, model1_str, model2_str):
         """ play two models against each other for n games, then switch sides """
-        utils.ensure_dir_exists(self.sgfs_dir)
         raw_game_count, _ = scan_results(self.sgfs_dir)
     
         model1, model2 = ModelConfig(model1_str), ModelConfig(model2_str)
@@ -228,11 +230,12 @@ class Evaluator:
 
 def main():
     sgfs_dir = f'{myconf.EXP_HOME}/eval_bots/sgfs'
+    utils.ensure_dir_exists(sgfs_dir)
 
-    models = [f'model1_epoch16#{x}' for x in (10, 50, 100, 200, 400)]
     evaluator = Evaluator(sgfs_dir, 32)
-    # model1, model2 = 'model1_epoch16.h5#50', 'model1_epoch16.h5#10'
-    # evaluator.run_two_sided_eval(model1, model2)
+    models = ['model1_epoch5#1', 'model1_epoch5#10']
+    # evaluator.run_two_sided_eval(models[0], models[1])
+    models = [f'model1_epoch5#{x}' for x in (1, 10, 50, 100, 200, 400)]
     evaluator.run_multi_models(models[::-1], band_size=2)
     evaluator.state_of_the_world(order=models)
 

@@ -93,7 +93,11 @@ class MCTSPlayer(MCTSPlayerInterface):
     def __init__(self, network, seconds_per_move=5, num_readouts=0,
                  resign_threshold=None,
                  timed_match=False):
-        """ """
+        """
+        num_readouts:
+          0: use FLAGS.num_readouts
+          1: raw NN output (no mcts)
+        """
         self.network = network
         self.seconds_per_move = seconds_per_move
         self.num_readouts = num_readouts or FLAGS.num_readouts
@@ -104,8 +108,7 @@ class MCTSPlayer(MCTSPlayerInterface):
         self.root = None  # type: mcts.MCTSNode
         self.resign_threshold = resign_threshold or FLAGS.resign_threshold
         self.timed_match = timed_match
-        assert (self.timed_match and self.seconds_per_move >
-                0) or self.num_readouts > 0
+        assert (self.timed_match and self.seconds_per_move > 0) or self.num_readouts > 0
         super().__init__()
 
     def get_position(self):
