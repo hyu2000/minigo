@@ -29,6 +29,7 @@ import pandas as pd
 
 import utils
 from evaluate import ModelConfig
+from katago.analysis_engine import KataDualNetwork, KataModels
 from sgf_wrapper import SGFReader
 import myconf
 
@@ -228,6 +229,43 @@ class Evaluator:
         print(f'dfw saved to {pickle_fpath}')
 
 
+def game_outcome_review(sgfs_dir):
+    """ KataEngine reviews final game outcome, to see if games are properly scored/finished
+    """
+    dnn_kata = KataDualNetwork(KataModels.G170_B6C96)
+    num_disagree = 0
+
+    game_counts = defaultdict(lambda: defaultdict(int))
+    disagree_cnt  = defaultdict(lambda: defaultdict(int))
+    models = set()
+    for sgf_fname in os.listdir(f'{sgfs_dir}'):
+        if not sgf_fname.endswith('.sgf'):
+            continue
+        reader = SGFReader.from_file_compatible(f'{sgfs_dir}/{sgf_fname}')
+        black_id = reader.black_name()
+        white_id = reader.white_name()
+        result_sign = reader.result()
+        assert result_sign != 0
+
+        pos = reader.last_pos()
+        pi, v_expert = dnn_kata.run(pos)
+        sign_expert = np.sign(v_expert)
+        if result_sign != sign_expert:
+            result_str = reader.result_str()
+            num_disagree += 1
+            logging.info(f'{sgf_fname} {result_str} kata_v={v_expert}')
+
+        models.update([black_id, white_id])
+        game_counts[black_id][white_id] += 1
+        disagree_cnt[black_id][white_id] += result_sign != sign_expert
+
+    # we can report on more detailed disagreement w/ disagree_cnt
+    models = sorted(models)
+    df_counts_raw = pd.DataFrame(game_counts, index=models, columns=models)
+    df_counts = df_counts_raw.T.fillna(0).astype(int)
+    logging.info(f'Total disagreement: {num_disagree} / %d', df_counts.sum().sum())
+
+
 def main():
     sgfs_dir = f'{myconf.EXP_HOME}/eval_bots/sgfs'
     utils.ensure_dir_exists(sgfs_dir)
@@ -238,6 +276,19 @@ def main():
     models = [f'model1_epoch5#{x}' for x in (1, 10, 50, 100, 200, 400)]
     evaluator.run_multi_models(models[::-1], band_size=2)
     evaluator.state_of_the_world(order=models)
+
+
+def count_disagreement():
+    """
+sgfs-200readouts: 2/320
+sgfs-100readouts-batch: 4/576
+sgfs-50readouts-batch: 13/576
+sgfs: model1_epoch5#10-vs-model1_epoch5#1  20/64
+
+sgfs-epoch5-batch: 75/640  many due to #1, #10 readouts
+    """
+    sgfs_dir = f'{myconf.EXP_HOME}/eval_bots/sgfs-epoch5-batch'
+    game_outcome_review(sgfs_dir)
 
 
 if __name__ == '__main__':
