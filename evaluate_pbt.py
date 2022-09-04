@@ -236,7 +236,7 @@ def game_outcome_review(sgfs_dir):
     num_disagree = 0
 
     game_counts = defaultdict(lambda: defaultdict(int))
-    disagree_cnt  = defaultdict(lambda: defaultdict(int))
+    disagree_cnt = defaultdict(lambda: defaultdict(int))
     models = set()
     for sgf_fname in os.listdir(f'{sgfs_dir}'):
         if not sgf_fname.endswith('.sgf'):
@@ -259,11 +259,14 @@ def game_outcome_review(sgfs_dir):
         game_counts[black_id][white_id] += 1
         disagree_cnt[black_id][white_id] += result_sign != sign_expert
 
-    # we can report on more detailed disagreement w/ disagree_cnt
     models = sorted(models)
     df_counts_raw = pd.DataFrame(game_counts, index=models, columns=models)
     df_counts = df_counts_raw.T.fillna(0).astype(int)
+    df_disagree = pd.DataFrame(disagree_cnt, index=models, columns=models).T.fillna(0).astype(int)
+    df_disagree.index.name = 'black_id'
+    df = df_disagree.astype(str) + '/' + df_counts.astype(str)
     logging.info(f'Total disagreement: {num_disagree} / %d', df_counts.sum().sum())
+    print(df.replace('0/0', '-'))
 
 
 def main():
@@ -293,3 +296,4 @@ sgfs-epoch5-batch: 75/640  many due to #1, #10 readouts
 
 if __name__ == '__main__':
     main()
+    # count_disagreement()
