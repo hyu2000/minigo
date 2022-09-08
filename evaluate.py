@@ -284,8 +284,8 @@ class RunOneSided:
         # self._make_tfrecords(game_idx)
 
         game_history = active.position.recent
-        move_history_head = ' '.join([coords.to_gtp(game_history[i].move) for i in range(5)])
-        logging.info(f'Finished game {game_idx}: %d moves, {result_str} \t%s', len(game_history), move_history_head)
+        move_history_head = ' '.join([coords.to_gtp(game_history[i].move) for i in range(12)])
+        logging.info(f'Finished game %3d: %3d moves, %-7s   %s', game_idx, len(game_history), result_str, move_history_head)
         return result_str
 
 

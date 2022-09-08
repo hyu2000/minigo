@@ -35,6 +35,9 @@ flags.DEFINE_integer('softpick_move_cutoff', (go.N * go.N // 12) // 2 * 2,
 # Ensure that both white and black have an equal number of softpicked moves.
 flags.register_validator('softpick_move_cutoff', lambda x: x % 2 == 0)
 
+flags.DEFINE_integer('softpick_topn_cutoff', 5,
+                     'restrict softpick to topN MCTS visits.')
+
 flags.DEFINE_float('resign_threshold', -0.9,
                    'The post-search Q evaluation at which resign should happen.'
                    'A threshold of -1 implies resign is disabled.')
@@ -211,7 +214,7 @@ class MCTSPlayer(MCTSPlayerInterface):
         if soft_pick:
             pi = self.root.children_as_pi(squash=False)
             # restrict soft-pick to only top 5 moves
-            nth = np.partition(pi.flatten(), -5)[-5]
+            nth = np.partition(pi.flatten(), -FLAGS.softpick_topn_cutoff)[-FLAGS.softpick_topn_cutoff]
             pi[pi < nth] = 0
             cdf = pi.cumsum()
 
