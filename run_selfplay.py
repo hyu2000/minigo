@@ -38,6 +38,7 @@ class InitPositions:
 
 
 def load_kata_network(model_file):
+    logging.info('loading Kata %s', model_file)
     return KataDualNetwork(model_file)
 
 
@@ -108,14 +109,14 @@ def main_local(argv):
     FLAGS.sgf_dir = f'{myconf.SELFPLAY_DIR}/sgf'
     FLAGS.selfplay_dir = f'{myconf.SELFPLAY_DIR}/train'
     FLAGS.holdout_dir = f'{myconf.SELFPLAY_DIR}/val'
-    FLAGS.num_readouts = 50
+    FLAGS.num_readouts = 200
     FLAGS.parallel_readouts = 16
     FLAGS.holdout_pct = 0
     FLAGS.softpick_move_cutoff = 6
-    FLAGS.dirichlet_noise_weight = 0.0
+    FLAGS.dirichlet_noise_weight = 0.125
     FLAGS.resign_threshold = -1.0
     play_games(num_games=2)
 
 
 if __name__ == '__main__':
-    app.run(main_local)
+    app.run(main)
