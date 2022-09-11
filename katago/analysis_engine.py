@@ -23,8 +23,8 @@ class KataModels:
     G170_B20 = f'{MODELS_DIR}/g170e-b20c256x2-s5303129600-d1228401921.bin.gz'
     # new run
     MODEL_B6_10k = f'{MODELS_DIR}/kata1-b6c96-s175395328-d26788732.txt.elo10k.gz'  # last kata1 b6c96 model. same as G170_B6C96!
-    MODEL_B6_5k  = f'{MODELS_DIR}/kata1-b6c96-s24455424-d3879081.txt.elo5k.gz'
-    MODEL_B6_4k  = f'{MODELS_DIR}/kata1-b6c96-s18429184-d3197121.txt.elo4k.gz'
+    MODEL_B6_5k  = f'{MODELS_DIR}/kata1-b6c96-s24455424-d3879081.txt.elo5k.gz'  # beats me consistently
+    MODEL_B6_4k  = f'{MODELS_DIR}/kata1-b6c96-s18429184-d3197121.txt.elo4k.gz'  # I can beat consistently @ 500(?) readouts
     MODEL_B40 = f'{MODELS_DIR}/kata1-b40c256-s11101799168-d2715431527.bin.gz'
 
     @staticmethod
@@ -37,6 +37,7 @@ class KataModels:
 class ARequest(object):
     moves = attr.ib(type=list)
     analyzeTurns = attr.ib(type=list)
+    maxVisits = attr.ib(type=int, default=500)
 
     id = attr.ib(type=str, default='foo')
     boardXSize = attr.ib(type=int, default=go.N)
@@ -46,11 +47,11 @@ class ARequest(object):
     rules = attr.ib(type=str, default='chinese')
 
     @staticmethod
-    def from_position(pos: go.Position):
+    def from_position(pos: go.Position, max_visits: int = 500):
         """ request to ask for next move """
         moves = [[go.color_str(x.color)[0], coords.to_gtp(x.move)] for x in pos.recent]
         assert len(moves) == pos.n
-        return ARequest(moves, [pos.n])
+        return ARequest(moves, [pos.n], max_visits)
 
 
 @attr.s
@@ -68,7 +69,7 @@ class AResponse(object):
 class RootInfo(object):
     currentPlayer: str
     visits: int
-    winrate: float
+    winrate: float  # from the doc seems to be mcts
     scoreLead: float
 
     @classmethod
