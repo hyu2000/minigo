@@ -38,7 +38,6 @@ class ExpertReviewer:
         Note this includes positive surprises as well, also we may miss a blunder that didn't cross 0.5, e.g.
         27:0.29, 28:0.26, 29:0.23 -> 30:0.48 -> 31:0.53  the white blunder (0.25) is missed, then a small black
         surprise is declared Change(i=30, 0.05).
-
         """
         wr_arr = np.array(black_winrates)
         wr_signs = np.sign(wr_arr - ExpertReviewer.JIGO)
@@ -104,15 +103,41 @@ def test_crossover_detect0():
 
 
 def test_crossover_detect1():
-    winrates = [0.54, 0.51, 0.52, 0.51, 0.59, 0.48, 0.65, 0.64, 0.57, 0.53,
-                0.71, 0.69, 0.66, 0.69, 0.68, 0.32, 0.79, 0.48, 0.48, 0.46,
-                0.86, 0.81, 0.85]
-    crosses = ExpertReviewer.detect_crossover(winrates)
-    print(crosses)
+    """  all the jumps make sense, but many are due to same underlying reason...
+
+cross [(0: -0.04), (3: 0.04), (5: 0.09), (8: -0.03), (9: 0.17), (14: -0.40), (15: 0.51), (16: -0.36), (19: 0.47),
+       (22: -0.58), (23: 0.66), (24: -0.57),              (29: 0.35),             (40: -0.62), (43: 0.67),
+                   (48: -0.55), (49: 0.55), (52: -0.75), (53: 0.76), (54: -0.70), (55: 0.69), (56: -0.79), (57: 0.80)]
+jumps [                                              (9: 0.17), (14: -0.40), (15: 0.51), (16: -0.36), (19: 0.47),
+       (22: -0.58), (23: 0.66), (24: -0.57),?(26: -0.14), (29: 0.35),*(31: 0.40), (40: -0.62), (43: 0.67),*(46: -0.46),  hereafter all due to the same missed move
+      *(47: 0.47), (48: -0.55), (49: 0.55), (52: -0.75), (53: 0.76), (54: -0.70), (55: 0.69), (56: -0.79), (57: 0.80),
+       (58: -0.40), (59: 0.40), (60: -0.20), (61: 0.19), (62: -0.13), (63: 0.12)]
+    """
+    winrates = [0.54, 0.50, 0.49, 0.48, 0.52, 0.50, 0.59, 0.59, 0.53, 0.50,
+                0.67, 0.68, 0.67, 0.66, 0.70, 0.30, 0.81, 0.45, 0.42, 0.40,
+                0.87, 0.82, 0.84, 0.26, 0.92, 0.35, 0.40, 0.26, 0.24, 0.19,
+                0.54, 0.56, 0.96, 0.96, 0.97, 0.96, 0.99, 0.95, 0.98, 0.94,
+                0.96, 0.34, 0.33, 0.32, 0.99, 0.99, 0.99, 0.53, 1.00, 0.45,
+                1.00, 0.97, 0.99, 0.24, 1.00, 0.30, 0.99, 0.20, 1.00, 0.60,
+                1.00, 0.80, 0.99, 0.86, 0.98, 0.91, 0.96, 0.93, 0.97, 0.92,
+                0.98, 0.92, 1.00, 0.93, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00,
+                1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00,
+                1.00]
+    cps = ExpertReviewer.detect_crossover(winrates)
+    print()
+    print('cross', cps)
+
+    # does it capture all jumps? No
+    warr = np.array(winrates)
+    diff = np.diff(warr)
+    JUMP_THRESH = 0.1
+    jumps = np.where(np.abs(diff) > JUMP_THRESH)
+    cp_jumps = [ChangePoint(i, diff[i]) for i in jumps[0]]
+    print('jumps', cp_jumps)
 
 
 def test_crossover_detect2():
-    """ JIGO w/ wiggle room """
+    """ TODO JIGO w/ wiggle room """
     winrates = [0.86, 0.80, 0.85, 0.31, 0.91, 0.40, 0.39, 0.29, 0.26, 0.23,
                 0.48, 0.53, 0.94]
     cps = ExpertReviewer.detect_crossover(winrates)
