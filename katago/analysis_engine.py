@@ -138,7 +138,7 @@ class KataEngine:
         self._proc, self._pipe_in, self._pipe_out = start_engine(self.model_fname)
         return self
 
-    def analyze(self, arequest: ARequest):
+    def analyze(self, arequest: ARequest) -> List[AResponse]:
         request1 = json.dumps(attr.asdict(arequest))
         # ask engine
         self._pipe_in.write(f'{request1}\n')
