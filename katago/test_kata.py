@@ -185,16 +185,14 @@ def test_analyze_game():
     model = KataModels.G170_B6C96
     reader = sgf_wrapper.SGFReader.from_file_compatible(sgf_fname)
 
-    player_moves = []  # type: List[PlayerMove]
-    for pwc in reader.iter_pwcs():
-        player_moves.append(PlayerMove(pwc.position.to_play, pwc.next_move))
+    player_moves = [PlayerMove(pwc.position.to_play, pwc.next_move)
+                    for pwc in reader.iter_pwcs()]
 
     proc, stdin, stdout = start_engine(model)
 
-    moves = ARequest.format_moves(player_moves)
     # moves = moves[:5]  # test only
     turns_to_analyze = list(range(len(player_moves)))
-    arequest = ARequest(moves, turns_to_analyze, komi=reader.komi())
+    arequest = ARequest(ARequest.format_moves(player_moves), turns_to_analyze, komi=reader.komi())
 
     request1 = json.dumps(attr.asdict(arequest))
     # ask engine

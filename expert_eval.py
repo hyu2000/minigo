@@ -11,8 +11,10 @@ import pandas as pd
 import coords
 import go
 import myconf
+import sgf_wrapper
+import utils
 from go import PlayerMove
-from katago.analysis_engine import KataEngine, ARequest, RootInfo
+from katago.analysis_engine import KataEngine, ARequest, RootInfo, assemble_comments
 from sgf_wrapper import SGFReader
 
 
@@ -30,8 +32,10 @@ class ExpertReviewer:
     JIGO = 0.5
     JUMP_THRESH = 0.10
 
-    def __init__(self):
+    def __init__(self, annotated_sgf_dir='/tmp/kata_reviewed_sgfs'):
         self.kata = KataEngine().start()
+        self._annotated_sgf_dir = annotated_sgf_dir
+        utils.ensure_dir_exists(annotated_sgf_dir)
 
     @staticmethod
     def detect_crossover(black_winrates: List[float]):
@@ -59,19 +63,30 @@ class ExpertReviewer:
         jumps = np.where(np.abs(diff) > ExpertReviewer.JUMP_THRESH)
         return [ChangePoint(i, diff[i]) for i in jumps[0]]
 
-    def review_a_game(self, reader: SGFReader, sgf_fname):
+    def review_a_game(self, sgf_fname):
         """ whenever winrate crosses 0.5, one side has made a mistake:
         - goes up: white made a mistake
         - down: black made a mistake
         """
-        moves = []
-        for pwc in reader.iter_pwcs():
-            move = [go.color_str(pwc.position.to_play)[0], coords.to_gtp(pwc.next_move)]
-            moves.append(move)
+        reader = SGFReader.from_file_compatible(sgf_fname)
 
-        turns_to_analyze = list(range(len(moves)))
-        arequest = ARequest(moves, turns_to_analyze, 500, komi=reader.komi())
+        player_moves = [PlayerMove(pwc.position.to_play, pwc.next_move)
+                        for pwc in reader.iter_pwcs()]
+        turns_to_analyze = list(range(len(player_moves)))
+        arequest = ARequest(ARequest.format_moves(player_moves), turns_to_analyze, 500, komi=reader.komi())
         responses = self.kata.analyze(arequest)
+
+        # write out annotated game, for later review
+        comments = assemble_comments(arequest, responses)
+        sgf_str = sgf_wrapper.make_sgf(player_moves, reader.result_str(), komi=arequest.komi,
+                                       white_name=reader.white_name(),
+                                       black_name=reader.black_name(),
+                                       game_comment=f'analyzed by: {self.kata.model_id()}',
+                                       comments=comments)
+        out_sgfname = f'{self._annotated_sgf_dir}/annotate.%s' % os.path.basename(sgf_fname)
+        logging.info(f'Writing review to {out_sgfname}')
+        with open(out_sgfname, 'w') as f:
+            f.write(sgf_str)
 
         black_winrates = [RootInfo.from_dict(x.rootInfo).winrate for x in responses]
         # print(', '.join([f'{i}:{x:.2f}' for i, x in enumerate(black_winrates)]))
@@ -79,8 +94,8 @@ class ExpertReviewer:
         cps = self.find_jumps(black_winrates)
         surprises = find_surprise_changes(cps)
         if len(surprises) > 0:
-            logging.info(f'%s has %d/%d surprises: %s', os.path.basename(sgf_fname), len(surprises), len(cps), surprises)
-        return cps
+            logging.info(f'%s has %d/%d surprises: %s', reader.name, len(surprises), len(cps), surprises)
+        return cps, reader
 
 
 def find_surprise_changes(cps: List[ChangePoint]) -> List[ChangePoint]:
@@ -106,9 +121,8 @@ def game_blunder_review(sgfs_dir, model_ids: List[str]):
             continue
 
         num_games += 1
-        logging.info(f'reviewing {sgf_fname}')
-        reader = SGFReader.from_file_compatible(sgf_fname)
-        cps = reviewer.review_a_game(reader, sgf_fname)
+        logging.info(f'reviewing #{num_games}')
+        cps, reader = reviewer.review_a_game(sgf_fname)
 
         black_id = reader.black_name()
         white_id = reader.white_name()
@@ -132,6 +146,7 @@ def game_blunder_review(sgfs_dir, model_ids: List[str]):
 
 
 def test_crossover_detect0():
+    logging.info('simple test')
     winrates = [0.53, 0.44, 0.5, 0.51, 0.59, 0.49, 0.67, 0.6, 0.67]
     crosses = ExpertReviewer.detect_crossover(winrates)
     print(crosses)
@@ -186,10 +201,11 @@ def test_crossover_detect2():
 
 
 def test_review_a_game():
-    sgf_fname = f'{myconf.EXP_HOME}/eval_bots-model2/sgfs-model1-vs-model2/model1_epoch5#100-vs-model2_epoch2#200-15-65075018704.sgf'
+    # sgf_fname = f'{myconf.EXP_HOME}/eval_bots-model2/sgfs-model1-vs-model2/model1_epoch5#100-vs-model2_epoch2#200-15-65075018704.sgf'
+    sgf_fname = f'{myconf.EXP_HOME}/eval_bots-model2/sgfs-model1-vs-model2/model1_epoch5#200-vs-model2_epoch2#300-8-63909912641.sgf'
 
     reviewer = ExpertReviewer()
-    cps = reviewer.review_a_game(sgf_fname)
+    cps, reader = reviewer.review_a_game(sgf_fname)
 
     print(cps)
     black_flips = [x for x in cps if x.i % 2 == 0]
@@ -200,4 +216,4 @@ def test_review_a_game():
 
 def test_review_games():
     sgfs_dir = f'{myconf.EXP_HOME}/eval_bots-model2/sgfs-model1-vs-model2'
-    game_blunder_review(sgfs_dir, ['model1_epoch5#200', 'model2_epoch2#200'])
+    game_blunder_review(sgfs_dir, ['model1_epoch5#200', 'model2_epoch2#300'])
