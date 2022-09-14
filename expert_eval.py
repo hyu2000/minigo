@@ -1,6 +1,8 @@
 """ expert (kata) eval of models, including eval games, selfplay games
 """
+import logging
 import os
+import glob
 from typing import List
 import attr
 import numpy as np
@@ -26,6 +28,7 @@ class ChangePoint:
 class ExpertReviewer:
     CROSSOVER_MARGIN_THRESH = 0.03
     JIGO = 0.5
+    JUMP_THRESH = 0.10
 
     def __init__(self):
         self.kata = KataEngine().start()
@@ -48,13 +51,19 @@ class ExpertReviewer:
         assert len(cps) == 1
         return [ChangePoint(i, wr_diff[i]) for i in cps[0]]
 
-    def review_a_game(self, sgf_fname):
+    @staticmethod
+    def find_jumps(black_winrates: List[float]):
+        """ """
+        warr = np.array(black_winrates)
+        diff = np.diff(warr)
+        jumps = np.where(np.abs(diff) > ExpertReviewer.JUMP_THRESH)
+        return [ChangePoint(i, diff[i]) for i in jumps[0]]
+
+    def review_a_game(self, reader: SGFReader, sgf_fname):
         """ whenever winrate crosses 0.5, one side has made a mistake:
         - goes up: white made a mistake
         - down: black made a mistake
         """
-        reader = SGFReader.from_file_compatible(sgf_fname)
-
         moves = []
         for pwc in reader.iter_pwcs():
             move = [go.color_str(pwc.position.to_play)[0], coords.to_gtp(pwc.next_move)]
@@ -65,32 +74,59 @@ class ExpertReviewer:
         responses = self.kata.analyze(arequest)
 
         black_winrates = [RootInfo.from_dict(x.rootInfo).winrate for x in responses]
-        print(', '.join([f'{i}:{x:.2f}' for i, x in enumerate(black_winrates)]))
-        cps = self.detect_crossover(black_winrates)
+        # print(', '.join([f'{i}:{x:.2f}' for i, x in enumerate(black_winrates)]))
+        # cps = self.detect_crossover(black_winrates)
+        cps = self.find_jumps(black_winrates)
+        surprises = find_surprise_changes(cps)
+        if len(surprises) > 0:
+            logging.info(f'%s has %d/%d surprises: %s', os.path.basename(sgf_fname), len(surprises), len(cps), surprises)
         return cps
 
 
-def game_blunder_review(sgfs_dir):
+def find_surprise_changes(cps: List[ChangePoint]) -> List[ChangePoint]:
+    """ find all positive surprises in change-points, i.e. black moves that improves black winrate """
+    surprises = [x for x in cps if (x.i % 2 == 0 and x.delta > 0) or (x.i % 2 == 1 and x.delta < 0)]
+    return surprises
+
+
+def game_blunder_review(sgfs_dir, model_ids: List[str]):
     """ kata review #blunders stats by both sides, ordered by pos.n
+
+    model_ids: if specified, check sgf_fname contains all models in the list;
+        and tabulate stats for each model (both playing white and black)
     """
     MAX_MOVE_NUMBER = 80 - 1
     reviewer = ExpertReviewer()
 
     num_games = 0
-    mistakes_by_move = np.zeros((2, MAX_MOVE_NUMBER + 1), dtype=int)
-    for sgf_fname in os.listdir(f'{sgfs_dir}'):
-        if not sgf_fname.endswith('.sgf'):
+    stats_by_model = {m: np.zeros(MAX_MOVE_NUMBER + 1, dtype=int) for m in model_ids}
+    model_id_set = set(model_ids)
+    for sgf_fname in glob.glob(f'{sgfs_dir}/*.sgf'):
+        if any(x not in sgf_fname for x in model_ids):
             continue
 
         num_games += 1
-        cps = reviewer.review_a_game(sgf_fname)
-        # todo this is testing positive / negative surprise rather than black/white
-        black_mistakes = [x.i for x in cps if x.delta < 0]
-        mistakes_by_move[0, np.minimum(black_mistakes, MAX_MOVE_NUMBER)] += 1
-        white_mistakes = [x.i for x in cps if x.delta > 0]
-        mistakes_by_move[1, np.minimum(white_mistakes, MAX_MOVE_NUMBER)] += 1
+        logging.info(f'reviewing {sgf_fname}')
+        reader = SGFReader.from_file_compatible(sgf_fname)
+        cps = reviewer.review_a_game(reader, sgf_fname)
 
-    df = pd.DataFrame(mistakes_by_move, index=['black', 'white'])
+        black_id = reader.black_name()
+        white_id = reader.white_name()
+        if black_id in model_id_set:
+            black_mistakes = [x.i for x in cps if x.i % 2 == 0]
+            if black_mistakes:
+                stats_by_model[black_id][np.minimum(black_mistakes, MAX_MOVE_NUMBER)] += 1
+        if white_id in model_id_set:
+            white_mistakes = [x.i for x in cps if x.i % 2 == 1]
+            if white_mistakes:
+                stats_by_model[white_id][np.minimum(white_mistakes, MAX_MOVE_NUMBER)] += 1
+
+        # if num_games > 1:
+        #     break
+
+    df = pd.DataFrame(stats_by_model)
+    pickle_fpath = '/tmp/df-blunder-stats.pkl'
+    df.to_pickle(pickle_fpath)
     print(f'Total {num_games} games')
     print(df)
 
@@ -113,6 +149,7 @@ jumps [                                              (9: 0.17), (14: -0.40), (15
       *(47: 0.47), (48: -0.55), (49: 0.55), (52: -0.75), (53: 0.76), (54: -0.70), (55: 0.69), (56: -0.79), (57: 0.80),
        (58: -0.40), (59: 0.40), (60: -0.20), (61: 0.19), (62: -0.13), (63: 0.12)]
     """
+    # from f'{myconf.EXP_HOME}/eval_bots-model2/sgfs-model1-vs-model2/model1_epoch5#100-vs-model2_epoch2#200-15-65075018704.sgf'
     winrates = [0.54, 0.50, 0.49, 0.48, 0.52, 0.50, 0.59, 0.59, 0.53, 0.50,
                 0.67, 0.68, 0.67, 0.66, 0.70, 0.30, 0.81, 0.45, 0.42, 0.40,
                 0.87, 0.82, 0.84, 0.26, 0.92, 0.35, 0.40, 0.26, 0.24, 0.19,
@@ -130,10 +167,12 @@ jumps [                                              (9: 0.17), (14: -0.40), (15
     # does it capture all jumps? No
     warr = np.array(winrates)
     diff = np.diff(warr)
-    JUMP_THRESH = 0.1
+    JUMP_THRESH = ExpertReviewer.JUMP_THRESH
     jumps = np.where(np.abs(diff) > JUMP_THRESH)
     cp_jumps = [ChangePoint(i, diff[i]) for i in jumps[0]]
     print('jumps', cp_jumps)
+    cp_surprises = find_surprise_changes(cps)
+    assert len(cp_surprises) == 0
 
 
 def test_crossover_detect2():
@@ -142,10 +181,8 @@ def test_crossover_detect2():
                 0.48, 0.53, 0.94]
     cps = ExpertReviewer.detect_crossover(winrates)
     print(cps)
-    black_flips = [x for x in cps if x.i % 2 == 0]
-    white_flips = [x for x in cps if x.i % 2 == 1]
-    assert(all(x.delta < 0 for x in black_flips))
-    assert(all(x.delta > 0 for x in white_flips))
+    cp_surprises = find_surprise_changes(cps)
+    assert len(cp_surprises) == 0
 
 
 def test_review_a_game():
@@ -157,12 +194,10 @@ def test_review_a_game():
     print(cps)
     black_flips = [x for x in cps if x.i % 2 == 0]
     white_flips = [x for x in cps if x.i % 2 == 1]
-    print('black', black_flips)
-    print('white', white_flips)
-    assert(all(x.delta < 0 for x in black_flips))
-    assert(all(x.delta > 0 for x in white_flips))
+    print('black', len(black_flips), black_flips)
+    print('white', len(white_flips), white_flips)
 
 
 def test_review_games():
-    sgfs_dir = ''
-    game_blunder_review(sgfs_dir)
+    sgfs_dir = f'{myconf.EXP_HOME}/eval_bots-model2/sgfs-model1-vs-model2'
+    game_blunder_review(sgfs_dir, ['model1_epoch5#200', 'model2_epoch2#200'])
