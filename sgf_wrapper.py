@@ -229,7 +229,7 @@ class SGFReader(object):
     def from_file_compatible(fname: str) -> 'SGFReader':
         with open(fname) as f:
             s = f.read()
-            return SGFReader.from_string_compatible(s)
+            return SGFReader.from_string_compatible(s, name=fname)
 
     @staticmethod
     def from_string_compatible(s: str, name='unknown') -> 'SGFReader':

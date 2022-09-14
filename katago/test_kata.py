@@ -1,4 +1,5 @@
 import io
+import os.path
 import subprocess
 import json
 from typing import List, Dict
@@ -12,11 +13,9 @@ import sgf_wrapper
 from go import PlayerMove
 import myconf
 from katago.analysis_engine import ARequest, AResponse, MoveInfo, RootInfo, KataModels, read_multi_responses, \
-    KataEngine, start_engine
+    KataEngine, start_engine, assemble_comment, assemble_comments
 from preprocessing import calc_feature_from_pos, make_tf_example
 from run_kata_preprocess import extract_policy_value
-
-MIN_VISITS = 5
 
 
 def test_attr():
@@ -82,16 +81,6 @@ def test_simple_parse():
 
     remainder = proc.communicate()[0].decode('utf-8')
     print(remainder)
-
-
-def count_good_moves(rinfo: RootInfo, move_infos: List[Dict]) -> int:
-    """ how is order determined? not by visits, lcb, winrate, """
-    # vis_counts = [move.get('visits') for move in move_infos]
-    if rinfo.currentPlayer == 'B':
-        good_moves = [move for move in move_infos if move.get('visits') > MIN_VISITS and move.get('winrate') > 0.5]
-    else:
-        good_moves = [move for move in move_infos if move.get('visits') > MIN_VISITS and move.get('winrate') < 0.5]
-    return len(good_moves)
 
 
 def test_selfplay():
@@ -185,65 +174,33 @@ def test_paired_match():
         engine.stop()
 
 
-def _format_pv(move_info: MoveInfo) -> str:
-    moves = move_info.pv[1:10]
-    return ' '.join(moves).replace('pass', 'x')
-
-
-def assemble_comment(actual_move, resp1: AResponse) -> str:
-    rinfo = RootInfo.from_dict(resp1.rootInfo)
-    good_moves = count_good_moves(rinfo, resp1.moveInfos)
-    s = f'%.2f %.2f {rinfo.visits} path=%d' % (rinfo.winrate, rinfo.scoreLead, good_moves)
-
-    lines = [s]
-    lines.append('move win% lead visits (%) prior pv')
-    for move_info in resp1.moveInfos[:10]:
-        minfo = MoveInfo.from_dict(move_info)
-        is_actual_move = minfo.move == actual_move
-        marker = '*' if is_actual_move else ' '
-        pv = _format_pv(minfo)  #if is_actual_move or minfo.order == 0 else ''
-        s = f'{marker}{minfo.order} {minfo.move} %.2f %.2f %d (%.2f) %.2f {pv}' % (
-            minfo.winrate, minfo.scoreLead, minfo.visits, minfo.visits / rinfo.visits, minfo.prior)
-        lines.append(s)
-
-    return '\n'.join(lines)
-
-
 def test_analyze_game():
-    """ analyze & annotate existing game """
+    """ analyze & annotate existing game
+    """
     sgf_fname = '/Users/hyu/Downloads/katago-sgfs/katatrain.b60c320.sgf'
     # sgf_fname = '/Users/hyu/Downloads/optimalC2.5x5.sgf'
     # sgf_fname = '/Users/hyu/Downloads/katago-sgfs/5x5/C2C3D3B3.sgf'
-    sgf_fname = f'{myconf.EXP_HOME}/selfplay6/sgf/full/211-54526899914.sgf'
+    sgf_fname = f'{myconf.EXP_HOME}/eval_bots-model2/sgfs-model1-vs-model2/model1_epoch5#100-vs-model2_epoch2#200-15-65075018704.sgf'
+    sgf_fname = f'{myconf.EXP_HOME}/eval_bots-model2/sgfs-model1-vs-model2/model1_epoch5#200-vs-model2_epoch2#300-8-63909912641.sgf'
     model = KataModels.G170_B6C96
     reader = sgf_wrapper.SGFReader.from_file_compatible(sgf_fname)
 
-    moves = []
     player_moves = []  # type: List[PlayerMove]
     for pwc in reader.iter_pwcs():
         player_moves.append(PlayerMove(pwc.position.to_play, pwc.next_move))
-        move = [go.color_str(pwc.position.to_play)[0], coords.to_gtp(pwc.next_move)]
-        moves.append(move)
 
     proc, stdin, stdout = start_engine(model)
 
+    moves = ARequest.format_moves(player_moves)
     # moves = moves[:5]  # test only
-    turns_to_analyze = list(range(len(moves)))
+    turns_to_analyze = list(range(len(player_moves)))
     arequest = ARequest(moves, turns_to_analyze, komi=reader.komi())
 
     request1 = json.dumps(attr.asdict(arequest))
     # ask engine
     stdin.write(f'{request1}\n')
-    responses = read_multi_responses(stdout, len(moves))
-
-    comments = []
-    for i, (move, resp1) in enumerate(zip(moves, responses)):
-        assert resp1.turnNumber == i
-
-        # assemble debug info in comment
-        comment = assemble_comment(move[1], resp1)
-        comments.append(comment)
-        print(i, len(resp1.moveInfos))
+    responses = read_multi_responses(stdout, len(player_moves))
+    comments = assemble_comments(arequest, responses)
 
     remainder = proc.communicate()[0].decode('utf-8')
     print('remainder:\n', remainder)
@@ -253,7 +210,8 @@ def test_analyze_game():
                                    black_name=reader.black_name(),
                                    game_comment=f'analyzed by: {model}',
                                    comments=comments)
-    with open(f'/Users/hyu/Downloads/test_annotate.sgf', 'w') as f:
+    out_fname = os.path.basename(sgf_fname)
+    with open(f'/Users/hyu/Downloads/annotate.{out_fname}', 'w') as f:
         f.write(sgf_str)
 
 

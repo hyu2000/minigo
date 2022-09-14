@@ -5,7 +5,7 @@ import attr
 import io
 import subprocess
 import json
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Any
 
 import numpy as np
 
@@ -52,6 +52,12 @@ class ARequest(object):
         moves = [[go.color_str(x.color)[0], coords.to_gtp(x.move)] for x in pos.recent]
         assert len(moves) == pos.n
         return ARequest(moves, [pos.n], max_visits)
+
+    @staticmethod
+    def format_moves(player_moves: List[go.PlayerMove]) -> List[Any]:
+        """ format PlayerMove to kata move spec """
+        moves = [[go.color_str(x.color)[0], coords.to_gtp(x.move)] for x in player_moves]
+        return moves
 
 
 @attr.s
@@ -128,6 +134,53 @@ def read_multi_responses(stdout, nmoves) -> List[AResponse]:
         responses.append(AResponse(**jdict))
 
     return sorted(responses, key=lambda x: x.turnNumber)
+
+
+_MIN_VISITS_FOR_GOOD_MOVE = 5
+
+
+def count_good_moves(rinfo: RootInfo, move_infos: List[Dict]) -> int:
+    """ how is order determined? not by visits, lcb, winrate, """
+    # vis_counts = [move.get('visits') for move in move_infos]
+    if rinfo.currentPlayer == 'B':
+        good_moves = [move for move in move_infos
+                      if move.get('visits') > _MIN_VISITS_FOR_GOOD_MOVE and move.get('winrate') > 0.5]
+    else:
+        good_moves = [move for move in move_infos
+                      if move.get('visits') > _MIN_VISITS_FOR_GOOD_MOVE and move.get('winrate') < 0.5]
+    return len(good_moves)
+
+
+def _format_pv(move_info: MoveInfo) -> str:
+    moves = move_info.pv[1:10]
+    return ' '.join(moves).replace('pass', 'x')
+
+
+def assemble_comment(actual_move: str, resp1: AResponse) -> str:
+    rinfo = RootInfo.from_dict(resp1.rootInfo)
+    good_moves = count_good_moves(rinfo, resp1.moveInfos)
+    s = f'%.2f %.2f {rinfo.visits} path=%d' % (rinfo.winrate, rinfo.scoreLead, good_moves)
+
+    lines = [s]
+    lines.append('move win% lead visits (%) prior pv')
+    for move_info in resp1.moveInfos[:10]:
+        minfo = MoveInfo.from_dict(move_info)
+        is_actual_move = minfo.move == actual_move
+        marker = '*' if is_actual_move else ' '
+        pv = _format_pv(minfo)  #if is_actual_move or minfo.order == 0 else ''
+        s = f'{marker}{minfo.order} {minfo.move} %.2f %.2f %d (%.2f) %.2f {pv}' % (
+            minfo.winrate, minfo.scoreLead, minfo.visits, minfo.visits / rinfo.visits, minfo.prior)
+        lines.append(s)
+
+    return '\n'.join(lines)
+
+
+def assemble_comments(arequest: ARequest, responses: List[AResponse]) -> List[str]:
+    # check responses are in order
+    assert all(resp1.turnNumber == i for i, resp1 in enumerate(responses))
+
+    comments = [assemble_comment(move[1], resp1) for move, resp1 in zip(arequest.moves, responses)]
+    return comments
 
 
 class KataEngine:
