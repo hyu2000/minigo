@@ -14,7 +14,7 @@ import myconf
 import sgf_wrapper
 import utils
 from go import PlayerMove
-from katago.analysis_engine import KataEngine, ARequest, RootInfo, assemble_comments
+from katago.analysis_engine import KataEngine, ARequest, RootInfo, assemble_comments, KataModels
 from sgf_wrapper import SGFReader
 
 
@@ -32,8 +32,8 @@ class ExpertReviewer:
     JIGO = 0.5
     JUMP_THRESH = 0.10
 
-    def __init__(self, annotated_sgf_dir='/tmp/kata_reviewed_sgfs'):
-        self.kata = KataEngine().start()
+    def __init__(self, annotated_sgf_dir='/Users/hyu/Downloads/kata_reviewed_sgfs'):
+        self.kata = KataEngine(KataModels.G170_B6C96).start()
         self._annotated_sgf_dir = annotated_sgf_dir
         utils.ensure_dir_exists(annotated_sgf_dir)
 
@@ -141,8 +141,9 @@ def game_blunder_review(sgfs_dir, model_ids: List[str]):
     df = pd.DataFrame(stats_by_model)
     pickle_fpath = '/tmp/df-blunder-stats.pkl'
     df.to_pickle(pickle_fpath)
-    print(f'Total {num_games} games')
-    print(df)
+    print(f'Stats in {pickle_fpath}: total {num_games} games')
+    print('Average #blunders per game:')
+    print(df.sum() / num_games)
 
 
 def test_crossover_detect0():
@@ -202,7 +203,7 @@ def test_crossover_detect2():
 
 def test_review_a_game():
     # sgf_fname = f'{myconf.EXP_HOME}/eval_bots-model2/sgfs-model1-vs-model2/model1_epoch5#100-vs-model2_epoch2#200-15-65075018704.sgf'
-    sgf_fname = f'{myconf.EXP_HOME}/eval_bots-model2/sgfs-model1-vs-model2/model1_epoch5#200-vs-model2_epoch2#300-8-63909912641.sgf'
+    sgf_fname = f'{myconf.EXP_HOME}/eval_bots-model2/sgfs-model1-vs-model2/model2_epoch2#300-vs-model1_epoch5#200-15-64106975597.sgf'
 
     reviewer = ExpertReviewer()
     cps, reader = reviewer.review_a_game(sgf_fname)
@@ -215,5 +216,5 @@ def test_review_a_game():
 
 
 def test_review_games():
-    sgfs_dir = f'{myconf.EXP_HOME}/eval_bots-model2/sgfs-model1-vs-model2'
-    game_blunder_review(sgfs_dir, ['model1_epoch5#200', 'model2_epoch2#300'])
+    sgfs_dir = f'{myconf.EXP_HOME}/eval_bots-model2/sgfs-model2epoch3'
+    game_blunder_review(sgfs_dir, ['model1_epoch5#200', 'model2_epoch3#200'])
