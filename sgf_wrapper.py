@@ -21,7 +21,7 @@ Most of the complexity here is dealing with two features of SGF:
 - Plays don't necessarily alternate colors; they can be repeated B or W moves
   This feature is used to handle free handicap placement.
 """
-from typing import Tuple, Optional, Iterable
+from typing import Tuple, Optional, Iterable, List
 
 import numpy as np
 import itertools
@@ -148,10 +148,11 @@ def add_stones(pos, black_stones_added, white_stones_added):
 
 def get_next_move(node):
     props = node.next.properties
+    comments = props.get('C')
     if 'W' in props:
-        return coords.from_sgf(props['W'][0])
+        return coords.from_sgf(props['W'][0]), comments
     elif 'B' in props:
-        return coords.from_sgf(props['B'][0])
+        return coords.from_sgf(props['B'][0]), comments
     else:
         raise KeyError('node has no B/W property')
 
@@ -198,7 +199,7 @@ def replay_sgf(sgf_contents):
             break
         pos = handle_node(pos, current_node)
         maybe_correct_next(pos, current_node.next)
-        next_move = get_next_move(current_node)
+        next_move, _ = get_next_move(current_node)
         yield PositionWithContext(pos, next_move, result)
         current_node = current_node.next
 
@@ -305,6 +306,20 @@ class SGFReader(object):
         else:
             return pos
 
+    def iter_comments(self) -> Iterable[Tuple[str, List[str]]]:
+        """ this provides access to node comments
+
+        Note comments can have multiple sections:
+        ;W[ff]C[comment1][comment2]  -> 'F4', ['comment1', 'comment2']
+
+        See test_sgf_wrapper for examples
+        """
+        current_node = self.root_node
+        while current_node.next is not None:
+            move, comments = get_next_move(current_node)
+            yield coords.to_gtp(move), comments
+            current_node = current_node.next
+
     def iter_pwcs(self) -> Iterable[PositionWithContext]:
         """ based on replay_sgf: result is black margin now """
         komi = self.komi()
@@ -323,7 +338,7 @@ class SGFReader(object):
             try:
                 pos = handle_node(pos, current_node)
                 maybe_correct_next(pos, current_node.next)
-                next_move = get_next_move(current_node)
+                next_move, _ = get_next_move(current_node)
                 yield PositionWithContext(pos, next_move, result)
             except:
                 logging.exception(f'{self.name} failed iter thru game: step {i}')

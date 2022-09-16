@@ -215,6 +215,40 @@ class TestReader(test_utils.MinigoUnitTest):
         last_pos_ignore_pass = reader.last_pos(ignore_final_pass=True)
         assert last_pos_ignore_pass.n + 2 == last_pos.n
 
+    def test_comments(self):
+        """ """
+        # sgf = '/Users/hyu/Downloads/kata-matches/elo5k-vs-4k/test_match0.sgf'
+        # reader = SGFReader.from_file_compatible(sgf)
+        sgf_str = """
+(;
+EV[Mini-Go]
+PB[Hoshikawa Takumi]
+BR[1p]
+PW[Yuki Satoshi]
+WR[9p]
+KM[6.5]
+RE[W+R]
+SZ[9]
+GC[not broadcast]
+
+;B[ff]C[0.5 215 path=4][comment2];W[dd]C[comment1];B[cc];W[df];B[be];W[dc];B[cb];W[gd];B[he];W[eg]
+;B[fg];W[ge];B[hf];W[fh];B[gh];W[eh];B[hd];W[gc];B[gf];W[bf]
+;B[ce];W[cf];B[de];W[ee];B[ef];W[db];B[cd];W[hc];B[ed];W[fe]
+;B[eb];W[ec];B[da];W[fc];B[ch];W[bh])        
+"""
+        reader = SGFReader.from_string(sgf_str)
+        for i, (move, comments) in enumerate(reader.iter_comments()):
+            if i == 0:
+                assert move == 'F4'
+                assert len(comments) == 2 and comments[1] == 'comment2'
+            elif i == 1:
+                assert move == 'D6'
+                assert len(comments) == 1 and comments[0] == 'comment1'
+            else:
+                assert comments is None
+            print(i, move, comments)
+        assert i == 35
+
 
 if __name__ == '__main__':
     unittest.main()
