@@ -3,7 +3,8 @@
 import logging
 import os
 import glob
-from typing import List
+from collections import Counter
+from typing import List, Tuple
 import attr
 import numpy as np
 import pandas as pd
@@ -104,7 +105,7 @@ def find_surprise_changes(cps: List[ChangePoint]) -> List[ChangePoint]:
     return surprises
 
 
-def extract_winrates_curve(sgf_fname) -> List[float]:
+def extract_black_winrates_curve(sgf_fname) -> Tuple[List[float], SGFReader]:
     """ read sgf comment section, extract root winrate curve """
     reader = SGFReader.from_file_compatible(sgf_fname)
     winrates = []
@@ -115,13 +116,37 @@ def extract_winrates_curve(sgf_fname) -> List[float]:
         winrate = float(root_fields[0])
         # print(i+1, move, winrate)
         winrates.append(winrate)
-    return winrates
+    return winrates, reader
 
 
 def tournament_advantage_curve(sgfs_dir, model_ids: List[str]):
     """ understand in a tournament, how a model's advantage changes with move#,
     to see whether the first 6 moves endow a significant edge
     """
+    MAX_MOVE_NUMBER = 80
+
+    assert len(model_ids) == 2
+
+    # total wins by move#, for black model
+    win_stats_by_black = {m: np.zeros(MAX_MOVE_NUMBER, dtype=int) for m in model_ids}
+    count_by_black = Counter()
+    model_id_set = set(model_ids)
+    for sgf_fname in glob.glob(f'{sgfs_dir}/*.sgf'):
+        if any(x not in sgf_fname for x in model_id_set):
+            continue
+
+        winrates, reader = extract_black_winrates_curve(sgf_fname)
+        win_at_move = np.array(winrates[:MAX_MOVE_NUMBER]) >= 0.5
+        pad_right = MAX_MOVE_NUMBER - len(win_at_move)
+        win_stats_by_black[reader.black_name()] += np.pad(win_at_move, (0, pad_right), 'edge')
+        count_by_black[reader.black_name()] += 1
+
+    anchor_model, other_model = model_ids[0], model_ids[1]
+    # flip black_wins by the other model, add them up
+    tournament_advantage = (win_stats_by_black[anchor_model] +
+                            count_by_black[other_model] - win_stats_by_black[model_ids[1]]) / sum(count_by_black.values())
+    print('game counts by black', count_by_black)
+    return tournament_advantage
 
 
 def game_randomness_review(sgfs_dir, model_ids: List[str]):
@@ -246,13 +271,37 @@ def test_review_a_game():
 def test_extract_winrates():
     sgf_fname = '/Users/hyu/Downloads/kata-matches/elo5k-vs-4k/test_match0.sgf'
     sgf_fname = f'/Users/hyu/Downloads/kata_reviewed_sgfs-b6c96/annotate.model2_epoch2#300-vs-model1_epoch5#200-15-64106975597.sgf'
-    winrates1 = extract_winrates_curve(sgf_fname)
+    winrates1, _ = extract_black_winrates_curve(sgf_fname)
     sgf_fname = f'/Users/hyu/Downloads/kata_reviewed_sgfs/annotate.model2_epoch2#300-vs-model1_epoch5#200-15-64106975597.sgf'
-    winrates2 = extract_winrates_curve(sgf_fname)
+    winrates2, _ = extract_black_winrates_curve(sgf_fname)
     df = pd.DataFrame({'b6c96': winrates1, 'b20': winrates2})
     print(df.head())
 
 
+def test_tournament_advantage():
+    """ analyze from expert reviewed tournament sgfs
+
+    kata_reviewed_sgfs-b6c96/  'model1_epoch5#200', 'model2_epoch3#200'   model1 is behind on move#7
+[0.5  0.56 0.51 0.46 0.41 0.44 *0.42 0.44 0.45 0.41 0.45 0.45 0.46 0.44
+ 0.46 0.44 0.51 0.46 0.45 0.45 0.5  0.53 0.53 0.49 0.47 0.5  0.49 0.49
+ 0.45 0.44 0.44 0.47 0.44 0.47 0.46 0.56 0.53 0.51 0.47 0.51 0.45 0.49
+ 0.45 0.49 0.47 0.49 0.47 0.47 0.49 0.5  0.5  0.5  0.53 0.53 0.51 0.54
+ 0.51 0.51 0.51 0.51 0.51 0.51 0.51 0.53 0.54 0.56 0.54 0.56 0.55 0.55
+ 0.55 0.55 0.54 0.55 0.55 0.55 0.55 0.55 0.55 0.55]
+    kata_reviewed_sgfs-b20/  much slower  same result
+[0.5  0.51 0.53 0.53 0.41 0.39 *0.36 0.39 0.4  0.39 0.41 0.39 0.44 0.45
+ 0.45 0.36 0.42 0.42 0.46 0.46 0.5  0.53 0.53 0.49 0.49 0.5  0.47 0.46
+ 0.45 0.4  0.4  0.41 0.41 0.46 0.44 0.53 0.51 0.53 0.47 0.5  0.42 0.5
+ 0.44 0.49 0.44 0.46 0.46 0.49 0.49 0.5  0.5  0.5  0.53 0.53 0.51 0.54
+ 0.51 0.51 0.51 0.51 0.51 0.51 0.51 0.54 0.54 0.56 0.54 0.56 0.54 0.55
+ 0.54 0.55 0.54 0.55 0.55 0.55 0.55 0.55 0.55 0.55]
+    """
+    sgfs_dir, models = f'/Users/hyu/Downloads/kata_reviewed_sgfs-b20', ['model1_epoch5#200', 'model2_epoch3#200']
+    edge_at_move = tournament_advantage_curve(sgfs_dir, models)
+    print(f'Tournament advantage for {models[0]}:')
+    print(edge_at_move)
+
+
 def test_review_games():
-    sgfs_dir = f'{myconf.EXP_HOME}/eval_bots-model2/sgfs-model2epoch3'
-    game_blunder_review(sgfs_dir, ['model1_epoch5#200', 'model2_epoch3#200'])
+    sgfs_dir = f'{myconf.EXP_HOME}/eval_bots-model2/sgfs-model1-vs-model2'
+    game_blunder_review(sgfs_dir, ['model1_epoch5#200', 'model2_epoch2#200'])

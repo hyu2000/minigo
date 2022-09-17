@@ -19,9 +19,10 @@ CMDLINE_TEMPLATE = '/opt/homebrew/bin/katago analysis -config {config} -model {m
 
 class KataModels:
     # g170 run
+    # b6c96 takes ~13s to review a game w/ 500 visits, b20 takes ~80s
     G170_B6C96 = f'{MODELS_DIR}/g170-b6c96-s175395328-d26788732.bin.gz'  # the only b6 model in g170 archive
     G170_B20 = f'{MODELS_DIR}/g170e-b20c256x2-s5303129600-d1228401921.bin.gz'
-    # new run
+    # new run, a.k.a. kata1
     MODEL_B6_10k = f'{MODELS_DIR}/kata1-b6c96-s175395328-d26788732.txt.elo10k.gz'  # last kata1 b6c96 model. same as G170_B6C96!
     MODEL_B6_5k  = f'{MODELS_DIR}/kata1-b6c96-s24455424-d3879081.txt.elo5k.gz'  # beats me consistently
     MODEL_B6_4k  = f'{MODELS_DIR}/kata1-b6c96-s18429184-d3197121.txt.elo4k.gz'  # I can beat consistently @ 500(?) readouts
