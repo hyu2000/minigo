@@ -33,10 +33,8 @@ class ExpertReviewer:
     JIGO = 0.5
     JUMP_THRESH = 0.10
 
-    def __init__(self, annotated_sgf_dir='/Users/hyu/Downloads/kata_reviewed_sgfs'):
-        self.kata = KataEngine(KataModels.G170_B6C96).start()
-        self._annotated_sgf_dir = annotated_sgf_dir
-        utils.ensure_dir_exists(annotated_sgf_dir)
+    def __init__(self):
+        self.kata = KataEngine(KataModels.G170_B20).start()
 
     @staticmethod
     def detect_crossover(black_winrates: List[float]):
@@ -64,11 +62,8 @@ class ExpertReviewer:
         jumps = np.where(np.abs(diff) > ExpertReviewer.JUMP_THRESH)
         return [ChangePoint(i, diff[i]) for i in jumps[0]]
 
-    def review_a_game(self, sgf_fname):
-        """ whenever winrate crosses 0.5, one side has made a mistake:
-        - goes up: white made a mistake
-        - down: black made a mistake
-        """
+    def run_expert_review(self, sgf_fname, output_sgf_dir):
+        """ run kata review, write out annotated sgf file """
         reader = SGFReader.from_file_compatible(sgf_fname)
 
         player_moves = [PlayerMove(pwc.position.to_play, pwc.next_move)
@@ -84,12 +79,14 @@ class ExpertReviewer:
                                        black_name=reader.black_name(),
                                        game_comment=f'analyzed by: {self.kata.model_id()}',
                                        comments=comments)
-        out_sgfname = f'{self._annotated_sgf_dir}/annotate.%s' % os.path.basename(sgf_fname)
+        out_sgfname = f'{output_sgf_dir}/annotate.%s' % os.path.basename(sgf_fname)
         logging.info(f'Writing review to {out_sgfname}')
         with open(out_sgfname, 'w') as f:
             f.write(sgf_str)
 
-        black_winrates = [RootInfo.from_dict(x.rootInfo).winrate for x in responses]
+    def find_blunders_from_review(self, reviewed_sgf_fname):
+        """ """
+        black_winrates, reader = extract_black_winrates_curve(reviewed_sgf_fname)
         # print(', '.join([f'{i}:{x:.2f}' for i, x in enumerate(black_winrates)]))
         # cps = self.detect_crossover(black_winrates)
         cps = self.find_jumps(black_winrates)
@@ -105,9 +102,9 @@ def find_surprise_changes(cps: List[ChangePoint]) -> List[ChangePoint]:
     return surprises
 
 
-def extract_black_winrates_curve(sgf_fname) -> Tuple[List[float], SGFReader]:
+def extract_black_winrates_curve(reviewed_sgf_fname) -> Tuple[List[float], SGFReader]:
     """ read sgf comment section, extract root winrate curve """
-    reader = SGFReader.from_file_compatible(sgf_fname)
+    reader = SGFReader.from_file_compatible(reviewed_sgf_fname)
     winrates = []
     for i, (move, comments) in enumerate(reader.iter_comments()):
         assert len(comments) >= 1
@@ -157,7 +154,7 @@ def game_randomness_review(sgfs_dir, model_ids: List[str]):
     """
 
 
-def game_blunder_review(sgfs_dir, model_ids: List[str]):
+def game_blunder_review(sgfs_dir, reviewed_sgfs_dir, model_ids: List[str]):
     """ kata review #blunders stats by both sides, ordered by pos.n
 
     model_ids: if specified, check sgf_fname contains all models in the list;
@@ -165,6 +162,7 @@ def game_blunder_review(sgfs_dir, model_ids: List[str]):
     """
     MAX_MOVE_NUMBER = 80 - 1
     reviewer = ExpertReviewer()
+    utils.ensure_dir_exists(reviewed_sgfs_dir)
 
     num_games = 0
     stats_by_model = {m: np.zeros(MAX_MOVE_NUMBER + 1, dtype=int) for m in model_ids}
@@ -174,8 +172,13 @@ def game_blunder_review(sgfs_dir, model_ids: List[str]):
             continue
 
         num_games += 1
-        logging.info(f'reviewing #{num_games}')
-        cps, reader = reviewer.review_a_game(sgf_fname)
+        reviewed_sgf = f'{reviewed_sgfs_dir}/annotate.%s' % os.path.basename(sgf_fname)
+        if not os.path.isfile(reviewed_sgf):
+            logging.info(f'reviewing #{num_games}')
+            reviewer.run_expert_review(sgf_fname, reviewed_sgfs_dir)
+        else:
+            logging.info(f'found reviewed game, reading #{num_games}')
+        cps, reader = reviewer.find_blunders_from_review(reviewed_sgf)
 
         black_id = reader.black_name()
         white_id = reader.white_name()
@@ -303,5 +306,6 @@ def test_tournament_advantage():
 
 
 def test_review_games():
+    annotated_sgf_dir = '/Users/hyu/Downloads/kata_reviewed_sgfs'
     sgfs_dir = f'{myconf.EXP_HOME}/eval_bots-model2/sgfs-model1-vs-model2'
-    game_blunder_review(sgfs_dir, ['model1_epoch5#200', 'model2_epoch2#200'])
+    game_blunder_review(sgfs_dir, annotated_sgf_dir, ['model1_epoch5#200', 'model2_epoch2#200'])
