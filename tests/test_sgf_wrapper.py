@@ -217,8 +217,6 @@ class TestReader(test_utils.MinigoUnitTest):
 
     def test_comments(self):
         """ """
-        # sgf = '/Users/hyu/Downloads/kata-matches/elo5k-vs-4k/test_match0.sgf'
-        # reader = SGFReader.from_file_compatible(sgf)
         sgf_str = """
 (;
 EV[Mini-Go]

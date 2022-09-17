@@ -104,6 +104,34 @@ def find_surprise_changes(cps: List[ChangePoint]) -> List[ChangePoint]:
     return surprises
 
 
+def extract_winrates_curve(sgf_fname) -> List[float]:
+    """ read sgf comment section, extract root winrate curve """
+    reader = SGFReader.from_file_compatible(sgf_fname)
+    winrates = []
+    for i, (move, comments) in enumerate(reader.iter_comments()):
+        assert len(comments) >= 1
+        lines = comments[0].split('\n')
+        root_fields = lines[0].split()
+        winrate = float(root_fields[0])
+        # print(i+1, move, winrate)
+        winrates.append(winrate)
+    return winrates
+
+
+def tournament_advantage_curve(sgfs_dir, model_ids: List[str]):
+    """ understand in a tournament, how a model's advantage changes with move#,
+    to see whether the first 6 moves endow a significant edge
+    """
+
+
+def game_randomness_review(sgfs_dir, model_ids: List[str]):
+    """ understand game randomness due to soft-pick, using expert-reviewed sgfs
+    The premise is that first move random sampling, as well as softpick in the first 6 moves, might introduce
+    some bias affecting the outcome of the final tournament. In other words, a random bias has set in before
+    bots are tested. More games will reduce this variance.
+    """
+
+
 def game_blunder_review(sgfs_dir, model_ids: List[str]):
     """ kata review #blunders stats by both sides, ordered by pos.n
 
@@ -213,6 +241,16 @@ def test_review_a_game():
     white_flips = [x for x in cps if x.i % 2 == 1]
     print('black', len(black_flips), black_flips)
     print('white', len(white_flips), white_flips)
+
+
+def test_extract_winrates():
+    sgf_fname = '/Users/hyu/Downloads/kata-matches/elo5k-vs-4k/test_match0.sgf'
+    sgf_fname = f'/Users/hyu/Downloads/kata_reviewed_sgfs-b6c96/annotate.model2_epoch2#300-vs-model1_epoch5#200-15-64106975597.sgf'
+    winrates1 = extract_winrates_curve(sgf_fname)
+    sgf_fname = f'/Users/hyu/Downloads/kata_reviewed_sgfs/annotate.model2_epoch2#300-vs-model1_epoch5#200-15-64106975597.sgf'
+    winrates2 = extract_winrates_curve(sgf_fname)
+    df = pd.DataFrame({'b6c96': winrates1, 'b20': winrates2})
+    print(df.head())
 
 
 def test_review_games():
