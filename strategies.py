@@ -239,7 +239,7 @@ class MCTSPlayer(MCTSPlayerInterface):
             # if game is over, override the value estimate with the true score
             if leaf.is_done():
                 value = leaf.position.score()
-                leaf.raw_margin = value + leaf.position.komi   # TODO should move to win_loss?
+                leaf.raw_margin = value
                 win_loss = np.sign(value)
                 leaf.backup_value(win_loss, up_to=self.root)
                 continue

@@ -441,11 +441,13 @@ class BensonScoreDetail(namedtuple('BensonScoreDetail', ['score', 'final', 'blac
 
     Note: when final=True, we are sure of the winner, but score might not be exact, since the game may not
     have finished (but won't affect final winner). score sign should be correct.
+
+    score has komi baked in
     """
     pass
 
 
-class Position():
+class Position:
     def __init__(self, board=None, n=0, komi=5.5, caps=(0, 0),
                  lib_tracker=None, ko=None, recent=tuple(),
                  board_deltas=None, to_play=BLACK, zobrist_hash=None):
@@ -696,6 +698,7 @@ class Position():
         return np.count_nonzero(working_board == BLACK) - np.count_nonzero(working_board == WHITE) - self.komi
 
     def score(self) -> float:
+        """ score has komi baked in """
         if self.n < NUM_MOVES_BEFORE_BENSON:
             # Pass-alive typically happens later in game. Use Tromp which is faster
             return self.score_tromp()

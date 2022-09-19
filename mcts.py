@@ -101,7 +101,7 @@ class MCTSNode(object):
         self.child_prior = np.zeros([go.N * go.N + 1], dtype=np.float32)
         self.children = {}  # type: Dict[int, 'MCTSNode']
 
-        self.raw_margin = np.nan
+        self.raw_margin = np.nan  # vnet output
 
     def __repr__(self):
         return "<MCTSNode move=%s, N=%s, to_play=%s>" % (
@@ -374,7 +374,7 @@ class MCTSNode(object):
         lines = []
         # todo #winning-paths for current player w/ enough visits
         good_moves = '-'
-        lines.append("Q=%.2f - N=%d path=%s" % (self.Q, self.N, good_moves))
+        lines.append("Q=%.2f raw=%.2f N=%d path=%s" % (self.Q, self.raw_margin, self.N, good_moves))
 
         lines.append("move win% lead visits (%) prior pv")
         for rank, idx_flat in enumerate(ranked_children[:max_children]):
