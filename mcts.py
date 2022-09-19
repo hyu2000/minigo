@@ -358,7 +358,7 @@ class MCTSNode(object):
             ))
         return ''.join(output)
 
-    def describe_less_details(self, max_children=10, target_move: int = -1):
+    def describe_less_details(self, max_children=10, target_move: int = -1) -> str:
         """ less details, test_kata:assemble_comment()
 
         Node-level:

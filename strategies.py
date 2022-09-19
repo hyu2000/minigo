@@ -178,6 +178,12 @@ class MCTSPlayer(MCTSPlayerInterface):
           - Makes the node associated with this move the root, for future
             `inject_noise` calls.
         """
+        try:
+            new_root = self.root.maybe_add_child(coords.to_flat(c))
+        except go.IllegalMove:
+            dbg("Illegal move")
+            raise
+
         if record_pi:
             # play-cap randomization: only record when we search enough
             if self.root.N >= FLAGS.num_readouts:
@@ -188,15 +194,15 @@ class MCTSPlayer(MCTSPlayerInterface):
                 self.searches_pi.append(None)
         else:
             self.searches_pi.append(None)
-        self.comments.append(self.root.describe_less_details(target_move=coords.to_flat(c)))
-        try:
-            self.root = self.root.maybe_add_child(coords.to_flat(c))
-        except go.IllegalMove:
-            dbg("Illegal move")
-            self.searches_pi.pop()
-            self.comments.pop()
-            raise
 
+        comment = self.root.describe_less_details(target_move=coords.to_flat(c))
+        score_details = new_root.position.score_benson()
+        if score_details.final:
+            # game will stop after this, so append info here
+            comment = f'{comment}\n\nBenson final score={score_details.score}'
+        self.comments.append(comment)
+
+        self.root = new_root
         self.position = self.root.position  # for showboard
         # del self.root.parent.children
         return True  # GTP requires positive result.
@@ -301,10 +307,8 @@ class MCTSPlayer(MCTSPlayerInterface):
         else:
             comments = []
         return sgf_wrapper.make_sgf(pos.recent, self.result_string, komi=pos.komi,
-                                    white_name=os.path.basename(
-                                        self.network.model_id) or "Unknown",
-                                    black_name=os.path.basename(
-                                        self.network.model_id) or "Unknown",
+                                    white_name=os.path.basename(self.network.model_id) or "Unknown",
+                                    black_name=os.path.basename(self.network.model_id) or "Unknown",
                                     comments=comments)
 
     def extract_data(self):
