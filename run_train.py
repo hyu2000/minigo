@@ -281,7 +281,7 @@ def dataset_split(ds: tf.data.Dataset, train_val_ratio: int = 9) -> Tuple:
 
 def train_local():
     # model = compile_dual()
-    model = load_model(f'{myconf.MODELS_DIR}/model1_epoch3.h5')
+    model = load_model(f'{myconf.MODELS_DIR}/model1_epoch5.h5')
 
     data_dir = myconf.SELFPLAY_DIR
     data_dir = f'{myconf.FEATURES_DIR}/g170'
@@ -295,6 +295,20 @@ def train_local():
     history = model.fit(ds_train.batch(64), validation_data=ds_val.batch(64),
                         epochs=5, callbacks=callbacks)
     print(history.history)
+
+
+def train_local0():
+    model = compile_dual()
+    data_dir = f'{myconf.FEATURES_DIR}'
+    ds_train = load_selfplay_data(f'{data_dir}/train')
+    ds_val   = load_selfplay_data(f'{data_dir}/val1')
+    callbacks = [
+        keras.callbacks.ModelCheckpoint(f'{myconf.MODELS_DIR}/model1_epoch{{epoch}}.h5'),
+        # keras.callbacks.EarlyStopping(monitor='val_loss', patience=2)
+    ]
+    history = model.fit(ds_train.shuffle(4000).batch(64), validation_data=ds_val.batch(64),
+                        epochs=5, callbacks=callbacks)
+    return model
 
 
 def _ds_size(dataset: tf.data.Dataset):
@@ -315,7 +329,7 @@ def train(argv: List):
     train_dir  = argv[1]  # can be a dir pattern, e.g. "tfrecords/enhance*/train"
     model_dir  = argv[2]
     start_iter = int(argv[3])
-    val_dir = argv[4] if len(argv) > 4 else f'{myconf.EXP_HOME}/exps-on-old-models/selfplay13/train'
+    val_dir = argv[4] if len(argv) > 4 else None
 
     new_iter = start_iter + 1
     START_EPOCH = 2
@@ -353,8 +367,8 @@ def train(argv: List):
 
 
 if __name__ == '__main__':
-    # train(sys.argv)
-    train_local()
+    train(sys.argv)
+    # train_local()
     # test_save_model()
     # test_eval_model()
     # label_top50()
