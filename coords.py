@@ -86,7 +86,7 @@ def from_gtp(gtpc):
 
 
 def to_gtp(coord):
-    """Converts from a Minigo coordinate to a GTP coordinate."""
+    """Converts from a Minigo coordinate to a GTP coordinate, e.g. E5 """
     if coord is None:
         return 'pass'
     y, x = coord

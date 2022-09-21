@@ -77,15 +77,14 @@ dataset = dataset.prefetch(buffer_size=batch_size)
     return dataset
 
 
-def sample_generator(ds):
-    i = 0
+def sample_generator(ds, num_symmetries=8):
     for datum in ds:
         x_tensor, y_dict = datum
         # feature needs to be uint8!
         x_org  = tf.cast(x_tensor, tf.uint8).numpy()
         pi_org = y_dict['policy'].numpy()
         v_org  = y_dict['value'].numpy()
-        x_new, pi_new, outcome_new = apply_symmetry_dual(x_org, pi_org, v_org, num_symmetries=8)
+        x_new, pi_new, outcome_new = apply_symmetry_dual(x_org, pi_org, v_org, num_symmetries=num_symmetries)
         for x, pi, value in zip(x_new, pi_new, outcome_new):
             yield preprocessing.make_tf_example(x, pi, value)
 

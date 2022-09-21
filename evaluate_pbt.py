@@ -332,6 +332,6 @@ sgfs-epoch5-batch: 75/640  many due to #1, #10 readouts
 
 
 if __name__ == '__main__':
-    # main()
+    main()
     # count_disagreement()
-    game_diversity_review()
+    # game_diversity_review()
