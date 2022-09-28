@@ -23,7 +23,7 @@ A PlayerMove is a (Color, Move) tuple
 from collections import namedtuple, defaultdict
 import copy
 import itertools
-from typing import Iterable, Sequence, Dict, Tuple, Set
+from typing import Iterable, Sequence, Dict, Tuple, Set, Optional
 
 import numpy as np
 import os
@@ -612,11 +612,15 @@ class Position:
     def get_liberties(self):
         return self.lib_tracker.liberty_cache
 
-    def play_move(self, c, color=None, mutate=False) -> 'Position':
+    def play_move(self, c: Optional[Tuple], color=None, mutate=False) -> 'Position':
+        """
+        color=None means the next player
+
         # Obeys CGOS Rules of Play. In short:
         # No suicides
         # Chinese/area scoring
         # Positional superko (this is very crudely approximate at the moment.)
+        """
         if color is None:
             color = self.to_play
 

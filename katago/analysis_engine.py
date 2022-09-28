@@ -185,6 +185,7 @@ def assemble_comments(arequest: ARequest, responses: List[AResponse]) -> List[st
 
 
 class KataEngine:
+    """ a simple wrap around KataGo analysis engine """
     def __init__(self, model=KataModels.G170_B6C96):
         self.model_fname = model
 

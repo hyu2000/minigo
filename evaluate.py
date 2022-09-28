@@ -218,12 +218,13 @@ class RunOneSided:
             active.play_move(move, record_pi=True)
             inactive.play_move(move, record_pi=False)
 
-            if num_move < NUM_OPEN_MOVES:
-                history = active.root.position.recent
-                assert history[-1].move == move
+            # todo check for benson score final
+
+            # if num_move < NUM_OPEN_MOVES:
+            #     history = active.root.position.recent
+            #     assert history[-1].move == move
 
             dur = time.time() - start
-            num_move += 1
 
             if (FLAGS.verbose > 1):  # or (FLAGS.verbose == 1 and num_move % 10 == 9):
                 timeper = (dur / active.num_readouts) * 100.0
