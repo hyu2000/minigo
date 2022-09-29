@@ -376,7 +376,7 @@ class MCTSNode(object):
         good_moves = '-'
         lines.append("Q=%.2f raw=%.2f N=%d path=%s" % (self.Q, self.raw_margin, self.N, good_moves))
 
-        lines.append("move win% lead visits (%) prior pv")
+        lines.append("move childQ lead visits (%) prior pv")
         for rank, idx_flat in enumerate(ranked_children[:max_children]):
             # if self.child_N[idx_flat] == 0:
             #     break

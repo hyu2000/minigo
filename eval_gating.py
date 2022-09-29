@@ -265,9 +265,10 @@ class EvaluateOneSide:
             if benson_score_details.final:  # end the game when score is final
                 game_result = GameResult(benson_score_details.score, was_resign=False)
                 break
-            if cur_pos.n >= max_game_length or cur_pos.is_game_over():
-                # score not final, but pass-pass or too long
-                # todo Tromp score, or tie?
+            if cur_pos.is_game_over():  # pass-pass: use Benson score, same as self-play
+                game_result = GameResult(benson_score_details.score, was_resign=False)
+                break
+            if cur_pos.n >= max_game_length:
                 logging.warning('ending game without a definite winner: %s', benson_score_details.score)
                 game_result = GameResult(0, was_resign=False)
                 break
@@ -319,7 +320,7 @@ def main(argv):
     kata_engine = KataEngine(KataModels.MODEL_B6_4k).start()
     black = KataPlayer(kata_engine, 200)
     white = K2Player(ModelConfig(f'{myconf.MODELS_DIR}/model5_epoch2.h5#200'))
-    evaluator = EvaluateOneSide(black, white, f'{myconf.EXP_HOME}/eval_gating/2')
+    evaluator = EvaluateOneSide(black, white, f'{myconf.EXP_HOME}/eval_gating/1')
     evaluator.play_games(10)
 
 
