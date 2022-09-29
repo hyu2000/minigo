@@ -19,6 +19,7 @@ import coords
 import k2net as dual_net
 import go
 import myconf
+import sgf_wrapper
 import utils
 from evaluate import ModelConfig
 from katago.analysis_engine import ARequest, KataEngine, MoveInfo, RootInfo, assemble_comment, KataModels
@@ -31,7 +32,10 @@ FLAGS = flags.FLAGS
 class BasicPlayerInterface:
     """ simplest interface for playing an eval game
     """
-    def initialize_game(self, position=None):
+    def id(self) -> str:
+        """ id for the model config """
+
+    def initialize_game(self, position: go.Position):
         """Initializes a new game. May start from a setup position
         """
 
@@ -66,15 +70,14 @@ class KataPlayer(BasicPlayerInterface):
         self.kata_engine = kata_engine
         self.max_readouts = max_readouts
 
-        self.moves = []  # type: List[str]
-        self.comments = []
+    def id(self):
+        return f'{self.kata_engine.model_id()}#{self.max_readouts}'
 
-    def initialize_game(self, position=None):
-        if position is None:
-            return
+    def initialize_game(self, position):
         self.moves = [coords.to_gtp(move.move)
                       for i, move in enumerate(position.recent)]
         self.comments = ['init' for x in self.moves]
+        self._resp1 = None
 
     def play_move(self, c):
         """ this gets called whether or not it's our turn to move """
@@ -129,14 +132,20 @@ def test_arg_top_k_moves():
 class K2Player(BasicPlayerInterface):
     """ k2net w/ mcts """
     def __init__(self, model_config: ModelConfig):
+        self.model_config = model_config
         self.dnn = dual_net.DualNetwork(model_config.model_path())
         self.mcts_player = MCTSPlayer(self.dnn, num_readouts=model_config.num_readouts)
 
-    def initialize_game(self, position=None):
+    def id(self):
+        return self.model_config.model_id()
+
+    def initialize_game(self, position: go.Position):
         self.mcts_player.initialize_game(position)
         first_node = self.mcts_player.root.select_leaf()
         prob, val = self.mcts_player.network.run(first_node.position)
         first_node.incorporate_results(prob, val, first_node)
+
+        self.mcts_player.comments = ['init' for x in range(position.n)]
 
     def play_move(self, c: tuple):
         self.mcts_player.play_move(c, record_pi=False)
@@ -156,12 +165,14 @@ class K2Player(BasicPlayerInterface):
         pi = active.root.children_as_pi(squash=False).flatten()
         # restrict soft-pick to only top 5 moves
         move_indices = arg_top_k_moves(pi, FLAGS.softpick_topn_cutoff)
-        top_moves = [(coords.to_gtp(x), pi[x]) for x in move_indices]
+        top_moves = [(coords.flat_to_gtp(x), pi[x]) for x in move_indices]
         return top_moves
 
     def set_result(self, winner, was_resign):
         """ """
 
+    def get_game_comments(self) -> List[str]:
+        return self.mcts_player.comments
 
 
 @attr.s
@@ -218,7 +229,7 @@ class EvaluateOneSide:
         """ evaluator may soft-pick to increase game variety """
         # active.pick_move(active.root.position.n < FLAGS.softpick_move_cutoff)
         top_move = moves_with_probs[0][0]
-        return top_move
+        return top_move, top_move
 
     def _play_one_game(self, init_position: go.Position):
         """ """
@@ -235,7 +246,7 @@ class EvaluateOneSide:
             else:
                 active, inactive = black, white
 
-            moves_with_probs = active.suggest_moves()
+            moves_with_probs = active.suggest_moves(cur_pos)
 
             if len(moves_with_probs) == 0:  # resigned
                 game_result = GameResult(-1 * cur_pos.to_play, was_resign=True)
@@ -245,9 +256,10 @@ class EvaluateOneSide:
             move, best_move = self._pick_move(cur_pos, moves_with_probs)
 
             # advance game
-            active.play_move(move)
-            inactive.play_move(move)
-            cur_pos = cur_pos.play_move(move)
+            c = coords.from_gtp(move)
+            active.play_move(c)
+            inactive.play_move(c)
+            cur_pos = cur_pos.play_move(c)
 
             benson_score_details = cur_pos.score_benson()
             if benson_score_details.final:  # end the game when score is final
@@ -263,8 +275,19 @@ class EvaluateOneSide:
         self._end_game(game_result)
         return cur_pos, game_result
 
-    def _create_sgf(self, ith_game: int):
+    def _create_sgf(self, final_pos: go.Position, game_result: GameResult, ith_game: int):
         """ merge comments from black and white """
+        black_comments = self.black_player.get_game_comments()
+        white_comments = self.white_player.get_game_comments()
+        assert len(black_comments) == len(white_comments) and len(black_comments) == final_pos.n
+        comments = [black_comments[i] if i % 2 == 0 else white_comments[i] for i in range(final_pos.n)]
+
+        with open(f'{self.sgf_dir}/game-{ith_game}.sgf', 'w') as _file:
+            sgfstr = sgf_wrapper.make_sgf(final_pos.recent,
+                                          game_result.sgf_str(), komi=final_pos.komi,
+                                          comments=comments,
+                                          black_name=self.black_player.id(), white_name=self.white_player.id())
+            _file.write(sgfstr)
 
     def _accumulate_stats(self):
         """ """
@@ -280,20 +303,24 @@ class EvaluateOneSide:
         # self._accumulate_stats(final_pos, game_result)
 
         # generate sgf
-        self._create_sgf(game_idx)
+        self._create_sgf(final_pos, game_result, game_idx)
 
         game_history = final_pos.recent
         move_history_head = ' '.join([coords.to_gtp(game_history[i].move) for i in range(12)])
         logging.info(f'Finished game %3d: %3d moves, %-7s   %s', game_idx, len(game_history), game_result.sgf_str(), move_history_head)
         return game_result
 
+    def play_games(self, n: int):
+        for i in range(n):
+            self.play_a_game()
+
 
 def main(argv):
     kata_engine = KataEngine(KataModels.MODEL_B6_4k).start()
     black = KataPlayer(kata_engine, 200)
     white = K2Player(ModelConfig(f'{myconf.MODELS_DIR}/model5_epoch2.h5#200'))
-    evaluator = EvaluateOneSide(black, white, f'{myconf.EXP_HOME}/eval_gating')
-    evaluator.play_a_game()
+    evaluator = EvaluateOneSide(black, white, f'{myconf.EXP_HOME}/eval_gating/2')
+    evaluator.play_games(10)
 
 
 if __name__ == '__main__':
