@@ -13,28 +13,37 @@ from typing import List
 
 import attr
 import numpy as np
-from absl import flags
+from absl import flags, app
 
 import coords
+import k2net as dual_net
 import go
+import myconf
 import utils
+from evaluate import ModelConfig
+from katago.analysis_engine import ARequest, KataEngine, MoveInfo, RootInfo, assemble_comment, KataModels
 from run_selfplay import InitPositions
+from strategies import MCTSPlayer
 
 FLAGS = flags.FLAGS
 
 
 class BasicPlayerInterface:
-    """ simplest interface for playing a game """
+    """ simplest interface for playing an eval game
+    """
     def initialize_game(self, position=None):
         """Initializes a new game. May start from a setup position
         """
 
-    def play_move(self, c) -> bool:
+    def play_move(self, c: tuple):
         """ play the given move, to advance the game
         """
 
-    def suggest_moves(self, position=None) -> List:
-        """ return a list of ranked moves, together with probs, for the current position (can be overridden)
+    def suggest_moves(self, position: go.Position) -> List:
+        """ return a list of ranked moves, together with probs, for the current position.
+
+        position should match the internal state if player chooses to track position.
+        play_move(c) will be called after this, which may not be the top move bot considered.
 
         returns [] if it's ready to resign
         """
@@ -46,6 +55,113 @@ class BasicPlayerInterface:
     def get_game_comments(self) -> List[str]:
         """ player's comment on each move of the game
         """
+
+
+class KataPlayer(BasicPlayerInterface):
+    """ backed by kata analysis engine
+
+    we don't really maintain game state here
+    """
+    def __init__(self, kata_engine: KataEngine, max_readouts=500):
+        self.kata_engine = kata_engine
+        self.max_readouts = max_readouts
+
+        self.moves = []  # type: List[str]
+        self.comments = []
+
+    def initialize_game(self, position=None):
+        if position is None:
+            return
+        self.moves = [coords.to_gtp(move.move)
+                      for i, move in enumerate(position.recent)]
+        self.comments = ['init' for x in self.moves]
+
+    def play_move(self, c):
+        """ this gets called whether or not it's our turn to move """
+        move = coords.to_gtp(c)
+        comment = 'not katas turn'
+        if self._resp1 is not None:
+            comment = assemble_comment(move, self._resp1)
+
+        self.comments.append(comment)
+        self.moves.append(move)
+
+        self._resp1 = None
+
+    def suggest_moves(self, position: go.Position) -> List:
+        assert position.n == len(self.moves)
+        kmoves = [['B' if i % 2 == 0 else 'W', move]
+                  for i, move in enumerate(self.moves)]
+        arequest = ARequest(kmoves, [len(kmoves)], maxVisits=self.max_readouts)
+        responses = self.kata_engine.analyze(arequest)
+
+        assert len(responses) == 1
+        resp1 = responses[0]
+        self._resp1 = resp1
+
+        rinfo = RootInfo.from_dict(resp1.rootInfo)
+        top_moves = []
+        for minfo_dict in resp1.moveInfos[:5]:
+            minfo = MoveInfo.from_dict(minfo_dict)
+            # this may not sum up to 1
+            prob = minfo.visits / rinfo.visits
+            top_moves.append((minfo.move, prob))
+        return top_moves
+
+    def get_game_comments(self) -> List[str]:
+        return self.comments
+
+
+def arg_top_k_moves(pi: np.array, k) -> np.array:
+    indices = np.argpartition(pi, -k)[-k:]
+    return indices[np.argsort(-pi[indices])]
+
+
+def test_arg_top_k_moves():
+    arr = np.arange(0, 1, .1)
+    np.random.shuffle(arr)
+    print(arr)
+    top_k_indices = arg_top_k_moves(arr, 3)
+    print(arr[top_k_indices])
+    # assert all(arr[top_k_indices] == np.array([0.9, 0.8, 0.7]))
+
+
+class K2Player(BasicPlayerInterface):
+    """ k2net w/ mcts """
+    def __init__(self, model_config: ModelConfig):
+        self.dnn = dual_net.DualNetwork(model_config.model_path())
+        self.mcts_player = MCTSPlayer(self.dnn, num_readouts=model_config.num_readouts)
+
+    def initialize_game(self, position=None):
+        self.mcts_player.initialize_game(position)
+        first_node = self.mcts_player.root.select_leaf()
+        prob, val = self.mcts_player.network.run(first_node.position)
+        first_node.incorporate_results(prob, val, first_node)
+
+    def play_move(self, c: tuple):
+        self.mcts_player.play_move(c, record_pi=False)
+
+    def suggest_moves(self, position: go.Position) -> List:
+        """ return a list of ranked moves, together with probs, for the current position.
+        """
+        active = self.mcts_player
+        assert active.root.position.n == position.n
+        current_readouts = active.root.N
+        while active.root.N < current_readouts + active.num_readouts:
+            active.tree_search()
+
+        if active.should_resign():  # Force resign
+            return []
+
+        pi = active.root.children_as_pi(squash=False).flatten()
+        # restrict soft-pick to only top 5 moves
+        move_indices = arg_top_k_moves(pi, FLAGS.softpick_topn_cutoff)
+        top_moves = [(coords.to_gtp(x), pi[x]) for x in move_indices]
+        return top_moves
+
+    def set_result(self, winner, was_resign):
+        """ """
+
 
 
 @attr.s
@@ -66,7 +182,7 @@ class GameResult:
         return f'{winner}+{margin}'
 
 
-def test_result():
+def test_game_result():
     result = GameResult(0, False)
     assert result.winner() == '-'
     assert result.sgf_str() == 'B+T'
@@ -84,25 +200,14 @@ def test_result():
 
 class EvaluateOneSide:
     """ run evaluation, control for randomness """
-    def __init__(self, black_config, white_config, sgf_dir: str):
-        # self.black_model = black_model
-        # self.white_model = white_model
+    def __init__(self, black_player: BasicPlayerInterface, white_player: BasicPlayerInterface, sgf_dir: str):
+        self.black_player = black_player
+        self.white_player = white_player
+
         self.sgf_dir = sgf_dir
-
         utils.ensure_dir_exists(sgf_dir)
-        utils.ensure_dir_exists(FLAGS.eval_data_dir)
-
-        self.black_model_id = black_config.model_id()
-        self.white_model_id = white_config.model_id()
-
-        with utils.logged_timer("Loading weights"):
-            self.black_net = None
-            self.white_net = None  # dual_net.DualNetwork(white_config.model_path())
-        self.black_player = None  # type: BasicPlayerInterface
-        self.white_player = None  # type: BasicPlayerInterface
 
         self.init_positions = InitPositions(None, None)  #['C2'], [1.0])
-
         self._num_games_so_far = 0
 
     def _end_game(self, result: GameResult):
@@ -172,7 +277,7 @@ class EvaluateOneSide:
         final_pos, game_result = self._play_one_game(init_position)
 
         # accu game stats
-        self._accumulate_stats(final_pos, game_result)
+        # self._accumulate_stats(final_pos, game_result)
 
         # generate sgf
         self._create_sgf(game_idx)
@@ -181,3 +286,15 @@ class EvaluateOneSide:
         move_history_head = ' '.join([coords.to_gtp(game_history[i].move) for i in range(12)])
         logging.info(f'Finished game %3d: %3d moves, %-7s   %s', game_idx, len(game_history), game_result.sgf_str(), move_history_head)
         return game_result
+
+
+def main(argv):
+    kata_engine = KataEngine(KataModels.MODEL_B6_4k).start()
+    black = KataPlayer(kata_engine, 200)
+    white = K2Player(ModelConfig(f'{myconf.MODELS_DIR}/model5_epoch2.h5#200'))
+    evaluator = EvaluateOneSide(black, white, f'{myconf.EXP_HOME}/eval_gating')
+    evaluator.play_a_game()
+
+
+if __name__ == '__main__':
+    app.run(main)
