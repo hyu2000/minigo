@@ -1,5 +1,8 @@
 import time
+import pickle
 
+import numpy as np
+import pandas as pd
 import zmq
 import multiprocessing as mp
 
@@ -12,11 +15,13 @@ def start_server(port: int):
     while True:
         #  Wait for next request from client
         message = socket.recv()
-        print("Received request: ", message)
+        print("Received request: ", len(message))
         if len(message) == 0:
             print('server exiting')
             break
 
+        data = pickle.loads(message)
+        print(type(data), len(data))
         time.sleep(0.1)
         socket.send(b"World from server")
 
@@ -27,12 +32,15 @@ def start_client(server_port: int):
     socket = context.socket(zmq.REQ)
     socket.connect("tcp://localhost:%s" % server_port)
 
-    for request in range(2):
-        print("Sending request ", request, "...")
-        socket.send(b"Hello")
+    objs = [(3, 'hello'), np.arange(0, 1, .2), pd.DataFrame({'a': range(4)})]
+    for i, obj in enumerate(objs):
+        data = pickle.dumps(obj)
+        print(f"Sending request {i}", type(obj), len(data), "...")
+        socket.send(data)
         #  Get the reply.
         message = socket.recv()
-        print("Received reply ", request, "[", message, "]")
+        print("Received reply ", "[", message, "]")
+
     socket.send(b'')
 
 
