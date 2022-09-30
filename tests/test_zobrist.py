@@ -1,4 +1,5 @@
-from collections import Counter
+import glob
+from collections import Counter, OrderedDict
 from numbers import Number
 from typing import List
 
@@ -13,7 +14,7 @@ from zobrist import DLGO_ZOBRIST_HASH, EMPTY_BOARD_HASH_19, ZobristHash
 from zobrist_util import legal_moves_sans_symmetry, board_hash_canonical
 import myconf
 
-assert go.N == 5
+# assert go.N == 5
 
 
 def test_empty_const():
@@ -163,20 +164,20 @@ def test_hashes_growth():
         print(f'selfplay {i_gen}: %s \t %s' % ([len(x) for x in cnters], len(cnter_all)))
 
 
-def _read_sgfs_in_dir(sgf_dir, num_sgfs: int):
+def _read_sgfs_in_dir(sgf_glob_pattern, num_sgfs: int):
     """ read a number of sgfs, skip over VOID games """
     game_hashes = []  # type: List[List[Number]]
     game_moves = []   # type: List[List[str]]
     game_results = []  # type: List[str]
     game_fnames = []   # type: List[str]
 
-    sgf_fnames = [x for x in os.listdir(sgf_dir) if x.endswith('.sgf')]
+    sgf_fnames = glob.glob(sgf_glob_pattern)
     sgf_fnames = sgf_fnames[:num_sgfs]
-    print(f'Use first %d sgfs in {sgf_dir}' % len(sgf_fnames))
+    print(f'Use first %d sgfs in {sgf_glob_pattern}' % len(sgf_fnames))
     num_void_games = 0
     for sgf_fname in sgf_fnames:
         hashes_in_game, moves_in_game = [], []
-        reader = SGFReader.from_file_compatible(f'{sgf_dir}/{sgf_fname}')
+        reader = SGFReader.from_file_compatible(f'{sgf_fname}')
         if reader.result_str() == 'VOID':
             num_void_games += 1
             continue
@@ -195,17 +196,20 @@ def _read_sgfs_in_dir(sgf_dir, num_sgfs: int):
     return game_hashes, game_moves, game_results, game_fnames
 
 
-def _show_unique_states_in_selfplay(sgf_dir):
+def _show_unique_states_in_selfplay(sgf_glob_pattern: str):
     """ count #unique states (bucketed by move#) in a set of selfplay games
     """
-    game_hashes, game_moves, game_results, game_fnames = _read_sgfs_in_dir(sgf_dir, 1000)
+    game_hashes, game_moves, game_results, game_fnames = _read_sgfs_in_dir(sgf_glob_pattern, num_sgfs=1000)
 
-    num_states_per_step = []
-    NUM_MOVES = 20
-    for imove in range(1, NUM_MOVES):
-        hash_set = {gh[imove] for gh in game_hashes if imove < len(gh)}
-        num_states_per_step.append(len(hash_set))
-    print('#unique-states for each move#:\n\t%s' % _format_long_array(num_states_per_step, istart=1))
+    num_states_per_step = OrderedDict()
+
+    move_of_interest = list(range(8)) + list(range(10, 80, 10))
+    for imove in move_of_interest:
+        # if a game ends early, use the last state
+        hash_set = {gh[imove] if imove < len(gh) else gh[-1] for gh in game_hashes}
+        num_states_per_step[imove] = len(hash_set)
+    print('#unique-states for each move#:\n\t%s' % num_states_per_step)
+    return
 
     # detailed distribution at certain move#
     for imove in [1, 3, 4, 5, 6, 7, 8, 10, 15, 20]:
@@ -224,9 +228,9 @@ def _show_unique_states_in_selfplay(sgf_dir):
 
 
 def test_unique_states_in_selfplay():
-    sgf_dir = f'{myconf.SELFPLAY_DIR}5/sgf/full'
+    sgf_dir = f'{myconf.EXP_HOME}/eval_gating/1'
     # sgf_dir = f'{myconf.EXP_HOME}/exps-on-old-models/selfplay13/sgf/full'
-    _show_unique_states_in_selfplay(sgf_dir)
+    _show_unique_states_in_selfplay(f'{sgf_dir}/*.sgf')
 
 
 def test_selfplay_stats_all():
