@@ -78,6 +78,7 @@ class KataPlayer(BasicPlayerInterface):
                       for i, move in enumerate(position.recent)]
         self.comments = ['init' for x in self.moves]
         self._resp1 = None
+        self.win_rate = 0.5
 
     def play_move(self, c):
         """ this gets called whether or not it's our turn to move """
@@ -103,6 +104,7 @@ class KataPlayer(BasicPlayerInterface):
         self._resp1 = resp1
 
         rinfo = RootInfo.from_dict(resp1.rootInfo)
+        self.win_rate = rinfo.winrate
         top_moves = []
         for minfo_dict in resp1.moveInfos[:5]:
             minfo = MoveInfo.from_dict(minfo_dict)
@@ -146,6 +148,7 @@ class K2Player(BasicPlayerInterface):
         first_node.incorporate_results(prob, val, first_node)
 
         self.mcts_player.comments = ['init' for x in range(position.n)]
+        self.win_rate = 0.5
 
     def play_move(self, c: tuple):
         self.mcts_player.play_move(c, record_pi=False)
@@ -162,6 +165,7 @@ class K2Player(BasicPlayerInterface):
         if active.should_resign():  # Force resign
             return []
 
+        self.win_rate = (active.root.Q + 1) / 2   # transform my Q value to winrate
         pi = active.root.children_as_pi(squash=False).flatten()
         # restrict soft-pick to only top 5 moves
         move_indices = arg_top_k_moves(pi, FLAGS.softpick_topn_cutoff)
@@ -231,6 +235,13 @@ class EvaluateOneSide:
         top_move = moves_with_probs[0][0]
         return top_move, top_move
 
+    def _check_benson_score(self, benson_score: float):
+        """ see if both agrees with Benson """
+        black_winrate, white_winrate = self.black_player.win_rate, self.white_player.win_rate
+        if np.sign(black_winrate - 0.5) == np.sign(white_winrate - 0.5) == np.sign(benson_score):
+            return
+        logging.warning(f'Benson score {benson_score:.1f} is non-final. Black winrate={black_winrate:.1f}, white {white_winrate:.1f}')
+
     def _play_one_game(self, init_position: go.Position):
         """ """
         black, white = self.black_player, self.white_player
@@ -266,6 +277,7 @@ class EvaluateOneSide:
                 game_result = GameResult(benson_score_details.score, was_resign=False)
                 break
             if cur_pos.is_game_over():  # pass-pass: use Benson score, same as self-play
+                self._check_benson_score(benson_score_details.score)
                 game_result = GameResult(benson_score_details.score, was_resign=False)
                 break
             if cur_pos.n >= max_game_length:
@@ -283,7 +295,8 @@ class EvaluateOneSide:
         assert len(black_comments) == len(white_comments) and len(black_comments) == final_pos.n
         comments = [black_comments[i] if i % 2 == 0 else white_comments[i] for i in range(final_pos.n)]
 
-        with open(f'{self.sgf_dir}/game-{ith_game}.sgf', 'w') as _file:
+        sgf_fname = f'{self.sgf_dir}/game-{ith_game}-%s.sgf' % utils.microseconds_since_midnight()
+        with open(sgf_fname, 'w') as _file:
             sgfstr = sgf_wrapper.make_sgf(final_pos.recent,
                                           game_result.sgf_str(), komi=final_pos.komi,
                                           comments=comments,
@@ -303,7 +316,6 @@ class EvaluateOneSide:
         # accu game stats
         # self._accumulate_stats(final_pos, game_result)
 
-        # generate sgf
         self._create_sgf(final_pos, game_result, game_idx)
 
         game_history = final_pos.recent
