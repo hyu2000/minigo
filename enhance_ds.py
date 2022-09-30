@@ -104,7 +104,8 @@ def main(argv: List):
     source_dir = argv[1]
     output_dir = argv[2]
 
-    print(f'Applying symmetries to {source_dir} -> {output_dir}')
+    num_symmetries = 4
+    print(f'Applying {num_symmetries} symmetries to {source_dir} -> {output_dir}')
     for tag in ['train', 'val']:
         source_data_dir = f'{source_dir}/{tag}'
         if len(os.listdir(source_data_dir)) == 0:
@@ -125,7 +126,7 @@ def main(argv: List):
                 print(f'no data found for {dtype}, skipping')
                 continue
 
-            for i, tf_examples in enumerate(utils.iter_chunks(10000, sample_generator(ds))):
+            for i, tf_examples in enumerate(utils.iter_chunks(10000, sample_generator(ds, num_symmetries=num_symmetries))):
                 fname = f'{output_work_dir}/chunk-{i}.tfrecord.{dtype}.zz'
                 print(f'{tag} {dtype} chunk {i}: writing %d records' % len(tf_examples))
                 preprocessing.write_tf_examples(fname, tf_examples)
