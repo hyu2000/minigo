@@ -75,22 +75,24 @@ class DNNServer:
         results = [self.cache.get(x) for x in zhashes]
 
         idx_to_calc = [i for i, result in enumerate(results) if result is None]
-        pos_to_calc = [pos_list[i] for i in idx_to_calc]
-        priors, values = self.dnn.run_many(pos_to_calc)
-        # cache
-        for i, pos in enumerate(pos_to_calc):
-            # make a ndarray.copy for caching
-            self.cache[pos.zobrist_hash] = (priors[i].copy(), values[i])
+        if len(idx_to_calc) > 0:
+            pos_to_calc = [pos_list[i] for i in idx_to_calc]
+            priors, values = self.dnn.run_many(pos_to_calc)
+            # cache
+            for i, pos in enumerate(pos_to_calc):
+                # make a ndarray.copy for caching
+                self.cache[pos.zobrist_hash] = (priors[i].copy(), values[i])
 
-        # backfill results, assemble response
-        for i, idx in enumerate(idx_to_calc):
-            results[idx] = (priors[i], values[i])
+            # backfill results, assemble response
+            for i, idx in enumerate(idx_to_calc):
+                results[idx] = (priors[i], values[i])
+
         all_priors = np.stack([result[0] for result in results])
         all_values = np.stack([result[1] for result in results])
         logging.info(f'%d -> %s %s', len(pos_list), all_priors.shape, all_values.shape)
 
         self._num_req_positions += len(pos_list)
-        self._num_pos_evals += len(pos_to_calc)
+        self._num_pos_evals += len(idx_to_calc)
         return all_priors, all_values
 
     def _summarize(self):
@@ -110,8 +112,10 @@ def test_server():
     pos0 = go.Position()
     pos1 = pos0.play_move(coords.from_gtp('D4'))
     pos2 = pos1.play_move(coords.from_gtp('E5'))
-    priors, raw_values = stub.remote_call([pos0, pos1, pos2])
-    best_moves = [coords.flat_to_gtp(x) for x in np.argmax(priors, axis=1)]
-    print(best_moves, raw_values)
+    positions = [pos0, pos1, pos2]
+    for i in range(3):
+        priors, raw_values = stub.remote_call(positions[:i+1])
+        best_moves = [coords.flat_to_gtp(x) for x in np.argmax(priors, axis=1)]
+        logging.info(f'try{i}: {best_moves}, {raw_values}')
 
     stub.send_eof()
