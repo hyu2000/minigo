@@ -1,3 +1,6 @@
+"""
+https://github.com/fperez/zmq-pykernel
+"""
 import time
 import pickle
 
