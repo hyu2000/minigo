@@ -22,6 +22,7 @@ SERVER_PORT = 5555
 
 class RemoteMethods:
     RUN_MANY = 1
+    GET_MODEL_ID = 2
 
 
 class DNNStub:
@@ -29,6 +30,14 @@ class DNNStub:
         context = zmq.Context()
         self.socket = context.socket(zmq.REQ)
         self.socket.connect(f"tcp://localhost:{server_port}")
+
+        #
+        self.model_id = self._remote_call(RemoteMethods.GET_MODEL_ID)
+
+    def run(self, position: go.Position):
+        # adapt from run_many()
+        priors, values = self.run_many([position])
+        return priors[0], values[0]
 
     def run_many(self, positions: List[go.Position]) -> Tuple[np.ndarray, np.ndarray]:
         """ stub for dnn.run_many() """
@@ -77,10 +86,15 @@ class DNNServer:
             method_idx = data[0]
             if method_idx == RemoteMethods.RUN_MANY:
                 resp = self._run_many_with_cache(data[1])
+            elif method_idx == RemoteMethods.GET_MODEL_ID:
+                resp = self._get_model_id()
             else:
                 raise Exception(f'Invalid remote method: {method_idx}')
 
             socket.send(pickle.dumps(resp))
+
+    def _get_model_id(self):
+        return self.dnn.model_id
 
     def _run_many_with_cache(self, pos_list: List[go.Position]):
         assert isinstance(pos_list, list)
@@ -123,10 +137,17 @@ def test_server():
     start_server_remote(f'{myconf.MODELS_DIR}/model5_epoch2.h5', SERVER_PORT)
     stub = DNNStub(SERVER_PORT)
 
+    assert 'model5_epoch2' in stub.model_id
+
     pos0 = go.Position()
     pos1 = pos0.play_move(coords.from_gtp('D4'))
     pos2 = pos1.play_move(coords.from_gtp('E5'))
     positions = [pos0, pos1, pos2]
+
+    # test run()
+    prior0, raw_value0 = stub.run(pos0)
+    print(prior0.shape, raw_value0)
+
     for i in range(3):
         priors, raw_values = stub.run_many(positions[:i+1])
         best_moves = [coords.flat_to_gtp(x) for x in np.argmax(priors, axis=1)]
@@ -135,9 +156,16 @@ def test_server():
     stub.send_eof()
 
 
+def test_shutdown_server():
+    stub = DNNStub(SERVER_PORT)
+    stub.send_eof()
+
+
 def start_server(argv):
-    port = SERVER_PORT if len(argv) == 1 else argv[1]
-    DNNServer(argv[0], port)
+    port = SERVER_PORT if len(argv) == 2 else argv[2]
+    load_file = argv[1]
+    logging.info(f'Starting server {port}: {load_file}')
+    DNNServer(load_file, port)
 
 
 if __name__ == '__main__':

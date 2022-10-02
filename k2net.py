@@ -162,15 +162,6 @@ class DualNetwork(object):
         return probs.numpy(), values.numpy().squeeze(axis=-1)
 
 
-class DNNCache:
-    """ caching DNN evals
-
-    DNN eval is likely the most expensive part, esp if we are just at b3.
-    My training setup calls for a centralized DNN eval server -- to serve 4 processes. Or maybe I should
-    use one server, running multiple search processes? rabbit-mq?
-    """
-
-
 class DummyNetwork(object):
     """ same interface as DualNetwork. Flat policy, Tromp score as value """
     def __init__(self):
