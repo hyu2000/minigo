@@ -7,6 +7,7 @@ import coords
 import go
 import mcts
 import myconf
+from cserver.dnn_server import DNNStub
 from selfplay import run_game, create_dir_if_needed
 import k2net as dual_net
 from katago.analysis_engine import KataDualNetwork, KataModels
@@ -56,6 +57,7 @@ def load_k2net(model_file):
 def play_games(num_games=500):
     """ """
     network = load_k2net(FLAGS.load_file)
+    # network = DNNStub(model_file=FLAGS.load_file)
     # network = load_kata_network(KataModels.MODEL_B6_4k)
 
     create_dir_if_needed(selfplay_dir=FLAGS.selfplay_dir, holdout_dir=FLAGS.holdout_dir,

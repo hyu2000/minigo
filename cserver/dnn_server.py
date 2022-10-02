@@ -2,6 +2,7 @@
 - go.Position is heavy. we pass it around so server side code is easy (hash, etc.)
 - zmq: can we peek into the queue to batch things across requests, now that we have cache?
 """
+import os
 import pickle
 import logging
 import multiprocessing as mp
@@ -26,13 +27,18 @@ class RemoteMethods:
 
 
 class DNNStub:
-    def __init__(self, server_port: int = SERVER_PORT):
+    def __init__(self, server_port: int = SERVER_PORT, model_file: str = None):
+        """
+        model_file, if specified, is only for checking that the server is running the same model
+        """
         context = zmq.Context()
         self.socket = context.socket(zmq.REQ)
         self.socket.connect(f"tcp://localhost:{server_port}")
 
         #
         self.model_id = self._remote_call(RemoteMethods.GET_MODEL_ID)
+        if model_file:
+            assert os.path.basename(self.model_id) == os.path.basename(model_file)
 
     def run(self, position: go.Position):
         # adapt from run_many()
@@ -48,7 +54,7 @@ class DNNStub:
         self.socket.send(payload)
         message = self.socket.recv()
         result = pickle.loads(message)
-        logging.info('sent %d bytes, response %d bytes', len(payload), len(message))
+        # logging.info('sent %d bytes, response %d bytes', len(payload), len(message))
         return result
 
     def send_eof(self):
@@ -73,6 +79,7 @@ class DNNServer:
         socket = context.socket(zmq.REP)
         # was "*:port"
         socket.bind(f"tcp://127.0.0.1:{self.port}")
+        logging.info(f'DNNServer started at {self.port}')
 
         while True:
             message = socket.recv()
@@ -117,8 +124,10 @@ class DNNServer:
 
         all_priors = np.stack([result[0] for result in results])
         all_values = np.stack([result[1] for result in results])
-        logging.info(f'%d -> %s %s', len(pos_list), all_priors.shape, all_values.shape)
+        # logging.info(f'%d -> %s %s', len(pos_list), all_priors.shape, all_values.shape)
 
+        if self._num_req_positions // 100000 != (self._num_req_positions + len(pos_list)) // 100000:
+            logging.info(f'Total %d entries, #pos={self._num_req_positions}, #calc={self._num_pos_evals}', len(self.cache))
         self._num_req_positions += len(pos_list)
         self._num_pos_evals += len(idx_to_calc)
         return all_priors, all_values
@@ -134,6 +143,12 @@ def start_server_remote(model_fname, port):
 
 
 def test_server():
+    """ we save 15% of eval calls.
+    The diff between #calc and #entries indicates that for the same batch, there might be dup positions...
+2022-10-02 14:09:05,316 INFO Total 48634 entries, #pos=56656, #calc=48789
+2022-10-02 14:49:02,927 INFO Total 428101 entries, #pos=500000, #calc=431083
+2022-10-02 14:58:13,379 INFO Total 760160 entries, #pos=899668, #calc=765432
+    """
     start_server_remote(f'{myconf.MODELS_DIR}/model5_epoch2.h5', SERVER_PORT)
     stub = DNNStub(SERVER_PORT)
 
@@ -162,6 +177,8 @@ def test_shutdown_server():
 
 
 def start_server(argv):
+    """ Usage: start_server <model_file> [port]
+    """
     port = SERVER_PORT if len(argv) == 2 else argv[2]
     load_file = argv[1]
     logging.info(f'Starting server {port}: {load_file}')
