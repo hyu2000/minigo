@@ -27,12 +27,16 @@ class InitPositions:
     5x5:    open_moves, open_probs = ['C2', 'B2'], np.ones(2) / 2
     """
     def __init__(self, open_moves: Optional[List], open_probs: Optional[List]):
-        if not open_moves:
-            open_moves, open_probs = ['C3', 'D3', 'E3', 'D4', 'E4', 'E5'], np.ones(6) / 6
-        assert len(open_moves) == len(open_probs)
+        # if not open_moves:
+        #     open_moves, open_probs = ['C3', 'D3', 'E3', 'D4', 'E4', 'E5'], np.ones(6) / 6
 
-        self.init_positions = [go.Position().play_move(coords.from_gtp(move)) for move in open_moves]
-        self.open_probs = open_probs
+        if not open_moves:
+            self.init_positions = [go.Position()]
+            self.open_probs = np.ones(1)
+        else:
+            assert len(open_moves) == len(open_probs)
+            self.init_positions = [go.Position().play_move(coords.from_gtp(move)) for move in open_moves]
+            self.open_probs = open_probs
         self.rng = np.random.default_rng()
 
     def sample(self) -> go.Position:
@@ -108,7 +112,7 @@ def main(argv):
 
 
 def main_local(argv):
-    FLAGS.load_file = f'{myconf.MODELS_DIR}/model5_epoch2.h5'
+    FLAGS.load_file = f'{myconf.MODELS_DIR}/model6_epoch2.h5'
     FLAGS.sgf_dir = f'{myconf.SELFPLAY_DIR}/sgf'
     FLAGS.selfplay_dir = f'{myconf.SELFPLAY_DIR}/train'
     FLAGS.holdout_dir = f'{myconf.SELFPLAY_DIR}/val'
