@@ -40,8 +40,7 @@ flags.DEFINE_string('selfplay_dir', None, 'Where to write game data.')
 flags.DEFINE_string('holdout_dir', None, 'Where to write held-out game data.')
 flags.DEFINE_string('sgf_dir', None, 'Where to write human-readable SGFs.')
 flags.DEFINE_float('holdout_pct', 0.05, 'What percent of games to hold out.')
-flags.DEFINE_float('resign_disable_pct', 0.05,
-                   'What percent of games to disable resign for.')
+flags.DEFINE_float('resign_disable_pct', 0.05, 'What percent of games to disable resign for.')
 
 # From strategies.py
 flags.declare_key_flag('verbose')
@@ -129,12 +128,14 @@ def play(network, init_position=None, init_root=None):
         player.play_move(move)
         player.add_move_info(_format_move_info(move, best_move))
         orig_root.uninject_noise()
-        if player.root.position.is_game_over():
-            player.set_result(player.root.position.result(), was_resign=False)
-            break
+
         benson_score_details = player.root.position.score_benson()
         if benson_score_details.final:  # end the game when score is final
-            # logging.info('ending game as Benson score is final')
+            player.set_result(np.sign(benson_score_details.score), was_resign=False)
+            break
+        if player.root.position.is_game_over():  # pass-pass
+            if np.sign(player.root.Q) != np.sign(benson_score_details.score):
+                logging.warning(f'Benson score {benson_score_details.score:.1f} is non-final. root.Q={player.root.Q:.1f}')
             player.set_result(np.sign(benson_score_details.score), was_resign=False)
             break
         if player.root.position.n >= FLAGS.max_game_length:

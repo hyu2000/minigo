@@ -24,12 +24,10 @@ FLAGS = flags.FLAGS
 class InitPositions:
     """
     9x9: limit to lower-left-down-center triangle: C3, D3, E3, D4, E4, E5
+            open_moves, open_probs = ['C3', 'D3', 'E3', 'D4', 'E4', 'E5'], np.ones(6) / 6
     5x5:    open_moves, open_probs = ['C2', 'B2'], np.ones(2) / 2
     """
     def __init__(self, open_moves: Optional[List], open_probs: Optional[List]):
-        # if not open_moves:
-        #     open_moves, open_probs = ['C3', 'D3', 'E3', 'D4', 'E4', 'E5'], np.ones(6) / 6
-
         if not open_moves:
             self.init_positions = [go.Position()]
             self.open_probs = np.ones(1)
