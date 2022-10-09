@@ -144,11 +144,23 @@ def build_model_v1(input_shape):
     return model
 
 
+def build_model_for_eval():
+    """ load_model will try to resolve all custom objects used during training, a pain to use
+    Use this, and model.load_weights() instead
+    """
+    # self.model = keras.models.load_model(save_file,
+    #                                      custom_objects={'custom_BCE_loss': None})
+    input_shape = (go.N, go.N, get_features_planes())
+    model = build_model(input_shape)
+    return model
+
+
 class DualNetwork(object):
     def __init__(self, save_file):
         self.model_id = save_file
-        self.model = keras.models.load_model(save_file,
-                                             custom_objects={'custom_BCE_loss': None})
+        model = build_model_for_eval()
+        model.load_weights(save_file)
+        self.model = model
 
     def run(self, position: go.Position):
         probs, values = self.run_many([position])
@@ -205,3 +217,10 @@ def test_filter_np():
     probs_filtered = DummyNetwork.zeroout_edges(probs)
     print(np.reshape(probs_filtered[:go.N * go.N], (go.N, go.N)))
     print(probs_filtered[-1-go.N:])
+
+
+def test_load_model():
+    fname = f'{myconf.EXP_HOME}/checkpoints/model7_epoch1.h5'
+    model = build_model_for_eval()
+    model.load_weights(fname)
+    model.summary()
