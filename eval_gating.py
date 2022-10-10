@@ -24,6 +24,7 @@ import utils
 from evaluate import ModelConfig
 from katago.analysis_engine import ARequest, KataEngine, MoveInfo, RootInfo, assemble_comment, KataModels
 from run_selfplay import InitPositions
+from sgfs_stats import run_tournament_report
 from strategies import MCTSPlayer
 
 FLAGS = flags.FLAGS
@@ -122,7 +123,7 @@ def arg_top_k_moves(pi: np.array, k) -> np.array:
     return indices[np.argsort(-pi[indices])]
 
 
-def test_arg_top_k_moves():
+def notest_arg_top_k_moves():
     arr = np.arange(0, 1, .1)
     np.random.shuffle(arr)
     print(arr)
@@ -197,7 +198,7 @@ class GameResult:
         return f'{winner}+{margin}'
 
 
-def test_game_result():
+def notest_game_result():
     result = GameResult(0, False)
     assert result.winner() == '-'
     assert result.sgf_str() == 'B+T'
@@ -304,9 +305,9 @@ class EvaluateOneSide:
             _file.write(sgfstr)
 
     def _accumulate_stats(self):
-        """ """
+        """ this needs to be done post-game, in case we run more games later """
 
-    def play_a_game(self):
+    def play_a_game(self) -> GameResult:
         game_idx = self._num_games_so_far
         self._num_games_so_far += 1
 
@@ -324,16 +325,31 @@ class EvaluateOneSide:
         return game_result
 
     def play_games(self, n: int):
+        logging.info(f'eval between {self.black_player.id()} vs {self.white_player.id()}: {n} games')
+        black_wins = 0
         for i in range(n):
-            self.play_a_game()
+            game_result = self.play_a_game()
+            black_wins += game_result.black_margin > 0
+        logging.info(f'  {self.black_player.id()} wins {black_wins} / {n} games')
+
+
+def count_unique_games():
+    pass
 
 
 def main(argv):
     kata_engine = KataEngine(KataModels.MODEL_B6_4k).start()
-    black = KataPlayer(kata_engine, 200)
-    white = K2Player(ModelConfig(f'{myconf.MODELS_DIR}/model5_epoch2.h5#200'))
-    evaluator = EvaluateOneSide(black, white, f'{myconf.EXP_HOME}/eval_gating/1')
-    evaluator.play_games(10)
+    kata_player = KataPlayer(kata_engine, 200)
+    k2_player = K2Player(ModelConfig(f'{myconf.MODELS_DIR}/model7_epoch4.h5#200'))
+    sgf_dir_root = f'{myconf.EXP_HOME}/eval_gating/model7_4'
+
+    num_games_per_side = 20
+    evaluator = EvaluateOneSide(kata_player, k2_player, f'{sgf_dir_root}/white')
+    evaluator.play_games(num_games_per_side)
+    evaluator = EvaluateOneSide(k2_player, kata_player, f'{sgf_dir_root}/black')
+    evaluator.play_games(num_games_per_side)
+
+    run_tournament_report(f'{sgf_dir_root}/*/*')
 
 
 if __name__ == '__main__':

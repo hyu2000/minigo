@@ -156,3 +156,14 @@ lr_finder.plot_loss(n_skip_beginning=20, n_skip_end=5)
         derivatives = self.get_derivatives(sma)
         best_der_idx = np.argmin(derivatives[n_skip_beginning:-n_skip_end])
         return self.lrs[n_skip_beginning:-n_skip_end][best_der_idx]
+
+
+def test_finder():
+    import myconf
+    import run_train
+    model = run_train.load_model(f'{myconf.MODELS_DIR}/model6_epoch2.h5')
+    data_dir = f'{myconf.EXP_HOME}/selfplay/enhance'
+    ds_train = run_train.load_selfplay_data(f'{data_dir}/train', 'full')
+
+    lrf = LRFinder(model)
+    lrf.find_generator(ds_train.shuffle(4000).batch(64), start_lr=0.0001, end_lr=1, steps_per_epoch=16573 // 64)

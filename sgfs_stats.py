@@ -8,6 +8,7 @@ Or just zhash counts in the first cut?
 """
 import glob
 import logging
+import os.path
 from collections import defaultdict, Counter
 from itertools import islice
 from typing import List
@@ -18,6 +19,10 @@ import coords
 import go
 import myconf
 from sgf_wrapper import SGFReader
+
+
+pd.set_option('display.max_columns', None)
+pd.set_option('display.width', 200)
 
 
 class StatsItf:
@@ -83,6 +88,7 @@ class DiversityStats(StatsItf):
     def report(self):
         cnt_by_move = {move_idx: len(s) for move_idx, s in self.zhash_by_move.items()}
         ts = pd.Series(cnt_by_move, name='count')
+        ts.index.name = 'move'
         df = pd.DataFrame({'count': ts, 'freq': ts / self.num_games})
         print(df)
         return df
@@ -101,8 +107,10 @@ class GameSequenceReport(StatsItf):
         all_moves = [coords.to_gtp(pwc.next_move) for pwc in reader.iter_pwcs()]
         open_moves = all_moves[: self.first_n]
         end_moves = all_moves[-self.last_n:]
-        line = f'%s ..(%3d).. %s \t%s' % (' '.join(open_moves), len(all_moves), ' '.join(end_moves), reader.result_str())
+        line = f'%s ..%3d .. %s \t%-6s' % (' '.join(open_moves), len(all_moves), ' '.join(end_moves), reader.result_str())
         line = line.replace('pass', '--', -1)
+        short_fname = os.path.basename(reader.name).removesuffix('.sgf')
+        line = f'{line}\t{short_fname}'
         self.game_summary.append(line)
 
     def report(self):
@@ -131,15 +139,22 @@ class SgfProcessor:
             self.add_game(sgf_fname, reader)
 
 
-def test_winner_stats():
-    print()
+def run_tournament_report(sgf_pattern):
     wstats = WinnerStats()
     dstats = DiversityStats()
     game_report = GameSequenceReport()
     processor = SgfProcessor([wstats, dstats, game_report])
-    # sgf_pattern = f'{myconf.EXP_HOME}/eval_bots-model7/model7_2/*.sgf'
-    sgf_pattern = f'{myconf.EXP_HOME}/eval_gating/model7_1/1/*.sgf'
+    logging.info(f'Scanning {sgf_pattern}')
     processor.process(sgf_pattern)
+    logging.info(f'{sgf_pattern}: found %d games', dstats.num_games)
     wstats.report()
+    logging.info('\tUnique states by move:')
     dstats.report()
+    logging.info('\tgames sorted:')
     game_report.report()
+
+
+def test_basic_report():
+    sgf_pattern = f'{myconf.EXP_HOME}/eval_bots-model7/model7-various-epochs/*.sgf'
+    # sgf_pattern = f'{myconf.EXP_HOME}/eval_gating/model7_4/*/*.sgf'
+    run_tournament_report(sgf_pattern)

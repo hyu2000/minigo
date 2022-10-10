@@ -33,6 +33,7 @@ from evaluate import ModelConfig
 from katago.analysis_engine import KataDualNetwork, KataModels
 from sgf_wrapper import SGFReader
 import myconf
+from sgfs_stats import run_tournament_report
 
 pd.set_option('display.max_columns', None)
 pd.set_option('display.width', 200)
@@ -272,54 +273,8 @@ def game_outcome_review(sgfs_dir):
     print(df.replace('0/0', '-'))
 
 
-def main():
-    sgfs_dir = f'{myconf.EXP_HOME}/eval_bots-model3/sgfs'
-    utils.ensure_dir_exists(sgfs_dir)
-
-    evaluator = Evaluator(sgfs_dir, 40)
-    models = ['model3_epoch3#200', 'model3_epoch3#300']
-    # evaluator.run_two_sided_eval(models[0], models[1])
-    models = [f'model3_epoch3#{x}' for x in range(200, 500, 100)]
-    evaluator.run_multi_models(models[::-1], band_size=2)
-    evaluator.state_of_the_world(order=models)
-
-
-def count_unique_states_by_move(sgf_fnames):
-    """ increase of #unique states over move# would be more informative
-    test_zobrist.test_unique_states_in_selfplay() seems relevant
-    """
-    for sgf_fname in sgf_fnames:
-        reader = SGFReader.from_file_compatible(sgf_fname)
-
-
-def game_diversity_review():
-    """ eval games has less diversity. See how many of the 80 games are unique """
-    sgfs_dir = f'{myconf.EXP_HOME}/eval_bots-model3/model3_3'
-    utils.ensure_dir_exists(sgfs_dir)
-
-    models = set(['model3_epoch3#200', 'model1_epoch5#300'])
-
-    moves_by_black = defaultdict(list)
-    for sgf_fname in os.listdir(f'{sgfs_dir}'):
-        if not sgf_fname.endswith('.sgf'):
-            continue
-        if any(x not in sgf_fname for x in models):
-            continue
-        reader = SGFReader.from_file_compatible(f'{sgfs_dir}/{sgf_fname}')
-        players = {reader.black_name(), reader.white_name()}
-        assert models == players
-        moves = [coords.to_gtp(pwc.next_move) for pwc in reader.iter_pwcs()]
-        game_str = '%s\t%s' % (' '.join(moves[:12]), reader.result_str())
-        moves_by_black[reader.black_name()].append(game_str)
-
-    for black_id, games in moves_by_black.items():
-        print(f'\nBlack: {black_id} %d games' % len(games))
-        games = sorted(games)
-        print('\n'.join(games))
-
-
 def count_disagreement():
-    """
+    """ todo: move to sgfs_stats
 sgfs-200readouts: 2/320
 sgfs-100readouts-batch: 4/576
 sgfs-50readouts-batch: 13/576
@@ -329,6 +284,20 @@ sgfs-epoch5-batch: 75/640  many due to #1, #10 readouts
     """
     sgfs_dir = f'{myconf.EXP_HOME}/eval_bots/sgfs-epoch5-batch'
     game_outcome_review(sgfs_dir)
+
+
+def main():
+    sgfs_dir = f'{myconf.EXP_HOME}/eval_bots-model7/model7_4'
+    utils.ensure_dir_exists(sgfs_dir)
+
+    evaluator = Evaluator(sgfs_dir, 40)
+    models = ['model7_epoch4#200', 'model6_epoch2#200']
+    # evaluator.run_two_sided_eval(models[0], models[1])
+    # models = [f'model7_epoch{x}#200' for x in range(1, 5)]
+    evaluator.run_multi_models(models[::-1], band_size=1)
+    evaluator.state_of_the_world(order=models)
+
+    run_tournament_report(f'{sgfs_dir}/*.sgf')
 
 
 if __name__ == '__main__':
