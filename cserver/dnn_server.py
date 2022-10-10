@@ -33,7 +33,8 @@ class DNNStub:
         """
         context = zmq.Context()
         self.socket = context.socket(zmq.REQ)
-        self.socket.connect(f"tcp://localhost:{server_port}")
+        # self.socket.connect(f"tcp://localhost:{server_port}")
+        self.socket.connect(f"ipc:///tmp/zmqdnn{server_port}")
 
         #
         self.model_id = self._remote_call(RemoteMethods.GET_MODEL_ID)
@@ -77,8 +78,8 @@ class DNNServer:
     def start(self):
         context = zmq.Context()
         socket = context.socket(zmq.REP)
-        # was "*:port"
-        socket.bind(f"tcp://127.0.0.1:{self.port}")
+        # socket.bind(f"tcp://127.0.0.1:{self.port}")  # was "*:port"
+        socket.bind(f"ipc:///tmp/zmqdnn{self.port}")
         logging.info(f'DNNServer started at {self.port}')
 
         while True:
@@ -126,7 +127,7 @@ class DNNServer:
         all_values = np.stack([result[1] for result in results])
         # logging.info(f'%d -> %s %s', len(pos_list), all_priors.shape, all_values.shape)
 
-        if self._num_req_positions // 100000 != (self._num_req_positions + len(pos_list)) // 100000:
+        if self._num_req_positions // 10000 != (self._num_req_positions + len(pos_list)) // 10000:
             logging.info(f'Total %d entries, #pos={self._num_req_positions}, #calc={self._num_pos_evals}', len(self.cache))
         self._num_req_positions += len(pos_list)
         self._num_pos_evals += len(idx_to_calc)
@@ -145,7 +146,7 @@ def start_server_remote(model_fname, port):
 def test_server():
     """ we save 15% of eval calls.
     The diff between #calc and #entries indicates that for the same batch, there might be dup positions...
-2022-10-02 14:09:05,316 INFO Total 48634 entries, #pos=56656, #calc=48789
+2022-10-02 14:09:05,316 INFO Total 48634 entries, #pos=56656, #calc=48789   4 games
 2022-10-02 14:49:02,927 INFO Total 428101 entries, #pos=500000, #calc=431083
 2022-10-02 14:58:13,379 INFO Total 760160 entries, #pos=899668, #calc=765432
     """

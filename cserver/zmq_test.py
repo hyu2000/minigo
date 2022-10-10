@@ -16,7 +16,8 @@ def start_server(port: int):
     context = zmq.Context()
     socket = context.socket(zmq.REP)
     # was "*:port"
-    socket.bind(f"tcp://127.0.0.1:{port}")
+    # socket.bind(f"tcp://127.0.0.1:{port}")
+    socket.bind('ipc:///tmp/zmqtest')
 
     while True:
         #  Wait for next request from client
@@ -60,7 +61,8 @@ class Stub:
     def __init__(self, server_port: int):
         context = zmq.Context()
         self.socket = context.socket(zmq.REQ)
-        self.socket.connect(f"tcp://localhost:{server_port}")
+        # self.socket.connect(f"tcp://localhost:{server_port}")
+        self.socket.connect('ipc:///tmp/zmqtest')
 
     def remote_call(self, *args):
         payload = pickle.dumps(args)
