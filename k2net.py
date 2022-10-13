@@ -166,11 +166,20 @@ class DualNetwork(object):
         probs, values = self.run_many([position])
         return probs[0], values[0]
 
+    # @tf.function(experimental_relax_shapes=True)
+    @tf.function(input_signature=(tf.TensorSpec(shape=[None, 9, 9, 11], dtype=tf.uint8),))
+    def tf_run(self, input):
+        """ https://www.tensorflow.org/guide/function
+        """
+        print('tracing...')
+        return self.model(input, training=False)
+
     def run_many(self, positions: List[go.Position]) -> Tuple[np.ndarray, np.ndarray]:
         f = get_features()
         processed = [features_lib.extract_features(p, f) for p in positions]
         # model.predict() doc suggests to use __call__ for small batch
-        probs, values = self.model(tf.convert_to_tensor(processed), training=False)
+        # probs, values = self.model(tf.convert_to_tensor(processed), training=False)
+        probs, values = self.tf_run(tf.convert_to_tensor(processed, dtype=tf.uint8))
         return probs.numpy(), values.numpy().squeeze(axis=-1)
 
 
