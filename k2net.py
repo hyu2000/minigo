@@ -51,7 +51,7 @@ def build_model(input_shape):
     2nd round: 125k
     6-block 9x9: 396k
     """
-    inputs = keras.Input(shape=input_shape)
+    inputs = keras.Input(shape=input_shape, name='input')
     # add "ones" feature plain
     x = tf.pad(inputs, [[0, 0], [0, 0], [0, 0], [0, 1]], 'CONSTANT', constant_values=1)
 
@@ -183,6 +183,44 @@ class DualNetwork(object):
         return probs.numpy(), values.numpy().squeeze(axis=-1)
 
 
+class CoreMLNet:
+    """ use coreml for prediction """
+
+    def __init__(self, save_file):
+        self.model_id = save_file
+        self.model = self.load_mlmodel(save_file)
+
+    def run(self, position: go.Position):
+        probs, values = self.run_many([position])
+        return probs[0], values[0]
+
+    def run_many(self, positions: List[go.Position]) -> Tuple[np.ndarray, np.ndarray]:
+        f = get_features()
+        processed = [features_lib.extract_features(p, f) for p in positions]
+        nparray = np.stack(processed).astype(np.float16)
+        results = self.model.predict({'input': nparray})
+        probs, values = results['Identity'], results['Identity_1']
+        return probs, values
+
+    @staticmethod
+    def convert_tf2_to_coreml(save_file):
+        import coremltools as ct
+        model = build_model_for_eval()
+        model.load_weights(save_file)
+        mlmodel = ct.convert(model,
+                             source='tensorflow',
+                             convert_to="mlprogram",
+                             compute_precision=ct.precision.FLOAT16,
+                             compute_units=ct.ComputeUnit.ALL)
+        # mlmodel.save('/tmp/model7_4.mlpackage')
+        return mlmodel
+
+    @staticmethod
+    def load_mlmodel(mlmodel_fname):
+        import coremltools as ct
+        return ct.models.MLModel(mlmodel_fname)
+
+
 class DummyNetwork(object):
     """ same interface as DualNetwork. Flat policy, Tromp score as value """
     def __init__(self):
@@ -233,3 +271,12 @@ def test_load_model():
     model = build_model_for_eval()
     model.load_weights(fname)
     model.summary()
+
+
+def test_mlmodel():
+    model = CoreMLNet('/tmp/model7_4.mlpackage')
+    pos0 = go.Position()
+    pos1 = pos0.play_move(coords.from_gtp('E5'))
+    probs, values = model.run_many([pos0, pos1])
+    print(probs.shape, values)
+    print(probs)

@@ -46,10 +46,19 @@ def load_kata_network(model_file):
     return KataDualNetwork(model_file)
 
 
+def load_coreml(model_file):
+    logging.info('loading %s', model_file)
+    network = dual_net.CoreMLNet(model_file)
+    return network
+
+
 def load_k2net(model_file):
     if model_file:
         logging.info('loading %s', model_file)
-        network = dual_net.DualNetwork(model_file)
+        if model_file.endswith('.mlpackage'):
+            network = load_coreml(model_file)
+        else:
+            network = dual_net.DualNetwork(model_file)
     else:
         logging.info('use DummyNetwork')
         network = dual_net.DummyNetwork()
