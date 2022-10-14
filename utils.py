@@ -23,7 +23,7 @@ import re
 import sys
 import time
 import datetime
-from typing import Iterator
+from typing import Iterator, List
 
 
 def dbg(*objects, file=sys.stderr, flush=True, **kwargs):
@@ -47,6 +47,15 @@ def parse_game_result(result):
     if re.match(r'[wW]\+', result):
         return -1
     return 0
+
+
+def format_game_summary(all_moves: List[str], result: str, first_n: int = 12, last_n: int = 2, sgf_fname=''):
+    open_moves = all_moves[: first_n]
+    end_moves = all_moves[-last_n:]
+    line = f'%s ..%3d .. %s \t%-6s' % (' '.join(open_moves), len(all_moves), ' '.join(end_moves), result)
+    line = line.replace('pass', '--', -1)
+    short_fname = os.path.basename(sgf_fname).removesuffix('.sgf')
+    return f'{line}\t{short_fname}'
 
 
 def product(iterable):

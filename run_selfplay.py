@@ -13,7 +13,7 @@ import k2net as dual_net
 from katago.analysis_engine import KataDualNetwork, KataModels
 from absl import logging, app, flags
 
-from utils import grouper
+from utils import grouper, format_game_summary
 
 flags.DEFINE_integer('num_games', 5, '#games to play')
 flags.DEFINE_integer('num_games_share_tree', 1, '#games that shares a tree')
@@ -81,25 +81,22 @@ def play_games(num_games=500):
         init_position = init_position_sampler.sample()
         shared_tree = mcts.MCTSNode(init_position)
         for i in i_batch:
-            player = run_game(network,
-                              init_position=init_position,
-                              init_root=shared_tree,
-                              selfplay_dir=FLAGS.selfplay_dir,
-                              holdout_dir=FLAGS.holdout_dir,
-                              holdout_pct=FLAGS.holdout_pct,
-                              sgf_dir=FLAGS.sgf_dir,
-                              game_id=str(i)
-                              )
-            margin_est = player.black_margin_no_komi
-            result_str = player.result_string
-            moves_history = player.root.position.recent
-            history_str = ' '.join([coords.to_gtp(x.move) for x in moves_history[:12]])
-            # history_str = ' '.join(player.move_infos[:8])
+            player, sgf_fname = run_game(network,
+                                         init_position=init_position,
+                                         init_root=shared_tree,
+                                         selfplay_dir=FLAGS.selfplay_dir,
+                                         holdout_dir=FLAGS.holdout_dir,
+                                         holdout_pct=FLAGS.holdout_pct,
+                                         sgf_dir=FLAGS.sgf_dir,
+                                         game_id=str(i)
+                                         )
+            # margin_est = player.black_margin_no_komi
+            moves = [coords.to_gtp(x.move) for x in player.root.position.recent]
+            history_str = format_game_summary(moves, player.result_string, sgf_fname=sgf_fname)
 
             # ru_rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
 
-            logging.info(f'game {i}: %d moves, score %s\t%s', player.root.position.n,
-                         result_str, history_str)
+            logging.info(f'game {i}: %s', history_str)
 
         del shared_tree
 
@@ -119,17 +116,19 @@ def main(argv):
 
 
 def main_local(argv):
-    FLAGS.load_file = f'{myconf.MODELS_DIR}/model6_epoch2.h5'
+    FLAGS.load_file = f'{myconf.MODELS_DIR}/model7_epoch4.h5'
     FLAGS.sgf_dir = f'{myconf.SELFPLAY_DIR}/sgf'
     FLAGS.selfplay_dir = f'{myconf.SELFPLAY_DIR}/train'
     FLAGS.holdout_dir = f'{myconf.SELFPLAY_DIR}/val'
-    FLAGS.num_readouts = 200
+    FLAGS.num_readouts = 400
     FLAGS.parallel_readouts = 16
     FLAGS.holdout_pct = 0
     FLAGS.softpick_move_cutoff = 6
     FLAGS.dirichlet_noise_weight = 0.
     FLAGS.resign_threshold = -1.0
-    play_games(num_games=8)
+    # FLAGS.reduce_symmetry_before_move = 8
+    FLAGS.verbose = 0
+    play_games(num_games=4)
 
 
 if __name__ == '__main__':

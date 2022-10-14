@@ -144,11 +144,10 @@ def play(network, init_position=None, init_root=None):
             player.set_result(0, was_resign=False)
             break
 
-        if (FLAGS.verbose >= 2) or (FLAGS.verbose >= 1 and player.root.position.n % 10 == 9):
-            print("Q: {:.5f}".format(player.root.Q))
+        if (FLAGS.verbose >= 2) or (FLAGS.verbose >= 1 and player.root.position.n % 10 == 7):
             dur = time.time() - start
-            print("%d: %d readouts, %.3f s/100. (%.2f sec)" % (
-                player.root.position.n, total_readouts, dur / total_readouts * 100.0, dur), flush=True)
+            logging.info(f"move %d: Q=%.3f, {total_readouts} readouts ({dur:.2f} sec), %.3f sec/100",
+                         player.root.position.n, player.root.Q, dur / total_readouts * 100.0)
         if FLAGS.verbose >= 3:
             print("Played >>",
                   coords.to_gtp(coords.from_flat(player.root.fmove)))
@@ -175,9 +174,9 @@ def create_dir_if_needed(selfplay_dir=None, holdout_dir=None, sgf_dir=None):
 def run_game(dnn, init_position: go.Position=None, init_root: mcts.MCTSNode=None,
              game_id=None,
              selfplay_dir=None, holdout_dir=None,
-             sgf_dir=None, holdout_pct=0.05) -> MCTSPlayer:
+             sgf_dir=None, holdout_pct=0.05) -> Tuple[MCTSPlayer, str]:
     """Takes a played game and record results and game data."""
-    with utils.logged_timer("Playing game"):
+    with utils.logged_timer(f"Playing game {game_id}"):
         player = play(dnn, init_position=init_position, init_root=init_root)
 
     if game_id:
@@ -185,6 +184,7 @@ def run_game(dnn, init_position: go.Position=None, init_root: mcts.MCTSNode=None
     else:
         output_name = '{}-{}'.format(utils.microseconds_since_midnight(), socket.gethostname())
     game_data = player.extract_data()
+    sgf_name = ''
     if sgf_dir is not None:
         sgf_name = output_name
         # with tf.io.gfile.GFile(os.path.join(minimal_sgf_dir, '{}.sgf'.format(sgf_name)), 'w') as f:
@@ -193,9 +193,9 @@ def run_game(dnn, init_position: go.Position=None, init_root: mcts.MCTSNode=None
             f.write(player.to_sgf())
 
     if player.result == 0:  # void
-        return player
+        return player, sgf_name
     if selfplay_dir is None:
-        return player
+        return player, sgf_name
 
     # separate out data where we have policy target vs those we don't
     iter1, iter2 = itertools.tee(game_data)
@@ -218,7 +218,7 @@ def run_game(dnn, init_position: go.Position=None, init_root: mcts.MCTSNode=None
         fname = os.path.join(dir_path, f'{output_name}.tfrecord.{sample_type}.zz')
         preprocessing.write_tf_examples(fname, samples)
 
-    return player
+    return player, sgf_name
 
 
 def main9(argv):
@@ -280,7 +280,7 @@ def main(argv):
                          sgf_dir=myconf.SELFPLAY_DIR)
 
     shared_tree = mcts.MCTSNode(init_position)
-    player = run_game(
+    player, sgf_fname = run_game(
         network,
         init_position=init_position, game_id=init_sgf,
         init_root=shared_tree,

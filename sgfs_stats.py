@@ -20,7 +20,7 @@ import coords
 import go
 import myconf
 from sgf_wrapper import SGFReader
-
+from utils import format_game_summary
 
 pd.set_option('display.max_columns', None)
 pd.set_option('display.width', 200)
@@ -148,12 +148,7 @@ class GameSequenceReport(StatsItf):
 
     def add_game(self, reader: SGFReader):
         all_moves = [coords.to_gtp(pwc.next_move) for pwc in reader.iter_pwcs()]
-        open_moves = all_moves[: self.first_n]
-        end_moves = all_moves[-self.last_n:]
-        line = f'%s ..%3d .. %s \t%-6s' % (' '.join(open_moves), len(all_moves), ' '.join(end_moves), reader.result_str())
-        line = line.replace('pass', '--', -1)
-        short_fname = os.path.basename(reader.name).removesuffix('.sgf')
-        line = f'{line}\t{short_fname}'
+        line = format_game_summary(all_moves, reader.result_str(), self.first_n, self.last_n, sgf_fname=reader.name)
         self.game_summary.append(line)
 
     def report(self):
@@ -200,4 +195,5 @@ def run_tournament_report(sgf_pattern):
 def test_basic_report():
     sgf_pattern = f'{myconf.EXP_HOME}/eval_bots-model7/model7-various-epochs/*.sgf'
     # sgf_pattern = f'{myconf.EXP_HOME}/eval_gating/model7_4/*/*.sgf'
+    sgf_pattern = f'{myconf.EXP_HOME}/selfplay/sgf/full/*sgf'
     run_tournament_report(sgf_pattern)

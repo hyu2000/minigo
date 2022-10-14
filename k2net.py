@@ -212,7 +212,6 @@ class CoreMLNet:
                              convert_to="mlprogram",
                              compute_precision=ct.precision.FLOAT16,
                              compute_units=ct.ComputeUnit.ALL)
-        # mlmodel.save('/tmp/model7_4.mlpackage')
         return mlmodel
 
     @staticmethod
@@ -280,3 +279,9 @@ def test_mlmodel():
     probs, values = model.run_many([pos0, pos1])
     print(probs.shape, values)
     print(probs)
+
+
+def test_convert_tf2_to_coreml():
+    fname = f'{myconf.EXP_HOME}/checkpoints/model7_epoch4.h5'
+    mlmodel = CoreMLNet.convert_tf2_to_coreml(fname)
+    mlmodel.save(f'{myconf.EXP_HOME}/checkpoints/model7_4.mlpackage')
