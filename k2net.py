@@ -282,6 +282,8 @@ def test_mlmodel():
 
 
 def test_convert_tf2_to_coreml():
-    fname = f'{myconf.EXP_HOME}/checkpoints/model7_epoch4.h5'
-    mlmodel = CoreMLNet.convert_tf2_to_coreml(fname)
-    mlmodel.save(f'{myconf.EXP_HOME}/checkpoints/model7_4.mlpackage')
+    generation = 8
+    for epoch in range(1, 5):
+        fname = f'{myconf.EXP_HOME}/checkpoints/model{generation}_epoch{epoch}.h5'
+        mlmodel = CoreMLNet.convert_tf2_to_coreml(fname)
+        mlmodel.save(f'{myconf.EXP_HOME}/checkpoints/model{generation}_{epoch}.mlpackage')

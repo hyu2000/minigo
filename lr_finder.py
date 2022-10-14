@@ -80,6 +80,7 @@ lr_finder.plot_loss(n_skip_beginning=20, n_skip_end=5)
         K.set_value(self.model.optimizer.lr, original_lr)
 
     def find_generator(self, generator, start_lr, end_lr, epochs=1, steps_per_epoch=None, **kw_fit):
+        """ steps_per_epoch: #mini-batches to use per epoch """
         if steps_per_epoch is None:
             try:
                 steps_per_epoch = len(generator)
@@ -102,11 +103,11 @@ lr_finder.plot_loss(n_skip_beginning=20, n_skip_end=5)
 
         callback = LambdaCallback(on_batch_end=lambda batch, logs: self.on_batch_end(batch, logs))
 
-        self.model.fit_generator(generator=generator,
-                                 epochs=epochs,
-                                 steps_per_epoch=steps_per_epoch,
-                                 callbacks=[callback],
-                                 **kw_fit)
+        self.model.fit(generator,
+                         epochs=epochs,
+                         steps_per_epoch=steps_per_epoch,
+                         callbacks=[callback],
+                         **kw_fit)
 
         # Restore the weights to the state before model fitting
         self.model.set_weights(initial_weights)
@@ -121,6 +122,7 @@ lr_finder.plot_loss(n_skip_beginning=20, n_skip_end=5)
             n_skip_beginning - number of batches to skip on the left.
             n_skip_end - number of batches to skip on the right.
         """
+        plt.figure(figsize=(15, 5))
         plt.ylabel("loss")
         plt.xlabel("learning rate (log scale)")
         plt.plot(self.lrs[n_skip_beginning:-n_skip_end], self.losses[n_skip_beginning:-n_skip_end])
