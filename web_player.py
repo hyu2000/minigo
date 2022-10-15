@@ -46,7 +46,9 @@ class WebPlayer(object):
         first_node.incorporate_results(prob, val, first_node)
 
         move = player.suggest_move(pos)
-        logging.info('mcts chose: %s', coords.to_gtp(move))
+        root_winrate = player.root.Q
+        child_q = player.root.child_Q[coords.to_flat(move)]
+        logging.info('root winrate=%.2f, mcts chose: %s, child_Q=%.2f', root_winrate, coords.to_gtp(move), child_q)
         return coords.to_gtp(move)
 
     def construct_game_state(self, moves_history: List[str]):

@@ -4,7 +4,7 @@ from flask import redirect, url_for
 import go
 import web_player
 import myconf
-from k2net import DualNetwork
+import k2net as dual_net
 from absl import logging, flags
 import absl.app
 
@@ -17,9 +17,9 @@ player = None  # type: web_player.WebPlayer
 def init():
     # needs flags
     global player
-    model_id = 'model1_epoch16'
-    # dnn = DualNetwork(f'{myconf.EXP_HOME}/models-old/model15_epoch2.h5')
-    dnn = DualNetwork(f'{myconf.EXP_HOME}/checkpoints/{model_id}.h5')
+    model_id = 'model8_4'
+    model_fname = f'{myconf.EXP_HOME}/checkpoints/{model_id}.mlpackage'
+    dnn = dual_net.load_net(model_fname)
     logging.info('mcts %s #readouts=%d', model_id, flags.FLAGS.num_readouts)
     player = web_player.WebPlayer(dnn)
 
@@ -40,6 +40,7 @@ def select_move(bot_name):
 
     return jsonify({
         'bot_move': move,
+        # todo: make js display diagnostics
         'diagnostics': {}
     })
 
