@@ -136,7 +136,7 @@ class K2Player(BasicPlayerInterface):
     """ k2net w/ mcts """
     def __init__(self, model_config: ModelConfig):
         self.model_config = model_config
-        self.dnn = dual_net.DualNetwork(model_config.model_path())
+        self.dnn = dual_net.load_net(model_config.model_path())
         self.mcts_player = MCTSPlayer(self.dnn, num_readouts=model_config.num_readouts)
 
     def id(self):
@@ -339,9 +339,9 @@ def count_unique_games():
 
 def main(argv):
     kata_engine = KataEngine(KataModels.MODEL_B6_4k).start()
-    kata_player = KataPlayer(kata_engine, 200)
-    k2_player = K2Player(ModelConfig(f'{myconf.MODELS_DIR}/model7_epoch4.h5#200'))
-    sgf_dir_root = f'{myconf.EXP_HOME}/eval_gating/model7_4'
+    kata_player = KataPlayer(kata_engine, 300)
+    k2_player = K2Player(ModelConfig(f'{myconf.MODELS_DIR}/model8_4.mlpackage#300'))
+    sgf_dir_root = f'{myconf.EXP_HOME}/eval_gating/model8_4/300-vs-kata300'
 
     num_games_per_side = 20
     evaluator = EvaluateOneSide(kata_player, k2_player, f'{sgf_dir_root}/white')

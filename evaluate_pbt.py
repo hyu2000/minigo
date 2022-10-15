@@ -248,13 +248,13 @@ sgfs-epoch5-batch: 75/640  many due to #1, #10 readouts
 
 
 def main():
-    sgfs_dir = f'{myconf.EXP_HOME}/eval_bots-model7/model7_4'
+    sgfs_dir = f'{myconf.EXP_HOME}/eval_bots-model8/model8-epochs'
     utils.ensure_dir_exists(sgfs_dir)
 
     evaluator = Evaluator(sgfs_dir, 40)
-    models = ['model7_epoch4#200', 'model6_epoch2#200']
+    models = ['model8_4#200', 'model8_2#200']
     # evaluator.run_two_sided_eval(models[0], models[1])
-    # models = [f'model7_epoch{x}#200' for x in range(1, 5)]
+    # models = [f'model8_{x}#200' for x in range(1, 5)]
     evaluator.run_multi_models(models[::-1], band_size=1)
     evaluator.state_of_the_world(order=models)
 
@@ -264,4 +264,3 @@ def main():
 if __name__ == '__main__':
     main()
     # count_disagreement()
-    # game_diversity_review()

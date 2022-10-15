@@ -46,28 +46,9 @@ def load_kata_network(model_file):
     return KataDualNetwork(model_file)
 
 
-def load_coreml(model_file):
-    logging.info('loading %s', model_file)
-    network = dual_net.CoreMLNet(model_file)
-    return network
-
-
-def load_k2net(model_file):
-    if model_file:
-        logging.info('loading %s', model_file)
-        if model_file.endswith('.mlpackage'):
-            network = load_coreml(model_file)
-        else:
-            network = dual_net.DualNetwork(model_file)
-    else:
-        logging.info('use DummyNetwork')
-        network = dual_net.DummyNetwork()
-    return network
-
-
 def play_games(num_games=500):
     """ """
-    network = load_k2net(FLAGS.load_file)
+    network = dual_net.load_net(FLAGS.load_file)
     # network = DNNStub(model_file=FLAGS.load_file)
     # network = load_kata_network(KataModels.MODEL_B6_4k)
 
@@ -99,6 +80,8 @@ def play_games(num_games=500):
             logging.info(f'game {i}: %s', history_str)
 
         del shared_tree
+
+    logging.info(f'Done with {num_games} games')
 
 
 def _examine_tree(root: mcts.MCTSNode, thresh: int):

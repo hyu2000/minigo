@@ -154,8 +154,9 @@ class ModelConfig:
             assert len(model_split) == 1
             model_path, num_readouts = model_config, FLAGS.num_readouts
 
-        if not model_path.endswith('.h5'):
-            model_path = f'{model_path}.h5'
+        if not model_path.endswith('.mlpackage'):
+            model_path = f'{model_path}.mlpackage'
+        # backoff to .h5? probably not
         return model_path, num_readouts
 
 
@@ -172,8 +173,8 @@ class RunOneSided:
         self.white_model_id = white_config.model_id()
 
         with utils.logged_timer("Loading weights"):
-            self.black_net = dual_net.DualNetwork(black_config.model_path())
-            self.white_net = dual_net.DualNetwork(white_config.model_path())
+            self.black_net = dual_net.load_net(black_config.model_path())
+            self.white_net = dual_net.load_net(white_config.model_path())
         self.black_player = MCTSPlayer(self.black_net, num_readouts=black_config.num_readouts)
         self.white_player = MCTSPlayer(self.white_net, num_readouts=white_config.num_readouts)
 

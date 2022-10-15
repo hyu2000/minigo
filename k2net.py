@@ -1,4 +1,5 @@
 """ modeled after dual_net w/ TF2.4 """
+import logging
 from typing import List, Tuple
 
 import numpy as np
@@ -258,6 +259,20 @@ def bootstrap():
     model.save(fname)
 
 
+def load_net(model_file):
+    """ instantiate the right network, according to filename """
+    if model_file:
+        logging.info('loading %s', model_file)
+        if model_file.endswith('.mlpackage'):
+            network = CoreMLNet(model_file)
+        else:
+            network = DualNetwork(model_file)
+    else:
+        logging.info('use DummyNetwork')
+        network = DummyNetwork()
+    return network
+
+
 def test_filter_np():
     probs = np.ones(myconf.TOTAL_MOVES) / myconf.TOTAL_MOVES
     probs_filtered = DummyNetwork.zeroout_edges(probs)
@@ -282,8 +297,8 @@ def test_mlmodel():
 
 
 def test_convert_tf2_to_coreml():
-    generation = 8
-    for epoch in range(1, 5):
+    generation = 5
+    for epoch in range(2, 3):
         fname = f'{myconf.EXP_HOME}/checkpoints/model{generation}_epoch{epoch}.h5'
         mlmodel = CoreMLNet.convert_tf2_to_coreml(fname)
         mlmodel.save(f'{myconf.EXP_HOME}/checkpoints/model{generation}_{epoch}.mlpackage')
