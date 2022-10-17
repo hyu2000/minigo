@@ -118,8 +118,10 @@ class MCTSNode(object):
 
     @property
     def child_U(self):
-        return (math.log((1.0 + self.N + FLAGS.c_puct_base) / FLAGS.c_puct_base) + FLAGS.c_puct_init) * \
-               2.0 * math.sqrt(max(1, self.N - 1)) * self.child_prior / (1 + self.child_N)
+        # can we simplify this a bit more?
+        n = self.N
+        return (math.log1p((1.0 + n) / FLAGS.c_puct_base) + FLAGS.c_puct_init) * \
+               2.0 * math.sqrt(max(1, n - 1)) * self.child_prior / (1 + self.child_N)
 
     @property
     def Q(self) -> float:
@@ -156,8 +158,7 @@ class MCTSNode(object):
             if not current.is_expanded:
                 break
 
-            # hyu: don't understand this hack
-            # HACK: if last move was a pass, always investigate double-pass first
+            # HACK: if last move was a pass, always investigate double-pass first (=> pos.score())
             # to avoid situations where we auto-lose by passing too early.
             if (current.position.recent and
                 current.position.recent[-1].move is None and

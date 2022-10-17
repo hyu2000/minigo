@@ -563,8 +563,8 @@ class Position:
 
         return True
 
-    def all_legal_moves(self):
-        'Returns a np.array of size go.N**2 + 1, with 1 = legal, 0 = illegal'
+    def all_legal_moves(self) -> np.ndarray:
+        """ Returns a np.array of size go.N**2 + 1, with 1 = legal, 0 = illegal """
         # by default, every move is legal
         legal_moves = np.ones([N, N], dtype=np.int8)
         # ...unless there is already a stone there
