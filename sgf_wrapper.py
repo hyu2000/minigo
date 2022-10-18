@@ -340,6 +340,8 @@ class SGFReader(object):
                 maybe_correct_next(pos, current_node.next)
                 next_move, _ = get_next_move(current_node)
                 yield PositionWithContext(pos, next_move, result)
+            except GeneratorExit:
+                break
             except:
                 logging.exception(f'{self.name} failed iter thru game: step {i}')
                 break

@@ -34,6 +34,52 @@ class StatsItf:
         pass
 
 
+class QAnalysis(StatsItf):
+    """ see how well extreme Q values correlate with game outcome
+    """
+
+    def __init__(self, model_id: str = ''):
+        self.model_id = model_id
+        self.q_curves = dict()
+
+    @staticmethod
+    def _extract_q(comment: str) -> float:
+        """
+        Q=-0.99 raw=-0.99 N=435 path=-
+        Note this could be the 2nd line
+        """
+        lines = comment.split('\n')
+        line = lines[0]
+        if not line.startswith('Q='):
+            line = lines[1]
+        flds = line.split()
+        assert flds[0][:2] == 'Q='
+        return float(flds[0][2:])
+
+    def add_game(self, reader: SGFReader):
+        winner_sign = reader.result()
+        game_name_short = os.path.basename(reader.name)
+
+        q_vals = []
+        for move_idx, (move, comments) in enumerate(reader.iter_comments()):
+            assert len(comments) == 1
+            q_val = self._extract_q(comments[0])
+            q_vals.append(q_val)
+        # last point is actual outcome
+        q_vals.append(winner_sign)
+        q_series = pd.Series(q_vals)
+
+        self.q_curves[game_name_short] = q_series
+
+
+def test_q_extraction():
+    stat = QAnalysis('model8_4.mlpackage')
+    sgf_fname = f'{myconf.EXP_HOME}/selfplay/sgf/full/0-32080527168.sgf'
+    for sgf_fname in glob.glob(f'{myconf.EXP_HOME}/selfplay/sgf/full/*.sgf'):
+        reader = SGFReader.from_file_compatible(sgf_fname)
+        stat.add_game(reader)
+
+
 class WinnerStats(StatsItf):
     """ this can count games among multiple players """
     def __init__(self):
@@ -193,7 +239,7 @@ def run_tournament_report(sgf_pattern):
 
 
 def test_basic_report():
-    sgf_pattern = f'{myconf.EXP_HOME}/eval_bots-model7/model7-various-epochs/*.sgf'
-    # sgf_pattern = f'{myconf.EXP_HOME}/eval_gating/model7_4/*/*.sgf'
-    sgf_pattern = f'{myconf.EXP_HOME}/selfplay/sgf/full/*sgf'
+    # sgf_pattern = f'{myconf.EXP_HOME}/eval_bots-model8/model8_4#200/model8_4#200-vs-model7_4#200-*.sgf'
+    sgf_pattern = f'{myconf.EXP_HOME}/eval_gating/model8_4/400-vs-elo5k#200/black/*.sgf'
+    # sgf_pattern = f'{myconf.EXP_HOME}/selfplay/sgf/full/*sgf'
     run_tournament_report(sgf_pattern)
