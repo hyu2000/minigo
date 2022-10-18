@@ -148,9 +148,6 @@ def play(network, init_position=None, init_root=None):
             dur = time.time() - start
             logging.info(f"move %d: Q=%.3f, {total_readouts} readouts ({dur:.2f} sec), %.3f sec/100",
                          player.root.position.n, player.root.Q, dur / total_readouts * 100.0)
-        if FLAGS.verbose >= 3:
-            print("Played >>",
-                  coords.to_gtp(coords.from_flat(player.root.fmove)))
 
     if FLAGS.verbose >= 2:
         utils.dbg("%s: %.3f" % (player.result_string, player.root.Q))

@@ -99,7 +99,7 @@ def main(argv):
 
 
 def main_local(argv):
-    FLAGS.load_file = f'{myconf.MODELS_DIR}/model7_epoch4.h5'
+    FLAGS.load_file = f'{myconf.MODELS_DIR}/model8_4.mlpackage'
     FLAGS.sgf_dir = f'{myconf.SELFPLAY_DIR}/sgf'
     FLAGS.selfplay_dir = f'{myconf.SELFPLAY_DIR}/train'
     FLAGS.holdout_dir = f'{myconf.SELFPLAY_DIR}/val'

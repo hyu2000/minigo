@@ -44,6 +44,7 @@ class QAnalysis(StatsItf):
         self._run_length = run_length
         # self.q_curves = dict()
         self.num_games = 0
+        self.num_games_resigned = 0
         self.num_errors = 0
         self.sum_moves = 0
         self.sum_saved = 0
@@ -66,7 +67,7 @@ class QAnalysis(StatsItf):
     @staticmethod
     def count_consecutive_overage(ts: pd.Series, thresh: float) -> pd.Series:
         """ count consecutive #times q has exceeded thresh
-        When q-value flips between 1 to -1, it's resetting
+        When q-value flips between 1 to -1, we reset
         """
         consecutive_count = pd.Series(0, index=ts.index)
 
@@ -108,6 +109,7 @@ class QAnalysis(StatsItf):
         if len(ts_resign) > 0:
             resign_idx = ts_resign.index[0]
             sign_at_resign = np.sign(ts[resign_idx])
+            self.num_games_resigned += 1
         else:  # no resign
             resign_idx = len(ts) - 1
             sign_at_resign = winner_sign
@@ -123,7 +125,8 @@ class QAnalysis(StatsItf):
 
     def report(self):
         logging.info(f'Total {self.num_games} games, thresh={self._thresh}, run_len={self._run_length}: '
-                     f'{self.num_errors} errors = %.1f%%, saved {self.sum_saved} = %.1f%%',
+                     f'{self.num_games_resigned} resigned = %.1f%%, {self.num_errors} errors = %.1f%%, saved {self.sum_saved} = %.1f%%',
+                     self.num_games_resigned / self.num_games * 100,
                      self.num_errors / self.num_games * 100, self.sum_saved / self.sum_moves * 100)
 
 
@@ -137,17 +140,19 @@ def test_count_consecutive_overage():
     print(df)
 
 
-def test_q_extraction():
+def test_resign_stats():
     """
+selfplay6:  restrict on move# should help this
+'11:25:23        INFO Total 3376 games, thresh=0.9, run_len=2: 2903 resigned = 86.0%, 294 errors = 8.7%, saved 94525 = 35.6%'
+
 selfplay7:
 '11:04:52        INFO Total 3324 games, thresh=0.9, run_len=1: 35 errors = 1.1%, saved 47070 = 18.1%'
-'11:05:45        INFO Total 3324 games, thresh=0.9, run_len=2: 26 errors = 0.8%, saved 40118 = 15.4%'
+'11:23:18        INFO Total 3324 games, thresh=0.9, run_len=2: 1986 resigned = 59.7%, 26 errors = 0.8%, saved 40118 = 15.4%'
 '11:06:48        INFO Total 3324 games, thresh=0.95, run_len=1: 15 errors = 0.5%, saved 33322 = 12.8%'
 '11:09:37        INFO Total 3324 games, thresh=0.95, run_len=2: 11 errors = 0.3%, saved 27732 = 10.7%'
     """
-    qstat = QAnalysis(0.95, 2)
+    qstat = QAnalysis(0.9, 2)
     sgf_fname = f'{myconf.EXP_HOME}/selfplay/sgf/full/0-32080527168.sgf'
-    sgf_pattern = f'{myconf.EXP_HOME}/selfplay7/sgf/full/0-*.sgf'
     sgf_pattern = f'{myconf.EXP_HOME}/selfplay7/sgf/full/*.sgf'
     processor = SgfProcessor([qstat])
     processor.process(sgf_pattern)
@@ -289,6 +294,7 @@ class SgfProcessor:
             stat.add_game(reader)
 
     def process(self, sgf_glob_pattern):
+        logging.info(f'Processing {sgf_glob_pattern} ...')
         sgf_fnames = glob.glob(sgf_glob_pattern)
         for sgf_fname in sgf_fnames:
             if not sgf_fname.endswith('.sgf'):
