@@ -35,12 +35,19 @@ class StatsItf:
 
 
 class QAnalysis(StatsItf):
-    """ see how well extreme Q values correlate with game outcome
+    """ see how well extreme Q values correlate with game outcome.
+    find a good strategy for trade-off accuracy vs savings, also how much savings
     """
 
-    def __init__(self, model_id: str = ''):
-        self.model_id = model_id
-        self.q_curves = dict()
+    def __init__(self, resign_thresh: float = 0.9, run_length: int = 1):
+        self._thresh = resign_thresh
+        self._run_length = run_length
+        # self.q_curves = dict()
+        self.num_games = 0
+        self.num_errors = 0
+        self.sum_moves = 0
+        self.sum_saved = 0
+        self._error_games = []
 
     @staticmethod
     def _extract_q(comment: str) -> float:
@@ -56,28 +63,95 @@ class QAnalysis(StatsItf):
         assert flds[0][:2] == 'Q='
         return float(flds[0][2:])
 
-    def add_game(self, reader: SGFReader):
-        winner_sign = reader.result()
-        game_name_short = os.path.basename(reader.name)
+    @staticmethod
+    def count_consecutive_overage(ts: pd.Series, thresh: float) -> pd.Series:
+        """ count consecutive #times q has exceeded thresh
+        When q-value flips between 1 to -1, it's resetting
+        """
+        consecutive_count = pd.Series(0, index=ts.index)
 
+        prev_sign = 5  # just not 1, -1, 0
+        for i in ts.index:
+            qval = ts[i]
+            cur_sign = np.sign(qval)
+            if abs(qval) >= thresh:
+                if cur_sign == prev_sign:
+                    consecutive_count[i] += consecutive_count[i - 1] + 1
+                else:
+                    consecutive_count[i] = 1
+            else:
+                consecutive_count[i] = 0
+
+            prev_sign = cur_sign
+
+        return consecutive_count
+
+    @staticmethod
+    def extract_q_curve(reader: SGFReader) -> pd.Series:
         q_vals = []
         for move_idx, (move, comments) in enumerate(reader.iter_comments()):
             assert len(comments) == 1
-            q_val = self._extract_q(comments[0])
+            q_val = QAnalysis._extract_q(comments[0])
             q_vals.append(q_val)
-        # last point is actual outcome
-        q_vals.append(winner_sign)
-        q_series = pd.Series(q_vals)
+        ts = pd.Series(q_vals)
+        return ts
 
-        self.q_curves[game_name_short] = q_series
+    def add_game(self, reader: SGFReader):
+        """  """
+        winner_sign = reader.result()
+        game_name_short = os.path.basename(reader.name)
+
+        ts = self.extract_q_curve(reader)
+        ts_cc = self.count_consecutive_overage(ts, self._thresh)
+
+        ts_resign = ts_cc[ts_cc >= self._run_length]
+        if len(ts_resign) > 0:
+            resign_idx = ts_resign.index[0]
+            sign_at_resign = np.sign(ts[resign_idx])
+        else:  # no resign
+            resign_idx = len(ts) - 1
+            sign_at_resign = winner_sign
+
+        is_error = sign_at_resign != winner_sign
+        self.num_games += 1
+        self.num_errors += is_error
+        self.sum_moves += len(ts)
+        self.sum_saved += len(ts) - resign_idx - 1
+        if is_error:
+            logging.info(f'{game_name_short} %d moves {reader.result_str()}: resigned at {resign_idx} %.1f',
+                         len(ts), ts[resign_idx])
+
+    def report(self):
+        logging.info(f'Total {self.num_games} games, thresh={self._thresh}, run_len={self._run_length}: '
+                     f'{self.num_errors} errors = %.1f%%, saved {self.sum_saved} = %.1f%%',
+                     self.num_errors / self.num_games * 100, self.sum_saved / self.sum_moves * 100)
+
+
+def test_count_consecutive_overage():
+    ts = pd.Series([0, 0.3, 0.9, 0.8, 0.9, 0.9, 1.0])
+    ts = pd.Series([0, 0.3, 0.9, 0.8, 0, -0.9, -1.0])
+    ts = pd.Series([0, 0.3, 0.9, -0.8, 0.9, -1.0, 0.9, 0.9])
+    ts_cc = QAnalysis.count_consecutive_overage(ts, 0.9)
+    df = pd.DataFrame({'ts': ts, 'count': ts_cc})
+    print()
+    print(df)
 
 
 def test_q_extraction():
-    stat = QAnalysis('model8_4.mlpackage')
+    """
+selfplay7:
+'11:04:52        INFO Total 3324 games, thresh=0.9, run_len=1: 35 errors = 1.1%, saved 47070 = 18.1%'
+'11:05:45        INFO Total 3324 games, thresh=0.9, run_len=2: 26 errors = 0.8%, saved 40118 = 15.4%'
+'11:06:48        INFO Total 3324 games, thresh=0.95, run_len=1: 15 errors = 0.5%, saved 33322 = 12.8%'
+'11:09:37        INFO Total 3324 games, thresh=0.95, run_len=2: 11 errors = 0.3%, saved 27732 = 10.7%'
+    """
+    qstat = QAnalysis(0.95, 2)
     sgf_fname = f'{myconf.EXP_HOME}/selfplay/sgf/full/0-32080527168.sgf'
-    for sgf_fname in glob.glob(f'{myconf.EXP_HOME}/selfplay/sgf/full/*.sgf'):
-        reader = SGFReader.from_file_compatible(sgf_fname)
-        stat.add_game(reader)
+    sgf_pattern = f'{myconf.EXP_HOME}/selfplay7/sgf/full/0-*.sgf'
+    sgf_pattern = f'{myconf.EXP_HOME}/selfplay7/sgf/full/*.sgf'
+    processor = SgfProcessor([qstat])
+    processor.process(sgf_pattern)
+    qstat.report()
 
 
 class WinnerStats(StatsItf):
@@ -210,7 +284,7 @@ class SgfProcessor:
     def __init__(self, stats: List[StatsItf]):
         self._stats = stats
 
-    def add_game(self, sgf_fname: str, reader: SGFReader):
+    def _process_game(self, sgf_fname: str, reader: SGFReader):
         for stat in self._stats:
             stat.add_game(reader)
 
@@ -220,7 +294,7 @@ class SgfProcessor:
             if not sgf_fname.endswith('.sgf'):
                 continue
             reader = SGFReader.from_file_compatible(f'{sgf_fname}')
-            self.add_game(sgf_fname, reader)
+            self._process_game(sgf_fname, reader)
 
 
 def run_tournament_report(sgf_pattern):
