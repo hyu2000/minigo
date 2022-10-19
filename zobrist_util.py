@@ -76,7 +76,7 @@ def legal_moves_cache_size() -> int:
 def legal_moves_sans_symmetry(pos: go.Position) -> np.ndarray:
     """ fast version for some open positions (even faster than all_legal_positions()
     """
-    if pos.n >= 3:  # no special handling beyond first 3 moves
+    if pos.n >= 3:  # no reduction or caching beyond first 3 moves
         return pos.all_legal_moves()
 
     zhash = pos.zobrist_hash

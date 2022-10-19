@@ -109,7 +109,7 @@ def main_local(argv):
     FLAGS.softpick_move_cutoff = 6
     FLAGS.dirichlet_noise_weight = 0.
     FLAGS.resign_threshold = -1.0
-    # FLAGS.reduce_symmetry_before_move = 8
+    FLAGS.reduce_symmetry_before_move = 3
     FLAGS.verbose = 0
     play_games(num_games=4)
 

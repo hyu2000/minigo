@@ -15,13 +15,13 @@ do
     --sgf_dir="${SELFPLAY_DIR}/sgf" \
     --softpick_move_cutoff=6 \
     --dirichlet_noise_weight=0.125 \
-    --num_readouts=200 \
+    --num_readouts=400 \
     --full_readout_prob=1.0 \
-    --reduce_symmetry_before_move=8 \
+    --reduce_symmetry_before_move=3 \
     --parallel_readouts=16 \
     --holdout_pct=0 \
-    --num_games=250 \
-    --load_file="${DRIVE_HOME}/checkpoints/model1_epoch5.h5" \
+    --num_games=800 \
+    --load_file="${DRIVE_HOME}/checkpoints/model7_4.mlpackage" \
     --resign_threshold=-1 \
     2>&1 | tee "${SELFPLAY_DIR}/run_selfplay${i}.log" &
 

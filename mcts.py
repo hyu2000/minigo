@@ -377,17 +377,18 @@ class MCTSNode(object):
         good_moves = '-'
         lines.append("Q=%.2f raw=%.2f N=%d path=%s" % (self.Q, self.raw_margin, self.N, good_moves))
 
-        lines.append("move childQ lead visits (%) prior pv")
+        lines.append("move childQ lead visits (%) prior prior_noise")
         for rank, idx_flat in enumerate(ranked_children[:max_children]):
             # if self.child_N[idx_flat] == 0:
             #     break
             marker = '*' if idx_flat == target_move else ' '
-            s = f'{marker}{rank} %s %5.2f - %4d (%.2f) %.2f -' % (
+            s = f'{marker}{rank} %s %5.2f - %4d (%.2f) %.2f %.2f' % (
                 coords.to_gtp(coords.from_flat(idx_flat)),
                 self.child_Q[idx_flat],
                 int(self.child_N[idx_flat]),
                 soft_n[idx_flat],
-                self.original_prior[idx_flat]
+                self.original_prior[idx_flat],
+                self.child_prior[idx_flat]
             )
             lines.append(s)
 
