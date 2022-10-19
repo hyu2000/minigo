@@ -22,11 +22,11 @@ def board_hash_canonical(board: np.ndarray) -> np.uint64:
     return min(hashes)
 
 
-def legal_moves_sans_symmetry(pos: go.Position) -> np.ndarray:
+def calc_legal_moves_sans_symmetry(pos: go.Position) -> np.ndarray:
     """ reduce moves that lead to the same board (under symmetry)
     Deterministic: when symmetry happens, we prefer move with higher flat index value
 
-    maybe it's faster if not using board_hash?
+    slow for MCTS... maybe it's faster if not using board_hash?
     """
     lmoves = pos.all_legal_moves()
     # num_legal_moves = lmoves.sum()
@@ -63,4 +63,27 @@ def legal_moves_sans_symmetry(pos: go.Position) -> np.ndarray:
             hashes.update(new_hashes)
             # print(f'move %s added' % coords.flat_to_gtp(flat_idx))
     # logging.info(f'reduce_symmetry move# {pos.n}: {num_legal_moves} -> {lmoves.sum()}')
+    return lmoves
+
+
+_legal_reduced_moves_cache = dict()
+
+
+def legal_moves_cache_size() -> int:
+    return len(_legal_reduced_moves_cache)
+
+
+def legal_moves_sans_symmetry(pos: go.Position) -> np.ndarray:
+    """ fast version for some open positions (even faster than all_legal_positions()
+    """
+    if pos.n >= 3:  # no special handling beyond first 3 moves
+        return pos.all_legal_moves()
+
+    zhash = pos.zobrist_hash
+    lmoves = _legal_reduced_moves_cache.get(zhash)
+    if lmoves is not None:
+        return lmoves
+
+    lmoves = calc_legal_moves_sans_symmetry(pos)
+    _legal_reduced_moves_cache[zhash] = lmoves
     return lmoves
