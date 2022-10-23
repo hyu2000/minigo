@@ -23,6 +23,7 @@ import re
 import sys
 import time
 import datetime
+import numpy as np
 from typing import Iterator, List
 
 
@@ -110,3 +111,24 @@ def microseconds_since_midnight():
     now = datetime.datetime.now()
     tdelta = now - now.replace(hour=0, minute=0, second=0, microsecond=0)
     return tdelta.seconds * 1000000 + tdelta.microseconds
+
+
+def soft_pick(pi: np.ndarray, temperature=1.0, softpick_topn_cutoff: int = 0) -> int:
+    """ pick a move by sampling pi**temp
+
+    pi might be modified
+    """
+    if softpick_topn_cutoff > 0:
+        nth = np.partition(pi.flatten(), -softpick_topn_cutoff)[-softpick_topn_cutoff]
+        pi[pi < nth] = 0
+    if temperature != 1.0:
+        pi = pi ** temperature
+    cdf = pi.cumsum()
+
+    if cdf[-2] > 1e-6:
+        cdf /= cdf[-2]  # Prevents passing via softpick.
+        selection = np.random.random()
+        fcoord = cdf.searchsorted(selection)
+        return fcoord
+
+    assert False, f'soft_pick {pi} failed: {cdf[-2]}'
