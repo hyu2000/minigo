@@ -29,7 +29,7 @@ import pandas as pd
 
 import coords
 import utils
-from evaluate import ModelConfig
+from model_config import ModelConfig
 from katago.analysis_engine import KataDualNetwork, KataModels
 from sgf_wrapper import SGFReader
 import myconf

@@ -23,7 +23,7 @@ import go
 import myconf
 import sgf_wrapper
 import utils
-from evaluate import ModelConfig
+from model_config import ModelConfig
 from katago.analysis_engine import ARequest, KataEngine, MoveInfo, RootInfo, assemble_comment, KataModels
 from run_selfplay import InitPositions
 from sgfs_stats import run_tournament_report
