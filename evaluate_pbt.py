@@ -141,16 +141,14 @@ class Evaluator:
 
     def start_games(self, black_id, white_id, num_games: int) -> subprocess.Popen:
         """
-        python evaluate.py
+        run one-sided eval in separate process
         """
         # evaluate doesn't inject noise, so no need to specify  --dirichlet_noise_weight = 0.0125
-        cmdline = f"""/Users/hyu/anaconda/envs/tf2/bin/python /Users/hyu/PycharmProjects/dlgo/minigo/evaluate.py
-                    --eval_sgf_dir={self.sgfs_dir}
-                    --softpick_move_cutoff=6
+        cmdline = f"""/Users/hyu/anaconda/envs/tf2/bin/python /Users/hyu/PycharmProjects/dlgo/minigo/eval_gating.py
                     --parallel_readouts=16
                     --resign_threshold=-1
-                    %s %s %d
-        """ % (black_id, white_id, num_games)
+                    %s %s %s %d
+        """ % (black_id, white_id, self.sgfs_dir, num_games)
         args = shlex.split(cmdline)
         p = subprocess.Popen(args)
         # p.wait()

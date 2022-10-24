@@ -357,6 +357,13 @@ def run_one_side(black_config_str, white_config_str, sgf_dir, num_games: int):
     evaluator.play_games(num_games)
 
 
+def main(argv):
+    logging.info('softpick_move_cutoff = %d, softpick_topn_cutoff = %d', FLAGS.softpick_move_cutoff, FLAGS.softpick_topn_cutoff)
+    _, black_id, white_id, eval_sgf_dir, num_games = argv
+    num_games = int(num_games)
+    return run_one_side(black_id, white_id, eval_sgf_dir, num_games)
+
+
 def main_local(argv):
     num_readouts = 200
     logging.info('softpick_move_cutoff = %d, softpick_topn_cutoff = %d', FLAGS.softpick_move_cutoff, FLAGS.softpick_topn_cutoff)
@@ -374,4 +381,4 @@ def main_local(argv):
 
 
 if __name__ == '__main__':
-    app.run(main_local)
+    app.run(main)

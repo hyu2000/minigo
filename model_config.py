@@ -2,8 +2,10 @@ import os
 from typing import Tuple
 
 import myconf
-from evaluate import FLAGS
+from absl import flags
 from katago.analysis_engine import KataModels
+
+FLAGS = flags.FLAGS
 
 
 class ModelConfig:
