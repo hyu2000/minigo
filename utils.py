@@ -24,7 +24,7 @@ import sys
 import time
 import datetime
 import numpy as np
-from typing import Iterator, List
+from typing import Iterator, List, Tuple
 
 
 def dbg(*objects, file=sys.stderr, flush=True, **kwargs):
@@ -132,3 +132,16 @@ def soft_pick(pi: np.ndarray, temperature=1.0, softpick_topn_cutoff: int = 0) ->
         return fcoord
 
     assert False, f'soft_pick {pi} failed: {cdf[-2]}'
+
+
+def choose_moves_with_probs(moves_with_probs: List[Tuple], temperature=1.0, softpick_topn_cutoff: int = 0, n: int = 1):
+    """ same as soft_pick, but with a top-moves list, sorted by probs """
+    if softpick_topn_cutoff > 0:
+        moves_with_probs = moves_with_probs[:softpick_topn_cutoff]
+    probs = np.array([x[1] for x in moves_with_probs])
+    if temperature != 1.0:
+        probs = probs ** temperature
+    probs = probs / probs.sum()
+    indices = np.random.choice(len(moves_with_probs), size=n, p=probs)
+    moves = [moves_with_probs[i][0] for i in indices]
+    return moves if n != 1 else moves[0]

@@ -28,10 +28,20 @@ class KataModels:
     MODEL_B6_4k  = f'{MODELS_DIR}/kata1-b6c96-s18429184-d3197121.txt.elo4k.gz'  # I can beat consistently @ 500(?) readouts
     MODEL_B40 = f'{MODELS_DIR}/kata1-b40c256-s11101799168-d2715431527.bin.gz'
 
+    SHORT_ID_MAP = {
+        G170_B6C96: 'g170_b6c96',
+        G170_B20: 'g170_b20',
+        MODEL_B6_10k: 'kata1_10k',
+        MODEL_B6_5k: 'kata1_5k',
+        MODEL_B6_4k: 'kata1_4k',
+        MODEL_B40: 'kata1_b40'
+    }
+
     @staticmethod
     def model_id(fname: str):
-        fname = fname[len(MODELS_DIR) + 1:]
-        return fname.removesuffix('.gz').removesuffix('.bin')
+        # fname = fname[len(MODELS_DIR) + 1:]
+        # return fname.removesuffix('.gz').removesuffix('.bin')
+        return KataModels.SHORT_ID_MAP[fname]
 
 
 @attr.s

@@ -258,7 +258,7 @@ class DiversityStats(StatsItf):
         ts = pd.Series(cnt_by_move, name='count')
         ts.index.name = 'move'
         df = pd.DataFrame({'count': ts, 'freq': ts / self.num_games})
-        print(df)
+        print(df.T)
         return df
 
 
@@ -319,7 +319,7 @@ def run_tournament_report(sgf_pattern):
 
 
 def test_basic_report():
-    # sgf_pattern = f'{myconf.EXP_HOME}/eval_bots-model8/model8_4#200/model8_4#200-vs-model7_4#200-*.sgf'
-    sgf_pattern = f'{myconf.EXP_HOME}/eval_gating/model8_4/400-vs-elo5k#200/black/*.sgf'
+    sgf_pattern = f'{myconf.EXP_HOME}/eval_bots-model11/model11_4/model9/*.sgf'
+    # sgf_pattern = f'{myconf.EXP_HOME}/eval_gating/model9_4/200.fair/*/*.sgf'
     # sgf_pattern = f'{myconf.EXP_HOME}/selfplay/sgf/full/*sgf'
     run_tournament_report(sgf_pattern)

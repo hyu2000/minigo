@@ -1,4 +1,5 @@
 """ revamp: attempt at a more accurate eval of two bots (including kata engine), using new dnn cache
+  Should I deprecate evaluate.py?
 
 - control randomness in each bot: open move, soft-picks (temperature?), noise
   my bot is controlled by configs
@@ -303,7 +304,8 @@ class EvaluateOneSide:
         assert len(black_comments) == len(white_comments) and len(black_comments) == final_pos.n
         comments = [black_comments[i] if i % 2 == 0 else white_comments[i] for i in range(final_pos.n)]
 
-        sgf_fname = f'{self.sgf_dir}/game-{ith_game}-%s.sgf' % utils.microseconds_since_midnight()
+        sgf_fname = f'{self.sgf_dir}/{self.black_player.id()}-vs-{self.white_player.id()}-{ith_game}-%s.sgf' % (
+                    utils.microseconds_since_midnight())
         with open(sgf_fname, 'w') as _file:
             sgfstr = sgf_wrapper.make_sgf(final_pos.recent,
                                           game_result.sgf_str(), komi=final_pos.komi,
@@ -340,26 +342,36 @@ class EvaluateOneSide:
         logging.info(f'  {self.black_player.id()} wins {black_wins} / {n} games')
 
 
-def count_unique_games():
-    pass
+def load_player(model_config: ModelConfig) -> BasicPlayerInterface:
+    if model_config.is_kata_model():
+        kata_engine = KataEngine(model_config.model_path()).start()
+        return KataPlayer(kata_engine, model_config.num_readouts)
+
+    return K2Player(model_config)
 
 
-def main(argv):
+def run_one_side(black_config_str, white_config_str, sgf_dir, num_games: int):
+    black_player = load_player(ModelConfig(black_config_str))
+    white_player = load_player(ModelConfig(white_config_str))
+    evaluator = EvaluateOneSide(black_player, white_player, f'{sgf_dir}')
+    evaluator.play_games(num_games)
+
+
+def main_local(argv):
     num_readouts = 200
     logging.info('softpick_move_cutoff = %d, softpick_topn_cutoff = %d', FLAGS.softpick_move_cutoff, FLAGS.softpick_topn_cutoff)
-    kata_engine = KataEngine(KataModels.MODEL_B6_4k).start()
-    kata_player = KataPlayer(kata_engine, num_readouts)
-    k2_player = K2Player(ModelConfig(f'{myconf.MODELS_DIR}/model9_4.mlpackage#{num_readouts}'))
-    sgf_dir_root = f'{myconf.EXP_HOME}/eval_gating/model9_4/{num_readouts}'
+    sgf_dir_root = f'{myconf.EXP_HOME}/eval_gating/tmp'
+
+    # player1 = f'{KataModels.MODEL_B6_5k}#{num_readouts}'
+    player1 = f'model11_2#{num_readouts}'
+    player2 = f'model11_4#{num_readouts}'
 
     num_games_per_side = 20
-    evaluator = EvaluateOneSide(kata_player, k2_player, f'{sgf_dir_root}/white')
-    evaluator.play_games(num_games_per_side)
-    evaluator = EvaluateOneSide(k2_player, kata_player, f'{sgf_dir_root}/black')
-    evaluator.play_games(num_games_per_side)
+    run_one_side(player1, player2, f'{sgf_dir_root}', num_games_per_side)
+    run_one_side(player2, player1, f'{sgf_dir_root}', num_games_per_side)
 
-    run_tournament_report(f'{sgf_dir_root}/*/*')
+    run_tournament_report(f'{sgf_dir_root}/*')
 
 
 if __name__ == '__main__':
-    app.run(main)
+    app.run(main_local)

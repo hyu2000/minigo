@@ -148,7 +148,6 @@ class Evaluator:
                     --eval_sgf_dir={self.sgfs_dir}
                     --softpick_move_cutoff=6
                     --parallel_readouts=16
-                    --num_readouts=50
                     --resign_threshold=-1
                     %s %s %d
         """ % (black_id, white_id, num_games)
