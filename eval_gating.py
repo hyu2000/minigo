@@ -8,8 +8,9 @@
 PlayerInterface: ok, but doesn't feel quite right
 """
 import logging
+import random
 import time
-from typing import List
+from typing import List, Tuple
 
 import attr
 import numpy as np
@@ -28,6 +29,7 @@ from sgfs_stats import run_tournament_report
 from strategies import MCTSPlayer
 
 FLAGS = flags.FLAGS
+# flags.mark_flags_as_required(['softpick_move_cutoff', 'softpick_topn_cutoff'])
 
 
 class BasicPlayerInterface:
@@ -44,7 +46,7 @@ class BasicPlayerInterface:
         """ play the given move, to advance the game
         """
 
-    def suggest_moves(self, position: go.Position) -> List:
+    def suggest_moves(self, position: go.Position) -> List[Tuple]:
         """ return a list of ranked moves, together with probs, for the current position.
 
         position should match the internal state if player chooses to track position.
@@ -107,7 +109,8 @@ class KataPlayer(BasicPlayerInterface):
         rinfo = RootInfo.from_dict(resp1.rootInfo)
         self.win_rate = rinfo.winrate
         top_moves = []
-        for minfo_dict in resp1.moveInfos[:5]:
+        top_n = FLAGS.softpick_topn_cutoff
+        for minfo_dict in resp1.moveInfos[:top_n]:
             minfo = MoveInfo.from_dict(minfo_dict)
             # this may not sum up to 1
             prob = minfo.visits / rinfo.visits
@@ -234,7 +237,11 @@ class EvaluateOneSide:
         """ evaluator may soft-pick to increase game variety """
         # active.pick_move(active.root.position.n < FLAGS.softpick_move_cutoff)
         top_move = moves_with_probs[0][0]
-        return top_move, top_move
+        if cur_pos.n < FLAGS.softpick_move_cutoff:
+            chosen_move = utils.choose_moves_with_probs(moves_with_probs, softpick_topn_cutoff=FLAGS.softpick_topn_cutoff)
+        else:
+            chosen_move = top_move
+        return chosen_move, top_move
 
     def _check_benson_score(self, benson_score: float):
         """ see if both agrees with Benson """
@@ -338,10 +345,12 @@ def count_unique_games():
 
 
 def main(argv):
+    num_readouts = 200
+    logging.info('softpick_move_cutoff = %d, softpick_topn_cutoff = %d', FLAGS.softpick_move_cutoff, FLAGS.softpick_topn_cutoff)
     kata_engine = KataEngine(KataModels.MODEL_B6_4k).start()
-    kata_player = KataPlayer(kata_engine, 300)
-    k2_player = K2Player(ModelConfig(f'{myconf.MODELS_DIR}/model8_4.mlpackage#300'))
-    sgf_dir_root = f'{myconf.EXP_HOME}/eval_gating/model8_4/300-vs-kata300'
+    kata_player = KataPlayer(kata_engine, num_readouts)
+    k2_player = K2Player(ModelConfig(f'{myconf.MODELS_DIR}/model9_4.mlpackage#{num_readouts}'))
+    sgf_dir_root = f'{myconf.EXP_HOME}/eval_gating/model9_4/{num_readouts}'
 
     num_games_per_side = 20
     evaluator = EvaluateOneSide(kata_player, k2_player, f'{sgf_dir_root}/white')
