@@ -36,6 +36,11 @@ class KataModels:
         MODEL_B6_4k: 'kata1_4k',
         MODEL_B40: 'kata1_b40'
     }
+    FULL_PATH_MAP = {v: k for k, v in SHORT_ID_MAP.items()}
+
+    @staticmethod
+    def full_path(model_id: str):
+        return KataModels.FULL_PATH_MAP[model_id]
 
     @staticmethod
     def model_id(fname: str):

@@ -1,5 +1,4 @@
 """ revamp: attempt at a more accurate eval of two bots (including kata engine), using new dnn cache
-  Should I deprecate evaluate.py?
 
 - control randomness in each bot: open move, soft-picks (temperature?), noise
   my bot is controlled by configs
@@ -350,9 +349,7 @@ def load_player(model_config: ModelConfig) -> BasicPlayerInterface:
     return K2Player(model_config)
 
 
-def run_one_side(black_config_str, white_config_str, sgf_dir, num_games: int):
-    black_player = load_player(ModelConfig(black_config_str))
-    white_player = load_player(ModelConfig(white_config_str))
+def run_one_side(black_player, white_player, sgf_dir, num_games: int):
     evaluator = EvaluateOneSide(black_player, white_player, f'{sgf_dir}')
     evaluator.play_games(num_games)
 
@@ -361,19 +358,27 @@ def main(argv):
     logging.info('softpick_move_cutoff = %d, softpick_topn_cutoff = %d', FLAGS.softpick_move_cutoff, FLAGS.softpick_topn_cutoff)
     _, black_id, white_id, eval_sgf_dir, num_games = argv
     num_games = int(num_games)
-    return run_one_side(black_id, white_id, eval_sgf_dir, num_games)
+    black_player = load_player(ModelConfig(black_id))
+    white_player = load_player(ModelConfig(white_id))
+    return run_one_side(black_player, white_player, eval_sgf_dir, num_games)
 
 
-def main_local(argv):
-    num_readouts = 200
+def main_kata(argv):
+    """ eval against kata remains serial, as it's likely not a good idea to run multiple KataEngine
+    """
+    num_readouts = 400
     logging.info('softpick_move_cutoff = %d, softpick_topn_cutoff = %d', FLAGS.softpick_move_cutoff, FLAGS.softpick_topn_cutoff)
-    sgf_dir_root = f'{myconf.EXP_HOME}/eval_gating/tmp'
+    sgf_dir_root = f'{myconf.EXP_HOME}/eval_bots-model9/model9_4-vs-elo5k#400'
 
-    # player1 = f'{KataModels.MODEL_B6_5k}#{num_readouts}'
-    player1 = f'model11_2#{num_readouts}'
-    player2 = f'model11_4#{num_readouts}'
+    player1id = f'{KataModels.MODEL_B6_5k}#{num_readouts}'
+    # player1id = f'model11_2#{num_readouts}'
+    player2id = f'model9_4#{num_readouts}'
 
     num_games_per_side = 20
+
+    # share KataEngine between two runs
+    player1 = load_player(ModelConfig(player1id))
+    player2 = load_player(ModelConfig(player2id))
     run_one_side(player1, player2, f'{sgf_dir_root}', num_games_per_side)
     run_one_side(player2, player1, f'{sgf_dir_root}', num_games_per_side)
 
