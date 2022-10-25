@@ -374,7 +374,11 @@ def main_kata(argv):
     # player1id = f'model11_2#{num_readouts}'
     player2id = f'model9_4#{num_readouts}'
 
-    num_games_per_side = 20
+    num_games_per_side = 4
+    FLAGS.softpick_move_cutoff = 8
+    FLAGS.reduce_symmetry_before_move = 3
+    logging.info('softpick_move_cutoff = %d, softpick_topn_cutoff = %d, reduce_symmetry_before_move = %d',
+                 FLAGS.softpick_move_cutoff, FLAGS.softpick_topn_cutoff, FLAGS.reduce_symmetry_before_move)
 
     # share KataEngine between two runs
     player1 = load_player(ModelConfig(player1id))
@@ -386,4 +390,5 @@ def main_kata(argv):
 
 
 if __name__ == '__main__':
+    # app.run(main_kata)
     app.run(main)

@@ -99,7 +99,7 @@ def main(argv):
 
 
 def main_local(argv):
-    FLAGS.load_file = f'{myconf.MODELS_DIR}/model8_4.mlpackage'
+    FLAGS.load_file = f'{myconf.MODELS_DIR}/model11_3.mlpackage'
     FLAGS.sgf_dir = f'{myconf.SELFPLAY_DIR}/sgf'
     FLAGS.selfplay_dir = f'{myconf.SELFPLAY_DIR}/train'
     FLAGS.holdout_dir = f'{myconf.SELFPLAY_DIR}/val'
@@ -107,12 +107,13 @@ def main_local(argv):
     FLAGS.parallel_readouts = 16
     FLAGS.holdout_pct = 0
     FLAGS.softpick_move_cutoff = 6
-    FLAGS.dirichlet_noise_weight = 0.
+    FLAGS.dirichlet_noise_weight = 0.25
     FLAGS.resign_threshold = -1.0
     FLAGS.reduce_symmetry_before_move = 3
     FLAGS.verbose = 0
-    play_games(num_games=4)
+    play_games(num_games=5)
 
 
 if __name__ == '__main__':
+    # app.run(main_local)
     app.run(main)
