@@ -59,7 +59,8 @@ class ModelConfig:
             model_path, num_readouts = model_config, FLAGS.num_readouts
 
         if ModelConfig._is_kata_model(model_path):
-            assert model_path.startswith('/')
+            if not model_path.startswith('/'):
+                model_path = KataModels.full_path(model_path)
         elif not model_path.startswith('/'):
             default_model_dir = f'{myconf.MODELS_DIR}'
             model_path = f'{default_model_dir}/{model_path}'

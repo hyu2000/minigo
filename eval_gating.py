@@ -296,15 +296,13 @@ class EvaluateOneSide:
         self._end_game(game_result)
         return cur_pos, game_result
 
-    def _create_sgf(self, final_pos: go.Position, game_result: GameResult, ith_game: int):
+    def _create_sgf(self, final_pos: go.Position, game_result: GameResult, sgf_fname: str):
         """ merge comments from black and white """
         black_comments = self.black_player.get_game_comments()
         white_comments = self.white_player.get_game_comments()
         assert len(black_comments) == len(white_comments) and len(black_comments) == final_pos.n
         comments = [black_comments[i] if i % 2 == 0 else white_comments[i] for i in range(final_pos.n)]
 
-        sgf_fname = f'{self.sgf_dir}/{self.black_player.id()}-vs-{self.white_player.id()}-{ith_game}-%s.sgf' % (
-                    utils.microseconds_since_midnight())
         with open(sgf_fname, 'w') as _file:
             sgfstr = sgf_wrapper.make_sgf(final_pos.recent,
                                           game_result.sgf_str(), komi=final_pos.komi,
@@ -324,12 +322,14 @@ class EvaluateOneSide:
 
         # accu game stats
         # self._accumulate_stats(final_pos, game_result)
-
-        self._create_sgf(final_pos, game_result, game_idx)
+        sgf_fname = f'{self.sgf_dir}/{self.black_player.id()}-vs-{self.white_player.id()}-{game_idx}-%s.sgf' % (
+                    utils.microseconds_since_midnight())
+        self._create_sgf(final_pos, game_result, sgf_fname)
 
         game_history = final_pos.recent
-        move_history_head = ' '.join([coords.to_gtp(game_history[i].move) for i in range(12)])
-        logging.info(f'Finished game %3d: %3d moves, %-7s   %s', game_idx, len(game_history), game_result.sgf_str(), move_history_head)
+        all_moves = [coords.to_gtp(x.move) for x in game_history]
+        line = utils.format_game_summary(all_moves, game_result.sgf_str(), sgf_fname=sgf_fname)
+        logging.info(f'Finished game %3d: %s', game_idx, line)
         return game_result
 
     def play_games(self, n: int):
