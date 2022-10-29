@@ -145,6 +145,8 @@ class Evaluator:
         """
         # evaluate doesn't inject noise, so no need to specify  --dirichlet_noise_weight = 0.0125
         cmdline = f"""/Users/hyu/anaconda/envs/tf2/bin/python /Users/hyu/PycharmProjects/dlgo/minigo/eval_gating.py
+                    --reduce_symmetry_before_move=3
+                    --softpick_move_cutoff=8
                     --parallel_readouts=16
                     --resign_threshold=-1
                     %s %s %s %d

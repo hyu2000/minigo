@@ -332,13 +332,14 @@ class EvaluateOneSide:
         logging.info(f'Finished game %3d: %s', game_idx, line)
         return game_result
 
-    def play_games(self, n: int):
+    def play_games(self, n: int) -> int:
         logging.info(f'eval between {self.black_player.id()} vs {self.white_player.id()}: {n} games')
         black_wins = 0
         for i in range(n):
             game_result = self.play_a_game()
             black_wins += game_result.black_margin > 0
         logging.info(f'  {self.black_player.id()} wins {black_wins} / {n} games')
+        return black_wins
 
 
 def load_player(model_config: ModelConfig) -> BasicPlayerInterface:
@@ -349,13 +350,15 @@ def load_player(model_config: ModelConfig) -> BasicPlayerInterface:
     return K2Player(model_config)
 
 
-def run_one_side(black_player, white_player, sgf_dir, num_games: int):
+def run_one_side(black_player, white_player, sgf_dir, num_games: int) -> int:
     evaluator = EvaluateOneSide(black_player, white_player, f'{sgf_dir}')
-    evaluator.play_games(num_games)
+    num_blackwins = evaluator.play_games(num_games)
+    return num_blackwins
 
 
 def main(argv):
-    logging.info('softpick_move_cutoff = %d, softpick_topn_cutoff = %d', FLAGS.softpick_move_cutoff, FLAGS.softpick_topn_cutoff)
+    logging.info('softpick_move_cutoff = %d, softpick_topn_cutoff = %d, reduce_symmetry_before_move = %d',
+                 FLAGS.softpick_move_cutoff, FLAGS.softpick_topn_cutoff, FLAGS.reduce_symmetry_before_move)
     _, black_id, white_id, eval_sgf_dir, num_games = argv
     num_games = int(num_games)
     black_player = load_player(ModelConfig(black_id))
@@ -367,14 +370,13 @@ def main_kata(argv):
     """ eval against kata remains serial, as it's likely not a good idea to run multiple KataEngine
     """
     num_readouts = 400
-    logging.info('softpick_move_cutoff = %d, softpick_topn_cutoff = %d', FLAGS.softpick_move_cutoff, FLAGS.softpick_topn_cutoff)
-    sgf_dir_root = f'{myconf.EXP_HOME}/eval_bots-model9/model9_4-vs-elo5k#400'
+    sgf_dir_root = f'{myconf.EXP_HOME}/eval_gating/model12_2-vs-elo4k'
 
     player1id = f'{KataModels.MODEL_B6_5k}#{num_readouts}'
     # player1id = f'model11_2#{num_readouts}'
-    player2id = f'model9_4#{num_readouts}'
+    player2id = f'model12_2#{num_readouts}'
 
-    num_games_per_side = 4
+    num_games_per_side = 20
     FLAGS.softpick_move_cutoff = 8
     FLAGS.reduce_symmetry_before_move = 3
     logging.info('softpick_move_cutoff = %d, softpick_topn_cutoff = %d, reduce_symmetry_before_move = %d',
@@ -387,6 +389,42 @@ def main_kata(argv):
     run_one_side(player2, player1, f'{sgf_dir_root}', num_games_per_side)
 
     run_tournament_report(f'{sgf_dir_root}/*')
+
+
+def review_kata(argv):
+    """ generational review of models in exp2 """
+    num_readouts = 400
+    num_games_per_side = 20
+    FLAGS.reduce_symmetry_before_move = 3
+
+    kata_id = KataModels.MODEL_B6_4k
+    kata_id_short = KataModels.model_id(kata_id)
+    sgf_dir_root = f'{myconf.EXP_HOME}/eval_review/{kata_id_short}'
+    # share KataEngine across runs
+    kataplayer = load_player(ModelConfig(f'{kata_id}#{num_readouts}'))
+
+    k2models = [f'model{x}.mlpackage#{num_readouts}'
+                for x in ['1_5', '2_2', '3_3', '4_4', '5_2', '6_2', '7_4', '8_4', '9_4', '10_4', '11_3', '12_2']]
+
+    logging.info('softpick_move_cutoff = %d, softpick_topn_cutoff = %d, reduce_symmetry_before_move = %d',
+                 FLAGS.softpick_move_cutoff, FLAGS.softpick_topn_cutoff, FLAGS.reduce_symmetry_before_move)
+
+    for player2id in k2models[:11]:
+        player2 = load_player(ModelConfig(player2id))
+        sgf_dir = f'{sgf_dir_root}/{player2id}'
+
+        FLAGS.softpick_move_cutoff = 0
+        logging.info(f'running {player2id} softpick_move_cutoff = %d', FLAGS.softpick_move_cutoff)
+        # play the strongest game
+        num_wins_as_white = 1 - run_one_side(kataplayer, player2, f'{sgf_dir}', 1)
+        num_wins_as_black = run_one_side(player2, kataplayer, f'{sgf_dir}', 1)
+        # play the rest with diversity
+        FLAGS.softpick_move_cutoff = 8
+        logging.info(f'running {player2id} softpick_move_cutoff = %d', FLAGS.softpick_move_cutoff)
+        num_wins_as_white += num_games_per_side - 1 - run_one_side(kataplayer, player2, f'{sgf_dir}', num_games_per_side - 1)
+        num_wins_as_black += run_one_side(player2, kataplayer, f'{sgf_dir}', num_games_per_side - 1)
+
+        logging.info(f'{player2id} wins as black {num_wins_as_black}, as white {num_wins_as_white}')
 
 
 if __name__ == '__main__':
