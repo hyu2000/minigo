@@ -236,34 +236,38 @@ def game_outcome_review(sgfs_dir):
 
 
 class DiversityStats(StatsItf):
-    """ #unique states at certain moves """
+    """ #unique states at certain moves, as well as freq of each zhash """
     def __init__(self, move_indices: List[int] = None):
         """ move indices are 1-based, i.e. the index of the first move is 1 """
         self._moves_of_interest = move_indices
         if not move_indices:
             self._moves_of_interest = list(range(1, 8)) + list(range(10, 80, 10))
 
-        self.zhash_by_move = {move_idx: set() for move_idx in self._moves_of_interest}
+        self.zhash_by_move = {move_idx: Counter() for move_idx in self._moves_of_interest}
         self.num_games = 0
 
     def add_game(self, reader: SGFReader):
         zhashes = [pwc.position.zobrist_hash for pwc in reader.iter_pwcs()]
-        for move_idx, s in self.zhash_by_move.items():
+        for move_idx, cnter in self.zhash_by_move.items():
             # if a game ends early, use the last state for higher move indices
             zhash = zhashes[move_idx] if move_idx < len(zhashes) else zhashes[-1]
-            s.add(zhash)
+            cnter[zhash] += 1
         self.num_games += 1
 
     def report(self) -> pd.DataFrame:
-        cnt_by_move = {move_idx: len(s) for move_idx, s in self.zhash_by_move.items()}
+        cnt_by_move = {move_idx: len(cnter) for move_idx, cnter in self.zhash_by_move.items()}
         ts = pd.Series(cnt_by_move, name='count')
         ts.index.name = 'move'
         df = pd.DataFrame({'count': ts, 'freq': ts / self.num_games})
         print(df.T)
         return df
 
-    def zhash_set_for_move(self, move_idx: int) -> Set:
+    def zhash_count_for_move(self, move_idx: int) -> Counter:
         return self.zhash_by_move[move_idx]
+
+    def zhash_set_for_move(self, move_idx: int) -> Set:
+        cnter = self.zhash_by_move[move_idx]
+        return set(cnter.keys())
 
 
 class GameSequenceReport(StatsItf):
@@ -297,15 +301,20 @@ class SgfProcessor:
         for stat in self._stats:
             stat.add_game(reader)
 
-    def process(self, sgf_glob_pattern):
+    def process(self, sgf_glob_pattern, max_num_games: int = 1000_000) -> int:
         logging.info(f'Processing {sgf_glob_pattern} ...')
         sgf_fnames = glob.glob(sgf_glob_pattern)
+        cnt = 0
         for sgf_fname in sgf_fnames:
+            if cnt >= max_num_games:
+                logging.info(f'#processed games exceeded {max_num_games}, break')
+                break
             if not sgf_fname.endswith('.sgf'):
                 continue
             reader = SGFReader.from_file_compatible(f'{sgf_fname}')
             self._process_game(sgf_fname, reader)
-
+            cnt += 1
+        return cnt
 
 def run_tournament_report(sgf_pattern):
     wstats = WinnerStats()
@@ -330,34 +339,38 @@ def test_basic_report():
 
 
 def test_review_common_states():
-    review_root = '/Users/hyu/PycharmProjects/dlgo/9x9-exp2/eval_review/kata1_5k'
-    MOVE_OF_INTEREST = 2
-    model_ids = [f'model{x}'
-                 for x in ['1_5', '2_2', '3_3', '4_4', '5_2', '6_2', '7_4', '8_4', '9_4', '10_4', '11_3', '12_2']]
-    model_ids = model_ids[:4]
+    """
+    0 shared states at move#60, across all selfplays!
+    """
+    # review_root = '/Users/hyu/PycharmProjects/dlgo/9x9-exp2/eval_review/kata1_5k'
+    review_root = '/Users/hyu/PycharmProjects/dlgo/9x9-exp2'
+    MOVE_OF_INTEREST = 10
+    MAX_NUM_GAMES_EACH = 2000
+    # model_ids = [f'model{x}'
+    #              for x in ['1_5', '2_2', '3_3', '4_4', '5_2', '6_2', '7_4', '8_4', '9_4', '10_4', '11_3', '12_2']]
+    model_ids = range(1, 12)
+    model_ids = model_ids[:]
 
     zhs_list = []  # type: List[Set]
     for model_id in model_ids:
-        sgf_pattern = f'{review_root}/{model_id}.mlpackage#400/*.sgf'
+        sgf_pattern = f'{review_root}/selfplay{model_id}/sgf/full/*.sgf'
         dstats = DiversityStats()
         processor = SgfProcessor([dstats])
-        processor.process(sgf_pattern)
-        print(f'\nProcessing for {model_id}:')
+        num_games = processor.process(sgf_pattern, max_num_games=MAX_NUM_GAMES_EACH)
+        print(f'\nProcessed {num_games} games for {model_id}')
         df = dstats.report()
         s60 = dstats.zhash_set_for_move(MOVE_OF_INTEREST)
         zhs_list.append(s60)
 
-    BAND_SIZE = 4
     num_models = len(model_ids)
-    arr2d = np.zeros((num_models, num_models), dtype=np.int)
-    for band_idx in range(1, min(BAND_SIZE, num_models)):
-        for m1_idx in range(num_models):
-            arr2d[m1_idx, m1_idx] = len(zhs_list[m1_idx])
-            m2_idx = m1_idx + band_idx
-            if m2_idx >= num_models:
-                break
+    BAND_SIZE = num_models - 1
+    arr2d = np.ones((num_models, num_models), dtype=np.int) * -1
+    for m1_idx in range(num_models):
+        arr2d[m1_idx, m1_idx] = len(zhs_list[m1_idx])
+        for m2_idx in range(m1_idx + 1, min(m1_idx + BAND_SIZE + 1, num_models)):
             arr2d[m1_idx, m2_idx] = len(zhs_list[m1_idx].intersection(zhs_list[m2_idx]))
     df = pd.DataFrame(arr2d, index=model_ids, columns=model_ids)
+    print(f'#shared states at move {MOVE_OF_INTEREST}:')
     print(df)
 
 
