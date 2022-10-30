@@ -11,7 +11,7 @@ import logging
 import os.path
 from collections import defaultdict, Counter
 from itertools import islice
-from typing import List
+from typing import List, Set
 
 import numpy as np
 import pandas as pd
@@ -249,17 +249,21 @@ class DiversityStats(StatsItf):
     def add_game(self, reader: SGFReader):
         zhashes = [pwc.position.zobrist_hash for pwc in reader.iter_pwcs()]
         for move_idx, s in self.zhash_by_move.items():
+            # if a game ends early, use the last state for higher move indices
             zhash = zhashes[move_idx] if move_idx < len(zhashes) else zhashes[-1]
             s.add(zhash)
         self.num_games += 1
 
-    def report(self):
+    def report(self) -> pd.DataFrame:
         cnt_by_move = {move_idx: len(s) for move_idx, s in self.zhash_by_move.items()}
         ts = pd.Series(cnt_by_move, name='count')
         ts.index.name = 'move'
         df = pd.DataFrame({'count': ts, 'freq': ts / self.num_games})
         print(df.T)
         return df
+
+    def zhash_set_for_move(self, move_idx: int) -> Set:
+        return self.zhash_by_move[move_idx]
 
 
 class GameSequenceReport(StatsItf):
@@ -319,7 +323,46 @@ def run_tournament_report(sgf_pattern):
 
 
 def test_basic_report():
-    sgf_pattern = f'{myconf.EXP_HOME}/eval_bots-model11/model11_4/model9/*.sgf'
-    # sgf_pattern = f'{myconf.EXP_HOME}/eval_gating/model9_4/200.fair/*/*.sgf'
+    sgf_pattern = f'{myconf.EXP_HOME}/eval_bots-model11/model11_2/model10/*.sgf'
+    sgf_pattern = f'{myconf.EXP_HOME}/eval_gating/model12_2-vs-elo5k/kata*.sgf'
     # sgf_pattern = f'{myconf.EXP_HOME}/selfplay/sgf/full/*sgf'
     run_tournament_report(sgf_pattern)
+
+
+def test_review_common_states():
+    review_root = '/Users/hyu/PycharmProjects/dlgo/9x9-exp2/eval_review/kata1_5k'
+    MOVE_OF_INTEREST = 2
+    model_ids = [f'model{x}'
+                 for x in ['1_5', '2_2', '3_3', '4_4', '5_2', '6_2', '7_4', '8_4', '9_4', '10_4', '11_3', '12_2']]
+    model_ids = model_ids[:4]
+
+    zhs_list = []  # type: List[Set]
+    for model_id in model_ids:
+        sgf_pattern = f'{review_root}/{model_id}.mlpackage#400/*.sgf'
+        dstats = DiversityStats()
+        processor = SgfProcessor([dstats])
+        processor.process(sgf_pattern)
+        print(f'\nProcessing for {model_id}:')
+        df = dstats.report()
+        s60 = dstats.zhash_set_for_move(MOVE_OF_INTEREST)
+        zhs_list.append(s60)
+
+    BAND_SIZE = 4
+    num_models = len(model_ids)
+    arr2d = np.zeros((num_models, num_models), dtype=np.int)
+    for band_idx in range(1, min(BAND_SIZE, num_models)):
+        for m1_idx in range(num_models):
+            arr2d[m1_idx, m1_idx] = len(zhs_list[m1_idx])
+            m2_idx = m1_idx + band_idx
+            if m2_idx >= num_models:
+                break
+            arr2d[m1_idx, m2_idx] = len(zhs_list[m1_idx].intersection(zhs_list[m2_idx]))
+    df = pd.DataFrame(arr2d, index=model_ids, columns=model_ids)
+    print(df)
+
+
+def test_review_all_selfplay():
+    """ review state dist change across generations, see how much is shared, and thus revised
+    - quantify the amount of natural exploration not due to new model: even this depends on the model
+    - how much inconsistencies in vnet targets for the same state due to uncertain game outcomes
+    """
