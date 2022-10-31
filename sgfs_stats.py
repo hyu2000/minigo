@@ -351,7 +351,7 @@ def test_review_common_states():
     model_ids = range(1, 12)
     model_ids = model_ids[:]
 
-    zhs_list = []  # type: List[Set]
+    zhs_list = []  # type: List[Counter]
     for model_id in model_ids:
         sgf_pattern = f'{review_root}/selfplay{model_id}/sgf/full/*.sgf'
         dstats = DiversityStats()
@@ -359,19 +359,28 @@ def test_review_common_states():
         num_games = processor.process(sgf_pattern, max_num_games=MAX_NUM_GAMES_EACH)
         print(f'\nProcessed {num_games} games for {model_id}')
         df = dstats.report()
-        s60 = dstats.zhash_set_for_move(MOVE_OF_INTEREST)
+        s60 = dstats.zhash_count_for_move(MOVE_OF_INTEREST)
         zhs_list.append(s60)
 
     num_models = len(model_ids)
     BAND_SIZE = num_models - 1
-    arr2d = np.ones((num_models, num_models), dtype=np.int) * -1
+    unique2d = np.ones((num_models, num_models), dtype=np.int) * -1
+    cnt2d = np.ones((num_models, num_models), dtype=np.int) * -1
     for m1_idx in range(num_models):
-        arr2d[m1_idx, m1_idx] = len(zhs_list[m1_idx])
+        cnter1 = zhs_list[m1_idx]
+        unique2d[m1_idx, m1_idx] = len(cnter1)
+        cnt2d[m1_idx, m1_idx] = sum(cnter1.values())  # not double-counted
         for m2_idx in range(m1_idx + 1, min(m1_idx + BAND_SIZE + 1, num_models)):
-            arr2d[m1_idx, m2_idx] = len(zhs_list[m1_idx].intersection(zhs_list[m2_idx]))
-    df = pd.DataFrame(arr2d, index=model_ids, columns=model_ids)
+            cnter2 = zhs_list[m2_idx]
+            states_in_common = set(cnter1.keys()).intersection(cnter2.keys())
+            unique2d[m1_idx, m2_idx] = len(states_in_common)
+            cnt2d[m1_idx, m2_idx] = sum(cnter1[k] + cnter2[k] for k in states_in_common)
+    dfu = pd.DataFrame(unique2d, index=model_ids, columns=model_ids)
     print(f'#shared states at move {MOVE_OF_INTEREST}:')
-    print(df)
+    print(dfu)
+    dfc = pd.DataFrame(cnt2d, index=model_ids, columns=model_ids)
+    print(f'#shared state counts at move {MOVE_OF_INTEREST}:')
+    print(dfu.astype(str) + '/' + dfc.astype(str))
 
 
 def test_review_all_selfplay():
