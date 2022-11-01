@@ -9,7 +9,8 @@ Or just zhash counts in the first cut?
 import glob
 import logging
 import os.path
-from collections import defaultdict, Counter
+import random
+from collections import defaultdict, Counter, namedtuple
 from itertools import islice
 from typing import List, Set
 
@@ -34,22 +35,8 @@ class StatsItf:
         pass
 
 
-class QAnalysis(StatsItf):
-    """ see how well extreme Q values correlate with game outcome.
-    find a good strategy for trade-off accuracy vs savings, also how much savings
-    """
-
-    def __init__(self, resign_thresh: float = 0.9, run_length: int = 1):
-        self._thresh = resign_thresh
-        self._run_length = run_length
-        # self.q_curves = dict()
-        self.num_games = 0
-        self.num_games_resigned = 0
-        self.num_errors = 0
-        self.sum_moves = 0
-        self.sum_saved = 0
-        self._error_games = []
-
+class QExtractor:
+    """ common Q-value related code """
     @staticmethod
     def _extract_q(comment: str) -> float:
         """
@@ -63,6 +50,33 @@ class QAnalysis(StatsItf):
         flds = line.split()
         assert flds[0][:2] == 'Q='
         return float(flds[0][2:])
+
+    @staticmethod
+    def extract_q_curve(reader: SGFReader) -> pd.Series:
+        q_vals = []
+        for move_idx, (move, comments) in enumerate(reader.iter_comments()):
+            assert len(comments) == 1
+            q_val = QExtractor._extract_q(comments[0])
+            q_vals.append(q_val)
+        ts = pd.Series(q_vals)
+        return ts
+
+
+class QResignAnalysis(StatsItf):
+    """ see how well extreme Q values correlate with game outcome.
+    find a good strategy for trade-off accuracy vs savings, also how much savings
+    """
+
+    def __init__(self, resign_thresh: float = 0.9, run_length: int = 1):
+        self._thresh = resign_thresh
+        self._run_length = run_length
+
+        self.num_games = 0
+        self.num_games_resigned = 0
+        self.num_errors = 0
+        self.sum_moves = 0
+        self.sum_saved = 0
+        self._error_games = []
 
     @staticmethod
     def count_consecutive_overage(ts: pd.Series, thresh: float) -> pd.Series:
@@ -87,22 +101,12 @@ class QAnalysis(StatsItf):
 
         return consecutive_count
 
-    @staticmethod
-    def extract_q_curve(reader: SGFReader) -> pd.Series:
-        q_vals = []
-        for move_idx, (move, comments) in enumerate(reader.iter_comments()):
-            assert len(comments) == 1
-            q_val = QAnalysis._extract_q(comments[0])
-            q_vals.append(q_val)
-        ts = pd.Series(q_vals)
-        return ts
-
     def add_game(self, reader: SGFReader):
         """  """
         winner_sign = reader.result()
         game_name_short = os.path.basename(reader.name)
 
-        ts = self.extract_q_curve(reader)
+        ts = QExtractor.extract_q_curve(reader)
         ts_cc = self.count_consecutive_overage(ts, self._thresh)
 
         ts_resign = ts_cc[ts_cc >= self._run_length]
@@ -130,33 +134,53 @@ class QAnalysis(StatsItf):
                      self.num_errors / self.num_games * 100, self.sum_saved / self.sum_moves * 100)
 
 
-def test_count_consecutive_overage():
-    ts = pd.Series([0, 0.3, 0.9, 0.8, 0.9, 0.9, 1.0])
-    ts = pd.Series([0, 0.3, 0.9, 0.8, 0, -0.9, -1.0])
-    ts = pd.Series([0, 0.3, 0.9, -0.8, 0.9, -1.0, 0.9, 0.9])
-    ts_cc = QAnalysis.count_consecutive_overage(ts, 0.9)
-    df = pd.DataFrame({'ts': ts, 'count': ts_cc})
-    print()
-    print(df)
+class QVDatum(namedtuple('QVDatum', ['zhash', 'move', 'qval', 'outcome'])):
+    pass
 
 
-def test_resign_stats():
+class QVarianceAnalysis(StatsItf):
+    """ collect Q-values for the same state, variations, how much it agrees with game outcome;
+       and how it evolves across selfplays
+
+    Analysis will be hard to interpret, as game outcome is not ground truth either.
+    - compare empirical winrate vs Q-values (mean & std)?
     """
-selfplay6:  restrict on move# should help this
-'11:25:23        INFO Total 3376 games, thresh=0.9, run_len=2: 2903 resigned = 86.0%, 294 errors = 8.7%, saved 94525 = 35.6%'
+    def __init__(self, move_indices: List[int] = None):
+        """ move indices are 1-based, i.e. the index of the first move is 1 """
+        self._moves_of_interest = move_indices
+        if not move_indices:
+            self._moves_of_interest = list(range(1, 8)) + list(range(10, 80, 10))
 
-selfplay7:
-'11:04:52        INFO Total 3324 games, thresh=0.9, run_len=1: 35 errors = 1.1%, saved 47070 = 18.1%'
-'11:23:18        INFO Total 3324 games, thresh=0.9, run_len=2: 1986 resigned = 59.7%, 26 errors = 0.8%, saved 40118 = 15.4%'
-'11:06:48        INFO Total 3324 games, thresh=0.95, run_len=1: 15 errors = 0.5%, saved 33322 = 12.8%'
-'11:09:37        INFO Total 3324 games, thresh=0.95, run_len=2: 11 errors = 0.3%, saved 27732 = 10.7%'
-    """
-    qstat = QAnalysis(0.9, 2)
-    sgf_fname = f'{myconf.EXP_HOME}/selfplay/sgf/full/0-32080527168.sgf'
-    sgf_pattern = f'{myconf.EXP_HOME}/selfplay7/sgf/full/*.sgf'
-    processor = SgfProcessor([qstat])
-    processor.process(sgf_pattern)
-    qstat.report()
+        self.q_curves = dict()
+        self.records = []  # type: List[QVDatum]
+
+    def add_game(self, reader: SGFReader):
+        """  """
+        winner_sign = reader.result()
+
+        ts = QExtractor.extract_q_curve(reader)
+        # game_name_short = os.path.basename(reader.name)
+        # if random.random() < 0.1:  self.q_curves[game_name_short] = ts
+
+        zhashes = [pwc.position.zobrist_hash for pwc in reader.iter_pwcs()]
+        for move_idx in self._moves_of_interest:
+            if move_idx > len(zhashes):
+                break
+            move_idx_0_based = move_idx - 1
+            zhash = zhashes[move_idx_0_based]
+            self.records.append(QVDatum(zhash, move_idx_0_based, ts[move_idx_0_based], winner_sign))
+
+    def get_df(self) -> pd.DataFrame:
+        df = pd.DataFrame.from_records(self.records, columns=QVDatum._fields)
+        return df
+
+
+def test_qvariance():
+    review_root = '/Users/hyu/PycharmProjects/dlgo/9x9-exp2'
+    qstat = QVarianceAnalysis([1, 2, 6])
+    reader = SGFReader.from_file_compatible(f'{review_root}/selfplay11/sgf/full/0-31022166082.sgf')
+    qstat.add_game(reader)
+    print(len(qstat.data))
 
 
 class WinnerStats(StatsItf):
@@ -383,8 +407,47 @@ def test_review_common_states():
     print(dfu.astype(str) + '/' + dfc.astype(str))
 
 
+def test_count_consecutive_overage():
+    ts = pd.Series([0, 0.3, 0.9, 0.8, 0.9, 0.9, 1.0])
+    ts = pd.Series([0, 0.3, 0.9, 0.8, 0, -0.9, -1.0])
+    ts = pd.Series([0, 0.3, 0.9, -0.8, 0.9, -1.0, 0.9, 0.9])
+    ts_cc = QResignAnalysis.count_consecutive_overage(ts, 0.9)
+    df = pd.DataFrame({'ts': ts, 'count': ts_cc})
+    print()
+    print(df)
+
+
+def test_resign_stats():
+    """
+selfplay6:  restrict on move# should help this
+'11:25:23        INFO Total 3376 games, thresh=0.9, run_len=2: 2903 resigned = 86.0%, 294 errors = 8.7%, saved 94525 = 35.6%'
+
+selfplay7:
+'11:04:52        INFO Total 3324 games, thresh=0.9, run_len=1: 35 errors = 1.1%, saved 47070 = 18.1%'
+'11:23:18        INFO Total 3324 games, thresh=0.9, run_len=2: 1986 resigned = 59.7%, 26 errors = 0.8%, saved 40118 = 15.4%'
+'11:06:48        INFO Total 3324 games, thresh=0.95, run_len=1: 15 errors = 0.5%, saved 33322 = 12.8%'
+'11:09:37        INFO Total 3324 games, thresh=0.95, run_len=2: 11 errors = 0.3%, saved 27732 = 10.7%'
+    """
+    qstat = QResignAnalysis(0.9, 2)
+    sgf_fname = f'{myconf.EXP_HOME}/selfplay/sgf/full/0-32080527168.sgf'
+    sgf_pattern = f'{myconf.EXP_HOME}/selfplay7/sgf/full/*.sgf'
+    processor = SgfProcessor([qstat])
+    processor.process(sgf_pattern)
+    qstat.report()
+
+
+def test_review_vtarget_variance():
+    """ review Q value in sgfs
+    - how much inconsistencies in vnet targets for the same state due to uncertain game outcomes
+    """
+    qvstat = QVarianceAnalysis()
+    sgf_pattern = f'{myconf.EXP_HOME}/selfplay11/sgf/full/*.sgf'
+    processor = SgfProcessor([qvstat])
+    processor.process(sgf_pattern, max_num_games=200)
+
+
 def test_review_all_selfplay():
     """ review state dist change across generations, see how much is shared, and thus revised
     - quantify the amount of natural exploration not due to new model: even this depends on the model
-    - how much inconsistencies in vnet targets for the same state due to uncertain game outcomes
+      bet w/ 2000 games, we are far from saturation, probably except the first n moves
     """
