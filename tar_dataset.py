@@ -255,12 +255,15 @@ class KataG170DataSet:
             stop = len(self.dir_lst)
         num_games = 0
         for i_dir, dirname in enumerate(self.dir_lst[start:stop]):
-            if i_dir + 1 % 10 == 0:
+            if (i_dir + 1) % 10 == 0:
                 logging.info(f'game_iter: {i_dir}th zip, produced {num_games} games...')
             for fname in glob.glob(f'{self.sgfs_root_dir}/{dirname}/sgfs/*.sgfs'):
                 fname_trunk = fname[(len(self.sgfs_root_dir) + 1):]
                 file_id = os.path.splitext(fname_trunk)[0]
                 for iline, line in enumerate(open(fname)):
+                    # speedup: parse line is slow, filter on boardsize first
+                    if f'SZ[{board_size}]' not in line:
+                        continue
                     reader = SGFReader.from_string(line)
                     if reader.board_size() != board_size:
                         continue

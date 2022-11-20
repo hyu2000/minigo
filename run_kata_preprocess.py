@@ -136,6 +136,20 @@ def nottest_scan_batch():
     assert i_batch == 0
 
 
+def count_num_samples():
+    """ 11/20/12 wonder how 22k games only produced the amount of data less than 2 selfplays
+    """
+    data_dir = '/Users/hyu/go/g170archive/sgfs-9x9'
+    ds = KataG170DataSet(data_dir)
+    total_samples = 0
+    for i_game, (game_id, reader) in enumerate(ds.game_iter()):
+        total_samples += reader.num_nodes()
+        if i_game % 100 == 1:
+            print(f'processed {i_game} games: avg %.1f moves/game' % (total_samples / (i_game + 1)))
+    print(f'Total {i_game} games, {total_samples} samples')
+
+
 if __name__ == '__main__':
     random.seed(2021)
     preprocess()
+    # count_num_samples()
