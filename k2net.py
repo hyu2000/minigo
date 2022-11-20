@@ -1,5 +1,6 @@
 """ modeled after dual_net w/ TF2.4 """
 import logging
+import os.path
 from typing import List, Tuple
 
 import numpy as np
@@ -296,9 +297,20 @@ def test_mlmodel():
     print(probs)
 
 
-def test_convert_tf2_to_coreml():
-    generation = 5
-    for epoch in range(2, 3):
+def test_batch_convert_tf2_to_coreml():
+    for model_spec in (x.split('_') for x in ['1_5', '2_2', '3_3', '4_4', '5_2', '6_2', '7_4', '8_4', '9_4', '10_4', '11_2']):
+        generation, epoch = model_spec[0], model_spec[1]
         fname = f'{myconf.EXP_HOME}/checkpoints/model{generation}_epoch{epoch}.h5'
+        print(f'checking {fname}')
+        assert os.path.isfile(fname)
+
+        mlmodel = CoreMLNet.convert_tf2_to_coreml(fname)
+        mlmodel.save(f'{myconf.EXP_HOME}/checkpoints/model{generation}_{epoch}.mlpackage')
+
+
+def test_convert_tf2_to_coreml():
+    generation = 12
+    for epoch in range(1, 5, 1):
+        fname = f'{myconf.EXP_HOME}/checkpoints/model{generation}_{epoch}.h5'
         mlmodel = CoreMLNet.convert_tf2_to_coreml(fname)
         mlmodel.save(f'{myconf.EXP_HOME}/checkpoints/model{generation}_{epoch}.mlpackage')
