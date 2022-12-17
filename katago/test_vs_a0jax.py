@@ -1,6 +1,7 @@
 import logging
 from typing import List
 
+import absl.app
 import attr
 import requests
 
@@ -42,7 +43,7 @@ class A0JaxPlayer(BasicPlayerInterface):
         self._last_move = -1
 
     def id(self):
-        return 'a0jax-restapi'
+        return 'a0jax'
 
     def initialize_game(self, position):
         assert position.n == 0
@@ -55,7 +56,7 @@ class A0JaxPlayer(BasicPlayerInterface):
         self._comments = []
 
     def play_move(self, c):
-        self._last_move = c
+        self._last_move = coords.to_flat(c)
         self._comments.append('')
 
     def suggest_moves(self, position: go.Position) -> List:
@@ -63,23 +64,30 @@ class A0JaxPlayer(BasicPlayerInterface):
         r = requests.post(f'{self.root_url}/{self._my_game_id}/move', json={'human_action': self._last_move})
         assert r.status_code == 200
         resp = A0Response(**r.json())
-        print(resp)
+        if resp.terminated:
+            print(f'a0jax says done: {resp.msg}')
+            return []
+        if resp.msg:
+            print(resp.msg)
         return [(coords.flat_to_gtp(resp.action), 1.0)]
 
     def get_game_comments(self) -> List[str]:
         return self._comments
 
 
-def test_a0jax():
+def play_vs_a0jax(argv):
     """ kata vs a0jax via its stateful rest api
     """
-    engine_kata = KataEngine(KataModels.MODEL_B6_10k).start()
-    player_kata = KataPlayer(engine_kata)
+    engine_kata = KataEngine(KataModels.MODEL_B6_5k).start()
+    player_kata = KataPlayer(engine_kata, max_readouts=400)
     player_a0jax = A0JaxPlayer()
     black, white = player_kata, player_a0jax
-    sgf_fname = '/Users/hyu/Downloads/a0-vs-kata.sgf'
+    sgf_fname = f'/Users/hyu/Downloads/{black.id()}-vs-{white.id()}.sgf'
 
     init_position = go.Position()
+    for player in [black, white]:
+        player.initialize_game(init_position)
+
     cur_pos = init_position  # type: go.Position
     max_game_length = 100
     game_result = None
@@ -116,6 +124,7 @@ def test_a0jax():
             game_result = GameResult(0, was_resign=False)
             break
 
+    logging.info('Game ended: %s', game_result.sgf_str())
     final_pos = cur_pos
     black_comments = black.get_game_comments()
     white_comments = white.get_game_comments()
@@ -128,3 +137,7 @@ def test_a0jax():
                                       comments=comments,
                                       black_name=black.id(), white_name=white.id())
         _file.write(sgfstr)
+
+
+if __name__ == '__main__':
+    absl.app.run(play_vs_a0jax)
