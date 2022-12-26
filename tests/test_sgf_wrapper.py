@@ -15,7 +15,7 @@
 import unittest
 import go
 from absl import logging
-from sgf_wrapper import replay_sgf, translate_sgf_move, make_sgf, replay_sgf_file, SGFReader
+from sgf_wrapper import replay_sgf, translate_sgf_move, make_sgf, make_sgf_from_gtp_moves, SGFReader
 
 import coords
 from tests import test_utils
@@ -59,6 +59,15 @@ class TestSgfGeneration(test_utils.MinigoUnitTest):
         last_position2 = second_last_position2.play_move(last_move2)
 
         self.assertEqualPositions(last_position, last_position2)
+
+    def test_make_sgf_from_gtp_moves(self):
+        gtp_moves = 'G6 C4 D4 D5 C3 E4 D3 F6 F7 G7 G8 H7 E6 F5 E8 D6 H6 E3 C5 B5 B4 C6 G4 B2 B6 C4 E2 F2 C5 A5 A4 C4 F3 D2 C5 G5 H5 C4 C2 E1 C5 H4 H3 C4 E7 C5 E5 C8 C7 D7 F4 E2 D8 B7 G2 C1 C9 B9 G1 B3 D9 B8 F1 A3 F6 D4 H8 A1 G9 pass J9 pass J6 pass G5 pass H2 A9 J8 pass G3 pass F5 pass H9 pass J7 pass H1 pass J3 B4 J4 A6 H7 C3 F8 pass J2 pass B1'
+        gtp_moves = 'C4 G6 F6 F5 G7 E6 F7 D4 D3 C3 E4 D5 E3 E5 B4 C2 D2 B3 C6 C7 B7 D7 H6 F4 F3 G3 G2 H2 F2 H5 E8 B1 A2 B6 B5 A6 A7 C5 A5 A3 D1 B8 C1 B6 A8 C8 A6 G5 A4 H7 H8 J6 J8 E7 F8 E9 F9 D9 H9 J7 B2 H4 H1 D6 G1 J2 F1 B6 B9 C9 A9 C3 J1 E1 G8 B3 A3 D8 E2 H3 C2 B3 C3 pass B3 G4 A1 J5 pass J3 pass B1'
+
+        sgf_str = make_sgf_from_gtp_moves(gtp_moves.split(), 1)
+        print(sgf_str)
+        with open('/Users/hyu/Downloads/make_sgf_from_gtp.4visits.sgf', 'w') as f:
+            f.write(sgf_str)
 
 
 class TestSgfWrapper(test_utils.MinigoUnitTest):

@@ -28,7 +28,7 @@ import itertools
 
 import coords
 import go
-from go import Position, PositionWithContext
+from go import Position, PositionWithContext, PlayerMove
 import utils
 import sgf
 from absl import logging
@@ -81,6 +81,21 @@ def make_sgf(
                          for z in itertools.zip_longest(move_history, comments))
     result = result_string
     return SGF_TEMPLATE.format(**locals())
+
+
+def make_sgf_from_gtp_moves(gtp_moves: List[str], result: int,
+                            ruleset="Chinese",
+                            komi=7.5,
+                            white_name='Unknown',
+                            black_name='Unknown',
+                            game_comment=' ',
+                            comments=[]
+                            ) -> str:
+    """ convenience method: convert gtp moves to a sgf """
+    player_moves = [PlayerMove(go.BLACK if i % 2 == 1 else go.WHITE, coords.from_gtp(gtp_move))
+                    for i, gtp_move in enumerate(gtp_moves)]
+    result_string = 'B+R' if result > 0 else ('W+R' if result < 0 else 'B+T')
+    return make_sgf(player_moves, result_string, ruleset, komi, white_name, black_name, game_comment, comments)
 
 
 def make_sgf_from_move_str(
