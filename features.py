@@ -69,12 +69,24 @@ def stone_features(position: go.Position):
     # apply deltas to compute previous board states
     last_eight[1:num_deltas_avail + 1] -= cumulative_deltas
     # if no more deltas are available, just repeat oldest board.
-    last_eight[num_deltas_avail +
-               1:] = last_eight[num_deltas_avail].reshape(1, go.N, go.N)
+    last_eight[num_deltas_avail + 1:] = last_eight[num_deltas_avail].reshape(1, go.N, go.N)
 
     features[::2] = last_eight == position.to_play
     features[1::2] = last_eight == -position.to_play
     return np.rollaxis(features, 0, 3)
+
+
+@planes(8)
+def recent_board_features(position: go.Position):
+    """ recent 8 boards (each with 1/0/-1), latest board last """
+    num_deltas_avail = position.board_deltas.shape[0]
+    cumulative_deltas = np.cumsum(position.board_deltas, axis=0)
+    last_eight = np.tile(position.board, [8, 1, 1])
+    # apply deltas to compute previous board states
+    last_eight[1:num_deltas_avail + 1] -= cumulative_deltas
+    # if no more deltas are available, just repeat oldest board.
+    last_eight[num_deltas_avail + 1:] = last_eight[num_deltas_avail].reshape(1, go.N, go.N)
+    return np.moveaxis(last_eight[::-1], 0, -1)
 
 
 # TODO(tommadams): add a generic stone_features for all N <= 8
@@ -231,6 +243,14 @@ REDUX_FEATURES = [
     would_capture_feature,
 ]
 REDUX_FEATURES_PLANES = sum(f.planes for f in REDUX_FEATURES)
+
+
+""" a0jax: """
+A0JAX_FEATURES = [
+    recent_board_features,
+    ones_feature
+]
+A0JAX_FEATURES_PLANES = sum(f.planes for f in REDUX_FEATURES)
 
 
 def extract_features(position, features):

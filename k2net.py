@@ -185,6 +185,28 @@ class DualNetwork(object):
         return probs.numpy(), values.numpy().squeeze(axis=-1)
 
 
+class A0JaxNet:
+    def __init__(self, saved_model_path: str):
+        self.model = tf.saved_model.load(saved_model_path)
+
+    def run(self, position: go.Position):
+        f = features_lib.A0JAX_FEATURES
+        processed = features_lib.extract_features(position, f)
+        processed *= position.to_play
+
+        probs, value = self.model.f(processed)
+        return probs.numpy(), value.numpy()
+
+    def run_many(self, positions: List[go.Position]) -> Tuple[np.ndarray, np.ndarray]:
+        f = features_lib.A0JAX_FEATURES
+        processed = [features_lib.extract_features(position, f) * position.to_play for position in positions]
+        xs = np.stack(processed)
+        probs, values = self.model.f_batched(xs)
+        # values are from current player's perspective. convert to values for black
+        values_black = values.numpy() * np.array([position.to_play for position in positions])
+        return probs.numpy(), values_black
+
+
 class CoreMLNet:
     """ use coreml for prediction """
 
@@ -309,8 +331,21 @@ def test_batch_convert_tf2_to_coreml():
 
 
 def test_convert_tf2_to_coreml():
-    generation = 12
-    for epoch in range(1, 5, 1):
-        fname = f'{myconf.EXP_HOME}/checkpoints/model{generation}_{epoch}.h5'
+    MODEL_DIR = f'{myconf.EXP_HOME}/checkpoints/bootstrap_try2'
+    generation = 1
+    for epoch in range(12, 13, 1):
+        fname = f'{MODEL_DIR}/model{generation}_{epoch}.h5'
         mlmodel = CoreMLNet.convert_tf2_to_coreml(fname)
-        mlmodel.save(f'{myconf.EXP_HOME}/checkpoints/model{generation}_{epoch}.mlpackage')
+        mlmodel.save(f'{MODEL_DIR}/model{generation}_{epoch}.mlpackage')
+
+
+def test_a0jax():
+    saved_model = "/Users/hyu/PycharmProjects/a0-jax/exp-go5C2/tfmodel/myconv"
+    a0net = A0JaxNet(saved_model)
+    pos0 = go.Position()
+    probs, value = a0net.run(pos0)
+    print(probs, value)
+    assert np.argmax(probs) == 12
+    pos1 = pos0.play_move(coords.from_gtp('C2'))
+    probs, values = a0net.run_many([pos0, pos1])
+    print(probs.shape, values)

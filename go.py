@@ -107,9 +107,10 @@ def replay_position(position, result, initial_position=None):
 
 
 def find_reached(board: np.ndarray, c: Tuple) -> Tuple[set, set]:
+    """ find the chain c is in, as well as the boundary around it """
     color = board[c]
     chain = {c}
-    reached = set()
+    boundary = set()
     frontier = [c]
     while frontier:
         current = frontier.pop()
@@ -119,8 +120,8 @@ def find_reached(board: np.ndarray, c: Tuple) -> Tuple[set, set]:
                 if n not in chain:
                     frontier.append(n)
             else:
-                reached.add(n)
-    return chain, reached
+                boundary.add(n)
+    return chain, boundary
 
 
 def find_maximal_region_with_no(board: np.ndarray, c: Tuple, color_bound) -> Tuple[set, set]:
