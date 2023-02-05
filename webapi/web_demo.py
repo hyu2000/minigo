@@ -17,8 +17,9 @@ player = None  # type: web_player.WebPlayer
 def init():
     # needs flags
     global player
-    model_id = 'model8_4'
-    model_fname = f'{myconf.EXP_HOME}/checkpoints/{model_id}.mlpackage'
+    model_id = 'model12_2'
+    model_fname = f'{myconf.EXP_HOME}/../9x9-exp2/checkpoints/{model_id}.mlpackage'
+    model_fname = '/Users/hyu/PycharmProjects/a0-jax/exp-go9/tfmodel/model-218'
     dnn = dual_net.load_net(model_fname)
     logging.info('mcts %s #readouts=%d', model_id, flags.FLAGS.num_readouts)
     player = web_player.WebPlayer(dnn)

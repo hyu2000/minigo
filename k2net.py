@@ -282,14 +282,17 @@ def bootstrap():
     model.save(fname)
 
 
-def load_net(model_file):
+def load_net(model_fpath):
     """ instantiate the right network, according to filename """
-    if model_file:
-        logging.info('loading %s', model_file)
-        if model_file.endswith('.mlpackage'):
-            network = CoreMLNet(model_file)
-        else:
-            network = DualNetwork(model_file)
+    if model_fpath:
+        logging.info('loading %s', model_fpath)
+        if model_fpath.endswith('.mlpackage'):
+            network = CoreMLNet(model_fpath)
+        elif model_fpath.endswith('.h5'):
+            network = DualNetwork(model_fpath)
+        else:  # saved_model
+            assert os.path.isfile(f'{model_fpath}/saved_model.pb')
+            network = A0JaxNet(model_fpath)
     else:
         logging.info('use DummyNetwork')
         network = DummyNetwork()
