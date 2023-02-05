@@ -186,3 +186,11 @@ class TestOverall(test_utils.MinigoUnitTest):
         print(features.DLGO_FEATURES_PLANES, features.REDUX_FEATURES_PLANES, features.AGZ_FEATURES_PLANES)
         f = features.extract_features(TEST_POSITION, feat_desc)
         print(f.shape)
+
+    def test_a0jax_features(self):
+        feat_desc = features.A0JAX_FEATURES
+        print(features.A0JAX_FEATURES_PLANES)
+        f = features.extract_features(TEST_POSITION, feat_desc)
+        print(f.shape)
+        board = TEST_POSITION.board
+        assert (board == f[:, :, -2]).all()
