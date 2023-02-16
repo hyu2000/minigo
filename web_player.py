@@ -46,10 +46,12 @@ class WebPlayer(object):
         first_node.incorporate_results(prob, val, first_node)
 
         move = player.suggest_move(pos)
-        root_winrate = player.root.Q
+        root_winrate = player.root.Q[0]
         child_q = player.root.child_Q[coords.to_flat(move)]
-        logging.info('root winrate=%.2f, mcts chose: %s, child_Q=%.2f', root_winrate, coords.to_gtp(move), child_q)
-        return coords.to_gtp(move)
+        gtp_move = coords.to_gtp(move)
+        info_dict = {'winrate': '%.2f' % root_winrate, 'move': gtp_move}
+        logging.info('root winrate=%s, mcts chose: %s, child_Q=%.2f', info_dict['winrate'], gtp_move, child_q)
+        return gtp_move, info_dict
 
     def construct_game_state(self, moves_history: List[str]):
         """ moves are in gtp format """
@@ -72,7 +74,7 @@ def test_player():
     player = WebPlayer(dnn)
     moves_history = []
     for i in range(5):
-        move = player.select_move(moves_history)
+        move, info = player.select_move(moves_history)
         moves_history.append(move)
 
 
