@@ -19,6 +19,7 @@ def init():
     global player
     model_id = 'model12_2'   # almost elo5k
     model_id = 'model8_4'   # elo4k
+    model_id = 'model9_4'
     model_fname = '/Users/hyu/PycharmProjects/a0-jax/exp-go9/tfmodel/model-218'
     model_fname = f'{myconf.EXP_HOME}/../9x9-exp2/checkpoints/{model_id}.mlpackage'
     dnn = dual_net.load_net(model_fname)
@@ -44,6 +45,24 @@ def select_move(bot_name):
         'bot_move': move,
         'info': info
     })
+
+
+@app.route('/save-sgf/<fname>', methods=['POST'])
+def save_sgf(fname):
+    from sgf_wrapper import make_sgf_from_gtp_moves
+
+    content = request.json
+    board_size, gtp_moves = content['board_size'], content['moves']
+    assert board_size == go.N
+
+    sgf_str = make_sgf_from_gtp_moves(gtp_moves, 0)
+    fname = '/Users/hyu/Downloads/web_demo.save.sgf'
+    logging.info(f'Saving to {fname}: %d moves', len(gtp_moves))
+    with open(fname, 'w') as f:
+        f.write(sgf_str)
+    return jsonify(({
+        'filename': fname
+    }))
 
 
 def main(argv):
