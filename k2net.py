@@ -187,6 +187,7 @@ class DualNetwork(object):
 
 class A0JaxNet:
     def __init__(self, saved_model_path: str):
+        self.model_id = saved_model_path
         self.model = tf.saved_model.load(saved_model_path)
 
     def run(self, position: go.Position):
@@ -343,7 +344,7 @@ def test_convert_tf2_to_coreml():
 
 
 def test_a0jax():
-    saved_model = "/Users/hyu/PycharmProjects/a0-jax/exp-go5C2/tfmodel/myconv"
+    saved_model = "/Users/hyu/PycharmProjects/a0-jax/exp-go5C2/tfmodel/model5-25"
     a0net = A0JaxNet(saved_model)
     pos0 = go.Position()
     probs, value = a0net.run(pos0)

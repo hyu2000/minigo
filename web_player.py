@@ -46,10 +46,11 @@ class WebPlayer(object):
         first_node.incorporate_results(prob, val, first_node)
 
         move = player.suggest_move(pos)
-        root_winrate = player.root.Q[0]
+        # why is root.Q np.array for minigo model, float for converted jax model
+        root_winrate = '%s' % player.root.Q
         child_q = player.root.child_Q[coords.to_flat(move)]
         gtp_move = coords.to_gtp(move)
-        info_dict = {'winrate': '%.2f' % root_winrate, 'move': gtp_move}
+        info_dict = {'winrate': root_winrate, 'move': gtp_move}
         logging.info('root winrate=%s, mcts chose: %s, child_Q=%.2f', info_dict['winrate'], gtp_move, child_q)
         return gtp_move, info_dict
 
