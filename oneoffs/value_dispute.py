@@ -2,6 +2,7 @@
   This script resolves these disputes thru forward reasoning till they reach an agreement at a future state.
 """
 import enum
+import itertools
 import logging
 
 import numpy as np
@@ -45,7 +46,7 @@ class DisputeResolver:
 
             # disagree: whoever thinks the current player to win choose the next move
             policy_to_use = pi1 if pos.to_play * val1 > 0 else pi2
-            move = np.argmax(policy_to_use)
+            move = np.argmax(policy_to_use * pos.all_legal_moves())
 
             pos = pos.play_move(coords.from_flat(move))
             pi1, val1 = self.bot1.run(pos)
@@ -76,9 +77,11 @@ def test_resolve():
     model1_fname = f'{myconf.EXP_HOME}/../9x9-exp2/checkpoints/{model1_id}.mlpackage'
     model2_fname = f'{myconf.EXP_HOME}/../9x9-exp2/checkpoints/{model2_id}.mlpackage'
     bot1 = dual_net.load_net(model1_fname)
-    bot2 = dual_net.load_net(model1_fname)
+    bot2 = dual_net.load_net(model2_fname)
     resolver = DisputeResolver(bot1, bot2)
-    sgf_fname = '/Users/hyu/Downloads/web_demo.my-end-game-loss.sgf'
+    sgf_fpath = '/Users/hyu/Downloads/web_demo.my-end-game-loss.sgf'
+    reader = SGFReader.from_file_compatible(sgf_fpath)
     # pos @ move 60
+    pwc = next(itertools.islice(reader.iter_pwcs(), 60, None))
     pos0 = go.Position().play_move(coords.from_gtp('B2'))
-    resolver.resolve(pos0)
+    resolver.resolve(pos0)  #pwc.position)
