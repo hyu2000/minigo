@@ -12,6 +12,7 @@ import coords
 import go
 import k2net as dual_net
 import myconf
+import sgf_wrapper
 from k2net import DualNetwork
 from sgf_wrapper import SGFReader
 
@@ -25,6 +26,9 @@ class Resolution:
     val2: float = attr.ib()
     sign_final: int = attr.ib()
     num_steps_to_resolve: int = attr.ib()
+    # principle variation
+    pv1: str = attr.ib('')
+    pv2: str = attr.ib('')
 
     def verdict(self):
         sign1 = np.sign(self.val1)
@@ -38,9 +42,12 @@ class Resolution:
 
     def __str__(self):
         verdict = self.verdict()
+        ret = f'{verdict} {self.val1:.1f} {self.val2:.1f} {self.sign_final:.0f}'
         if self.num_steps_to_resolve > 0:
-            return f'{verdict} {self.val1:.1f} {self.val2:.1f} {self.sign_final} num_steps={self.num_steps_to_resolve}'
-        return verdict
+            ret = f'{ret} num_steps={self.num_steps_to_resolve}'
+        if self.pv1 or self.pv2:
+            ret = f'{ret} pv1={self.pv1} pv2={self.pv2}'
+        return ret
 
 
 class DisputeResolver:
@@ -73,7 +80,10 @@ class DisputeResolver:
 
         winner_final = np.sign(val1)
         num_steps_to_resolve = pos.n - pos_original.n
-        res = Resolution(val1_original.item(), val2_original.item(), winner_final.item(), num_steps_to_resolve)
+        pv1 = coords.flat_to_gtp(np.argmax(pi1))
+        pv2 = coords.flat_to_gtp(np.argmax(pi2))
+        res = Resolution(val1_original.item(), val2_original.item(), winner_final.item(), num_steps_to_resolve,
+                         pv1, pv2)
         logger.info(f'resolved pos.n={pos_original.n}: %s', res)
         return res
 
@@ -82,21 +92,37 @@ class DisputeResolver:
         taking top action from the bot
         """
 
-    def resolve_sgf(self, sgf_fpath):
+    def resolve_sgf(self, sgf_fpath, out_sgf_fpath=None):
         """ go thru a game, analyze every position """
         reader = SGFReader.from_file_compatible(sgf_fpath)
         resolutions = []
         for pwc in reader.iter_pwcs():
             resolutions.append(self.resolve(pwc.position))
+        final_pos = pwc.position
+
+        if not out_sgf_fpath:
+            return
+
+        comments = [str(x) for x in resolutions[:-1]]
+        logger.info(f'Writing to {out_sgf_fpath}')
+        with open(out_sgf_fpath, 'w') as _file:
+            sgfstr = sgf_wrapper.make_sgf(final_pos.recent,
+                                          reader.result_str(),
+                                          komi=final_pos.komi,
+                                          game_comment=f'bot1: {self.bot1.model_id}\nbot2: {self.bot2.model_id}',
+                                          comments=comments,
+                                          black_name=reader.black_name(), white_name=reader.white_name())
+            _file.write(sgfstr)
+
 
 
 def setup_resolver():
     model1_id = 'model8_4'   # elo4k
     model2_id = 'model12_2'   # almost elo5k
-    # model_fname = '/Users/hyu/PycharmProjects/a0-jax/exp-go9/tfmodel/model-218'
     model1_fname = f'{myconf.EXP_HOME}/../9x9-exp2/checkpoints/{model1_id}.mlpackage'
+    a0jax_fname = '/Users/hyu/PycharmProjects/a0-jax/exp-go9/tfmodel/model-218'
     model2_fname = f'{myconf.EXP_HOME}/../9x9-exp2/checkpoints/{model2_id}.mlpackage'
-    bot1 = dual_net.load_net(model1_fname)
+    bot1 = dual_net.load_net(a0jax_fname)
     bot2 = dual_net.load_net(model2_fname)
     resolver = DisputeResolver(bot1, bot2)
     return resolver
@@ -113,6 +139,11 @@ def test_resolve():
 
 
 def test_resolve_sgf():
+    """
+    seems a0jax w/o MCTS misjudges more often than elo5k w/o MCTS
+    """
     resolver = setup_resolver()
     sgf_fpath = '/Users/hyu/Downloads/web_demo.my-end-game-loss.sgf'
-    resolver.resolve_sgf(sgf_fpath)
+    sgf_fpath = '/Users/hyu/Downloads/web_demo.bot-misjudge-endgame.sgf'
+    out_fpath = '/Users/hyu/Downloads/resolved.sgf'
+    resolver.resolve_sgf(sgf_fpath, out_fpath)
