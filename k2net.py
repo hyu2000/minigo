@@ -196,7 +196,7 @@ class A0JaxNet:
         processed *= position.to_play
 
         probs, value = self.model.f(processed)
-        return probs.numpy(), value.numpy()
+        return probs.numpy(), value.numpy() * position.to_play
 
     def run_many(self, positions: List[go.Position]) -> Tuple[np.ndarray, np.ndarray]:
         f = features_lib.A0JAX_FEATURES
@@ -346,6 +346,7 @@ def test_convert_tf2_to_coreml():
 def test_a0jax():
     saved_model = "/Users/hyu/PycharmProjects/a0-jax/exp-go5C2/tfmodel/model5-25"
     a0net = A0JaxNet(saved_model)
+    # a0net = load_net('/Users/hyu/PycharmProjects/dlgo/5x5/checkpoints/model11_epoch2.h5')
     pos0 = go.Position()
     probs, value = a0net.run(pos0)
     print(probs, value)
