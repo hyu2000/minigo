@@ -258,11 +258,17 @@ def test_crossover_detect2():
 
 
 def test_review_a_game():
-    # sgf_fname = f'{myconf.EXP_HOME}/eval_bots-model2/sgfs-model1-vs-model2/model1_epoch5#100-vs-model2_epoch2#200-15-65075018704.sgf'
-    sgf_fname = f'{myconf.EXP_HOME}/eval_bots-model2/sgfs-model1-vs-model2/model2_epoch2#300-vs-model1_epoch5#200-15-64106975597.sgf'
+    reviewed_sgfs_dir = '/Users/hyu/Downloads/kata_reviewed_sgfs'
+    utils.ensure_dir_exists(reviewed_sgfs_dir)
+
+    # sgf_fname = f'{myconf.EXP_HOME}/eval_bots-model2/sgfs-model1-vs-model2/model2_epoch2#300-vs-model1_epoch5#200-15-64106975597.sgf'
+    sgf_fname = f'{myconf.EXP_HOME}/selfplay/sgf/full/2-53283342438.sgf'
+    sgf_fname = f'{myconf.EXP_HOME}/selfplay/sgf/full/6-36202020555.sgf'
 
     reviewer = ExpertReviewer()
-    cps, reader = reviewer.review_a_game(sgf_fname)
+    reviewer.run_expert_review(sgf_fname, reviewed_sgfs_dir)
+    reviewed_sgf = f'{reviewed_sgfs_dir}/annotate.%s' % os.path.basename(sgf_fname)
+    cps, reader = reviewer.find_blunders_from_review(reviewed_sgf)
 
     print(cps)
     black_flips = [x for x in cps if x.i % 2 == 0]
@@ -298,8 +304,24 @@ def test_tournament_advantage():
  0.44 0.49 0.44 0.46 0.46 0.49 0.49 0.5  0.5  0.5  0.53 0.53 0.51 0.54
  0.51 0.51 0.51 0.51 0.51 0.51 0.51 0.54 0.54 0.56 0.54 0.56 0.54 0.55
  0.54 0.55 0.54 0.55 0.55 0.55 0.55 0.55 0.55 0.55]
+
+    kata_reviewed_sgfs-b20/, ['model1_epoch5#200', 'model2_epoch2#200']
+ [0.5  0.47 0.44 0.5  0.57 0.54 0.56 0.56 0.54 0.56 0.57 0.66 0.56 0.56
+ 0.57 0.55 0.56 0.56 0.53 0.59 0.6  0.65 0.59 0.59 0.53 0.54 0.53 0.51
+ 0.47 0.47 0.46 0.5  0.47 0.5  0.49 0.46 0.49 0.44 0.46 0.49 0.47 0.49
+ 0.44 0.49 0.47 0.47 0.53 0.54 0.51 0.46 0.5  0.49 0.49 0.5  0.51 0.5
+ 0.47 0.49 0.5  0.51 0.49 0.49 0.5  0.49 0.5  0.49 0.49 0.47 0.49 0.47
+ 0.47 0.47 0.47 0.47 0.47 0.47 0.47 0.47 0.47 0.47]
+
+    kata_reviewed_sgfs-b6c96/  'model1_epoch5#200', 'model2_epoch2#300'   model1 is ahead on move#7
+[0.5  0.48 0.45 0.58 0.52 0.52 0.52 0.53 0.56 0.55 0.48 0.53 0.5  0.56
+ 0.55 0.52 0.41 0.48 0.45 0.5  0.44 0.5  0.48 0.44 0.39 0.41 0.42 0.45
+ 0.45 0.44 0.41 0.44 0.5  0.55 0.55 0.53 0.55 0.52 0.58 0.53 0.55 0.56
+ 0.55 0.53 0.53 0.52 0.53 0.53 0.56 0.55 0.55 0.55 0.53 0.53 0.53 0.53
+ 0.5  0.52 0.5  0.52 0.52 0.53 0.53 0.53 0.53 0.53 0.53 0.53 0.53 0.53
+ 0.53 0.55 0.55 0.55 0.55 0.55 0.55 0.55 0.55 0.55]
     """
-    sgfs_dir, models = f'/Users/hyu/Downloads/kata_reviewed_sgfs-b20', ['model1_epoch5#200', 'model2_epoch3#200']
+    sgfs_dir, models = f'/Users/hyu/Downloads/kata_reviewed_sgfs-b6c96', ['model1_epoch5#200', 'model2_epoch2#300']
     edge_at_move = tournament_advantage_curve(sgfs_dir, models)
     print(f'Tournament advantage for {models[0]}:')
     print(edge_at_move)
