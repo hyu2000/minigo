@@ -11,7 +11,7 @@ import numpy as np
 import go
 import coords
 import sgf_wrapper
-from k2net import DualNetwork
+from k2net import DualNetwork, CoreMLNet
 import myconf
 from sgf_wrapper import replay_sgf, SGFReader
 from strategies import MCTSPlayer
@@ -120,12 +120,13 @@ def run_hand_crafted_game():
 
 
 def run_game():
-    model_id = 'model4_epoch2'
+    model_id = 'model12_2'
     logging.info('loading %s', model_id)
-    dnn = DualNetwork(f'{myconf.EXP_HOME}/checkpoints/{model_id}.h5')
+    dnn = CoreMLNet(f'{myconf.EXP_HOME}/../9x9-exp2/checkpoints/{model_id}.mlpackage')
     player = BotAnalyzer(dnn)
 
     sgf_fname = '/Users/hyu/PycharmProjects/dlgo/5x5/selfplay4/sgf/full/133-54927012350.sgf'
+    sgf_fname = '/Users/hyu/Downloads/230601-hyu2001-GnuGo.sgf'
     logging.info('Reviewing %s', sgf_fname)
     reader = SGFReader.from_file_compatible(sgf_fname)
     player_moves, comments = probe_along_game(player, reader.iter_pwcs(), reader.result())

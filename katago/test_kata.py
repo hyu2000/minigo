@@ -79,6 +79,12 @@ def test_simple_parse():
     print(len(resp1.moveInfos), move1)
     assert rinfo.currentPlayer == 'W'
 
+    minfos = [MoveInfo.from_dict(x) for x in resp1.moveInfos]
+    sum_visits = 1 + sum(x.visits for x in minfos)
+    print('top N moves:', rinfo.visits, sum_visits)
+    print([(x.order, x.move, '%.2f' % x.winrate, x.visits) for x in minfos[:8]])
+    assert rinfo.visits <= sum_visits
+
     remainder = proc.communicate()[0].decode('utf-8')
     print(remainder)
 
@@ -177,12 +183,12 @@ def test_paired_match():
 def test_analyze_game():
     """ analyze & annotate existing game
     """
-    sgf_fname = '/Users/hyu/Downloads/katago-sgfs/katatrain.b60c320.sgf'
     # sgf_fname = '/Users/hyu/Downloads/optimalC2.5x5.sgf'
     # sgf_fname = '/Users/hyu/Downloads/katago-sgfs/5x5/C2C3D3B3.sgf'
     sgf_fname = f'{myconf.EXP_HOME}/eval_bots-model2/sgfs-model1-vs-model2/model1_epoch5#100-vs-model2_epoch2#200-15-65075018704.sgf'
-    sgf_fname = f'{myconf.EXP_HOME}/eval_bots-model2/sgfs-model1-vs-model2/model1_epoch5#200-vs-model2_epoch2#300-8-63909912641.sgf'
-    model = KataModels.G170_B6C96
+    sgf_fname = f'{myconf.EXP_HOME}/../9x9-exp2/selfplay11/sgf/full/0-31024177976.sgf'
+    sgf_fname = '/Users/hyu/Downloads/230601-hyu2001-GnuGo.sgf'
+    model = KataModels.G170_B20
     reader = sgf_wrapper.SGFReader.from_file_compatible(sgf_fname)
 
     player_moves = [PlayerMove(pwc.position.to_play, pwc.next_move)
@@ -209,6 +215,7 @@ def test_analyze_game():
                                    game_comment=f'analyzed by: {model}',
                                    comments=comments)
     out_fname = os.path.basename(sgf_fname)
+    print(f'Writing to {out_fname}')
     with open(f'/Users/hyu/Downloads/annotate.{out_fname}', 'w') as f:
         f.write(sgf_str)
 
