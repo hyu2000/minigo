@@ -11,6 +11,7 @@ import numpy as np
 
 import coords
 import go
+from k2net import DualNetwork
 
 MODELS_DIR = '/Users/hyu/go/models'
 ANALYSIS_CONFIG = '/Users/hyu/PycharmProjects/dlgo/minigo/katago/analysis_example.cfg'
@@ -244,7 +245,7 @@ def extract_policy_value(resp1: AResponse):
     return pi, v_tanh
 
 
-class KataDualNetwork:
+class KataDualNetwork(DualNetwork):
     """ kata masquerade as k2net
 
     This is quite slow. To improve,

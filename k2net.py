@@ -1,7 +1,7 @@
 """ modeled after dual_net w/ TF2.4 """
 import logging
 import os.path
-from typing import List, Tuple
+from typing import List, Tuple, Any
 
 import numpy as np
 import tensorflow as tf
@@ -157,7 +157,23 @@ def build_model_for_eval():
     return model
 
 
-class DualNetwork(object):
+class DualNetwork:
+    """ interface that evaluates a board and returns a policy and value.
+    While it is most likely implemented by DNN, it could also be
+    - a remote server like Kata (which has MCTS built-in)
+    - an MCTS-enhanced policy
+    """
+    def run(self, position: go.Position) -> Tuple[Any, float]:
+        pass
+
+    def run_many(self, positions: List[go.Position]) -> Tuple[np.ndarray, np.ndarray]:
+        pass
+
+    def model_id(self):
+        return 'unknown'
+
+
+class TFDualNetwork(DualNetwork):
     def __init__(self, save_file):
         self.model_id = save_file
         model = build_model_for_eval()
@@ -185,7 +201,7 @@ class DualNetwork(object):
         return probs.numpy(), values.numpy().squeeze(axis=-1)
 
 
-class A0JaxNet:
+class A0JaxNet(DualNetwork):
     def __init__(self, saved_model_path: str):
         self.model_id = saved_model_path
         self.model = tf.saved_model.load(saved_model_path)
@@ -208,7 +224,7 @@ class A0JaxNet:
         return probs.numpy(), values_black
 
 
-class CoreMLNet:
+class CoreMLNet(DualNetwork):
     """ use coreml for prediction """
 
     def __init__(self, save_file):
@@ -245,7 +261,7 @@ class CoreMLNet:
         return ct.models.MLModel(mlmodel_fname)
 
 
-class DummyNetwork(object):
+class DummyNetwork(DualNetwork):
     """ same interface as DualNetwork. Flat policy, Tromp score as value """
     def __init__(self):
         self.model_id = 'dummy'

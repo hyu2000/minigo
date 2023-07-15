@@ -362,9 +362,31 @@ def test_basic_report():
     run_tournament_report(sgf_pattern)
 
 
+def test_state_growth():
+    """ within a selfplay, how many new states we encounter with each extra game
+    The question in mind: how much state caching will lead to how much saving in computation
+    What about noise injection? Do we only inject at root?
+    Is it just easier to have a NN cache?
+    """
+
+
 def test_review_common_states():
     """
     0 shared states at move#60, across all selfplays!
+
+#shared state counts at move 10:
+          1          2         3          4          5          6          7          8          9          10         11
+1   916/2000     34/231    32/168      11/81     23/187       3/24       4/30        1/2        1/2       3/10       2/10
+2      -1/-1  1128/2000    74/604     27/144     37/202       5/23       4/19       2/19        3/8       5/13        2/8
+3      -1/-1      -1/-1  921/2000     37/266     35/219      14/48       6/22       5/37        2/9       5/17        3/8
+4      -1/-1      -1/-1     -1/-1  1275/2000     52/339     14/123       6/31       5/30       4/34       4/54        1/5
+5      -1/-1      -1/-1     -1/-1      -1/-1  1503/2000     23/137      12/51        1/7       4/12       5/17        0/0
+6      -1/-1      -1/-1     -1/-1      -1/-1      -1/-1  1325/2000     53/306     22/211       6/25      11/69     16/143
+7      -1/-1      -1/-1     -1/-1      -1/-1      -1/-1      -1/-1  1073/2000      25/86      12/35       9/38     16/149
+8      -1/-1      -1/-1     -1/-1      -1/-1      -1/-1      -1/-1      -1/-1  1217/2000     23/403     18/240     16/108
+9      -1/-1      -1/-1     -1/-1      -1/-1      -1/-1      -1/-1      -1/-1      -1/-1  1066/2000     32/384     23/313
+10     -1/-1      -1/-1     -1/-1      -1/-1      -1/-1      -1/-1      -1/-1      -1/-1      -1/-1  1213/2000     25/190
+11     -1/-1      -1/-1     -1/-1      -1/-1      -1/-1      -1/-1      -1/-1      -1/-1      -1/-1      -1/-1  1004/2000
     """
     # review_root = '/Users/hyu/PycharmProjects/dlgo/9x9-exp2/eval_review/kata1_5k'
     review_root = '/Users/hyu/PycharmProjects/dlgo/9x9-exp2'
