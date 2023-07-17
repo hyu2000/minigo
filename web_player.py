@@ -47,7 +47,7 @@ class WebPlayer(object):
 
         move = player.suggest_move(pos)
         # why is root.Q np.array for minigo model, float for converted jax model
-        root_winrate = '%s' % player.root.Q
+        root_winrate = '%.2f' % np.squeeze(player.root.Q)
         child_q = player.root.child_Q[coords.to_flat(move)]
         gtp_move = coords.to_gtp(move)
         info_dict = {'winrate': root_winrate, 'move': gtp_move}

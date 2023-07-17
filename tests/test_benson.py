@@ -9,7 +9,7 @@ import myconf
 from tests.test_go import coords_from_gtp_set
 
 
-class TestLibertyTracker(test_utils.MinigoUnitTest):
+class TestGoScoring(test_utils.MinigoUnitTest):
     EMPTY_ROW = '.' * go.N + '\n'
 
     def test_dev(self):
@@ -209,3 +209,31 @@ class TestLibertyTracker(test_utils.MinigoUnitTest):
         benson_detail = pos.score_benson()
         print('Score: Tromp=%.1f, Benson=%s' % (score_tromp, benson_detail))
 
+    def test_masked_score(self):
+        """ https://online-go.com/puzzle/67916
+        """
+        board = test_utils.load_board('''
+            .....XO..
+            .....XO.O
+            ....X.XO.
+            ......XO.
+            ......XX.
+        ''' + self.EMPTY_ROW * 4)
+        mask = np.zeros((9, 9), dtype=np.int8)
+        for i in range(5):
+            for j in range(1, 6):
+                mask[i, -j] = 1
+
+        pos = go.Position(board, komi=0)
+        score_tromp = pos.score_tromp()
+        score_masked = pos.score_tromp(mask=mask)
+        print('Score: Tromp=%.1f, score within mask=%.1f' % (score_tromp, score_masked))
+
+        mask = np.zeros((9, 9), dtype=np.int8)
+        # 3x3 corner: 1 black, 1 dame, white area=7
+        for i in range(3):
+            for j in range(1, 4):
+                mask[i, -j] = 1
+        score_masked = pos.score_tromp(mask=mask)
+        print('Score: Tromp=%.1f, score within mask=%.1f' % (score_tromp, score_masked))
+        assert score_masked == -6

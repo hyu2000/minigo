@@ -677,14 +677,15 @@ class Position:
                 self.recent[-1].move is None and
                 self.recent[-2].move is None)
 
-    def score_tromp(self) -> float:
+    def score_tromp(self, mask: np.array = None) -> float:
         """Return score from B perspective. If W is winning, score is negative.
         score = 0 could happen if komi is integer
         """
         working_board = np.copy(self.board)
-        return self._score_board(working_board)
+        return self._score_board(working_board, mask=mask)
 
-    def _score_board(self, working_board):
+    def _score_board(self, working_board, mask: np.arry = None):
+        """ mask: when present, restrict scoring to area where mask != 0 """
         while EMPTY in working_board:
             unassigned_spaces = np.where(working_board == EMPTY)
             c = unassigned_spaces[0][0], unassigned_spaces[1][0]
@@ -700,6 +701,8 @@ class Position:
                 territory_color = UNKNOWN  # dame, or seki
             place_stones(working_board, territory_color, territory)
 
+        if mask is not None:
+            working_board[mask == 0] = 0
         return np.count_nonzero(working_board == BLACK) - np.count_nonzero(working_board == WHITE) - self.komi
 
     def score(self) -> float:
