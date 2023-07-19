@@ -6,15 +6,6 @@ import requests
 import os
 import time
 
-downloadWholeCollection = False
-# if False, only the specified puzzle is downloaded
-# if True, all problems of the specified puzzle's collection are downloaded
-
-puzzleNumber = 6544
-# the puzzle id taken from the puzzle URL
-
-skipAuthentication = True
-
 
 # authentication is required for private problems
 
@@ -135,20 +126,37 @@ def authenticate():
     return response.cookies
 
 
+def download_one():
+    pass
+
+
 def main():
+    out_dir = '/Users/hyu/Downloads/go-puzzle9'
+    downloadWholeCollection = True
+    # if False, only the specified puzzle is downloaded
+    # if True, all problems of the specified puzzle's collection are downloaded
+
+    puzzleNumber = 67990
+    # the puzzle id taken from the puzzle URL
+
+    skipAuthentication = True
+
     cookies = [] if skipAuthentication else authenticate()
     if downloadWholeCollection:
         collectionUrl = 'https://online-go.com/api/v1/puzzles/' + str(puzzleNumber) + '/collection_summary'
         collection = requests.get(collectionUrl, cookies=cookies).json()
+        print('Found %d puzzles' % len(collection))
         time.sleep(5.0)
     puzzleUrl = 'https://online-go.com/api/v1/puzzles/' + str(puzzleNumber)
     responseJSON = requests.get(puzzleUrl, cookies=cookies).json()
     if downloadWholeCollection:
         collectionName = responseJSON['collection']['name']
-        collectionFolder = os.getcwd() + '/' + collectionName
-        os.mkdir(collectionFolder)
-        os.chdir(collectionFolder)
-    with open(responseJSON['name'] + '.sgf', 'w', encoding="utf-8") as file:
+        collection_dir = f'{out_dir}/{collectionName}'
+        os.mkdir(collection_dir)
+        os.chdir(collection_dir)
+    out_fname = f"{collection_dir}/{responseJSON['name']}.sgf"
+    with open(out_fname, 'w', encoding="utf-8") as file:
+        print(f'Writing to {out_fname}')
         writePuzzle(file, responseJSON['puzzle'])
     if downloadWholeCollection:
         for puzzle in collection:
@@ -156,7 +164,9 @@ def main():
                 time.sleep(5.0)
                 puzzleUrl = 'https://online-go.com/api/v1/puzzles/' + str(puzzle['id'])
                 puzzleJSON = requests.get(puzzleUrl, cookies=cookies).json()['puzzle']
-                with open(puzzle['name'] + '.sgf', 'w', encoding="utf-8") as file:
+                out_fname = f"{collection_dir}/{puzzle['name']}.sgf"
+                with open(out_fname, 'w', encoding="utf-8") as file:
+                    print(f'Writing to {out_fname}')
                     writePuzzle(file, puzzleJSON)
 
 
