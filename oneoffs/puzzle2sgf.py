@@ -1,10 +1,14 @@
 #!/usr/bin/python
 """ downloaded from
 https://github.com/merrillite/puzzle2sgf
+
+https://apidocs.online-go.com/
 """
 import requests
 import os
 import time
+
+SLEEP_SECS = 0.5
 
 
 # authentication is required for private problems
@@ -130,6 +134,71 @@ def download_one():
     pass
 
 
+def list_all_puzzles():
+    url = 'https://online-go.com/api/v1/puzzles'
+    puzzles = requests.get(url, cookies=[]).json()
+    print(puzzles)
+
+
+def list_puzzle_collections():
+    url = 'https://online-go.com/api/v1/puzzles/collections'
+    i_page = 0
+    num_collections = 0
+    while url:
+        print(f'Fetching {i_page}: {url}...')
+        page = requests.get(url, cookies=[]).json()
+        count = page['count']
+        # each page has 10 items
+        results = page['results']
+        for coll in results:
+            puzzle_count = coll['puzzle_count']
+            min_rank, max_rank = coll.get('min_rank'), coll.get('max_rank')
+            starting_puzzle = coll['starting_puzzle']
+            starting_puzzle_width, starting_puzzle_height = starting_puzzle['width'], starting_puzzle['height']
+
+            if puzzle_count >= 10:
+                coll_name = coll['name']
+                coll_owner = coll['owner'].get('username')
+                print(f"{coll_name} rank: {min_rank}-{max_rank} {puzzle_count} {coll_owner} {starting_puzzle['id']}")
+                num_collections += 1
+
+        url = page['next']
+        i_page += 1
+        if num_collections > 30:
+            break
+
+
+def download_collection(start_puzzle_id: int, out_dir: str):
+    cookies = []
+    url = f'https://online-go.com/api/v1/puzzles/{start_puzzle_id}/collection_summary'
+    puzzle_list = requests.get(url, cookies=cookies).json()
+    print('Found %d puzzles' % len(puzzle_list))
+    time.sleep(SLEEP_SECS)
+
+    for i, puzzle in enumerate(puzzle_list):
+        time.sleep(SLEEP_SECS)
+        url = 'https://online-go.com/api/v1/puzzles/' + str(puzzle['id'])
+        response_json = requests.get(url, cookies=cookies).json()
+        puzzle_json = response_json['puzzle']
+        # puzzle_type: 'life_and_death'
+        width, height = puzzle_json['width'], puzzle_json['height']
+        puzzle_rank = puzzle_json.get('puzzle_rank')
+        if i == 0:
+            collection_json = response_json['collection']
+            collection_name = collection_json['name']
+            collection_dir = f'{out_dir}/{collection_name}'
+            os.mkdir(collection_dir)
+
+        out_fname = f"{collection_dir}/{puzzle['name']}.sgf"
+        with open(out_fname, 'w', encoding="utf-8") as file:
+            print(f'Writing to {out_fname}: {width} {height} {puzzle_rank}')
+            writePuzzle(file, puzzle_json)
+
+
+def download_all():
+    list_puzzle_collections()
+
+
 def main():
     out_dir = '/Users/hyu/Downloads/go-puzzle9'
     downloadWholeCollection = True
@@ -171,4 +240,7 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    out_dir = '/Users/hyu/Downloads/go-puzzle9'
+    # main()
+    # download_all()
+    download_collection(28021, out_dir)
