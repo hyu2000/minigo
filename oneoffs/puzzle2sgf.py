@@ -243,4 +243,4 @@ if __name__ == '__main__':
     out_dir = '/Users/hyu/Downloads/go-puzzle9'
     # main()
     # download_all()
-    download_collection(28021, out_dir)
+    download_collection(45137, out_dir)

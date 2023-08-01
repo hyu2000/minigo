@@ -257,10 +257,10 @@ GC[not broadcast]
         assert i == 35
 
     def test_read_lnd_sgf(self):
-        """ we may not be handling variations properly before:
+        """ see how we handle LND puzzle sgfs: AB|AW and variations
         https://homepages.cwi.nl/~aeb/go/misc/sgfnotes.html
-        also need AB/AW handling
         """
+        # https://online-go.com/puzzle/67916
         sgf_str = """
 (;FF[4]CA[UTF-8]AP[puzzle2sgf:0.1]GM[1]GN[総合問題１０級]SZ[9]AB[he][ge][gd][gc][fb][fa][ec]AW[ib][gb][ga][hc][hd]PL[B]C[黒先白死：Black to kill
 

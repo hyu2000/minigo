@@ -350,6 +350,8 @@ class BensonAnalyzer:
     - is it easy to incrementally update its status?
     """
     def __init__(self, board: np.ndarray, color_bound):
+        """ color_bound: if black, we analyze black chains & black-"enclosed" regions.
+        """
         self.region_index = -np.ones([N, N], dtype=np.int32)  # type: np.ndarray
         self.regions = dict()  # type: Dict[int, Region]
         self.max_region_id = 0
@@ -684,8 +686,10 @@ class Position:
         working_board = np.copy(self.board)
         return self._score_board(working_board, mask=mask)
 
-    def _score_board(self, working_board, mask: np.arry = None):
-        """ mask: when present, restrict scoring to area where mask != 0 """
+    def _score_board(self, working_board, mask: np.array = None):
+        """ mask: when present, restrict scoring to area where mask != 0.
+        Note coloring remains the same (the entire board is used)
+        """
         while EMPTY in working_board:
             unassigned_spaces = np.where(working_board == EMPTY)
             c = unassigned_spaces[0][0], unassigned_spaces[1][0]

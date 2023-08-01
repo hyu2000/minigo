@@ -1,3 +1,5 @@
+import os.path
+
 import numpy as np
 import coords
 import go
@@ -36,11 +38,14 @@ class TestGoScoring(test_utils.MinigoUnitTest):
             X..X.....
             XXXX..O..
         ''' + self.EMPTY_ROW * 6)
+        print('To fully understand, see Region definition')
+        print(board)
         for color in (go.BLACK,):
             tracker = BensonAnalyzer.from_board(board, color)
             assert len(tracker.regions) == 3
             for rid, region in tracker.regions.items():
-                print(rid, region.color, len(region.stones), len(region.liberties), region.chains)
+                print(f'region {rid}: color={region.color} size={len(region.stones)}, liberties={len(region.liberties)}'
+                      f'  enclosing chains: {region.chains}')
 
             chain_ids, _ = tracker.eliminate()
             assert len(chain_ids) == 2
@@ -59,6 +64,7 @@ class TestGoScoring(test_utils.MinigoUnitTest):
         ''' + self.EMPTY_ROW * 5)
 
         tracker = BensonAnalyzer.from_board(board, go.BLACK)
+        # the big region outside is also considered black-enclosed!
         assert len(tracker.regions) == 3
         for rid, region in tracker.regions.items():
             print(rid, region.color, len(region.stones), len(region.liberties), region.chains)
@@ -209,16 +215,23 @@ class TestGoScoring(test_utils.MinigoUnitTest):
         benson_detail = pos.score_benson()
         print('Score: Tromp=%.1f, Benson=%s' % (score_tromp, benson_detail))
 
-    def test_masked_score(self):
+
+class TestMaskedScoring(test_utils.MinigoUnitTest):
+    EMPTY_ROW = '.' * go.N + '\n'
+
+    def case10kyu_1(self):
         """ https://online-go.com/puzzle/67916
         """
-        board = test_utils.load_board('''
+        return test_utils.load_board('''
             .....XO..
             .....XO.O
             ....X.XO.
             ......XO.
             ......XX.
         ''' + self.EMPTY_ROW * 4)
+
+    def test_masked_score(self):
+        board = self.case10kyu_1()
         mask = np.zeros((9, 9), dtype=np.int8)
         for i in range(5):
             for j in range(1, 6):
@@ -227,7 +240,7 @@ class TestGoScoring(test_utils.MinigoUnitTest):
         pos = go.Position(board, komi=0)
         score_tromp = pos.score_tromp()
         score_masked = pos.score_tromp(mask=mask)
-        print('Score: Tromp=%.1f, score within mask=%.1f' % (score_tromp, score_masked))
+        print('Score: Tromp=%.1f, score within 5x5 mask=%.1f' % (score_tromp, score_masked))
 
         mask = np.zeros((9, 9), dtype=np.int8)
         # 3x3 corner: 1 black, 1 dame, white area=7
@@ -235,5 +248,29 @@ class TestGoScoring(test_utils.MinigoUnitTest):
             for j in range(1, 4):
                 mask[i, -j] = 1
         score_masked = pos.score_tromp(mask=mask)
-        print('Score: Tromp=%.1f, score within mask=%.1f' % (score_tromp, score_masked))
+        print('Score: Tromp=%.1f, score within 3x3 mask=%.1f' % (score_tromp, score_masked))
         assert score_masked == -6
+
+    def notest_finalize_corner(self):
+        """
+        # puzzles are all life-and-death. so if successful, it should be pass-alive
+        It's easy to find pass-alive chains; but not so much can be said of the "enclosed" regions
+        We could just test for the presence of *any* safe chains in the corner, not worry about regions
+        """
+        board = self.case10kyu_1()
+        board[3, -1] = -1
+        board[1, -2] = -1
+        # pos = go.Position(board, komi=0)
+        tracker = BensonAnalyzer.from_board(board, go.WHITE)
+        print(len(tracker.regions), 'regions')
+        for rid, region in tracker.regions.items():
+            num_opp_stones = len(region.stones) - len(region.liberties)
+            print(f'region {region.id}: {region.color}  size=%d, %d opp stones' % (
+                len(region.stones), num_opp_stones))
+
+    def test_masked_score_from_sgf(self):
+        """
+        """
+        fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題４級.sgf'
+        fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題１０級.sgf'
+        assert os.path.isfile(fname)
