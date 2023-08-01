@@ -256,6 +256,32 @@ GC[not broadcast]
             print(i, move, comments)
         assert i == 35
 
+    def test_read_lnd_sgf(self):
+        """ we may not be handling variations properly before:
+        https://homepages.cwi.nl/~aeb/go/misc/sgfnotes.html
+        also need AB/AW handling
+        """
+        sgf_str = """
+(;FF[4]CA[UTF-8]AP[puzzle2sgf:0.1]GM[1]GN[総合問題１０級]SZ[9]AB[he][ge][gd][gc][fb][fa][ec]AW[ib][gb][ga][hc][hd]PL[B]C[黒先白死：Black to kill
+
+コウやセキは失敗：Kou and Seki are failures
+](;B[ha];W[hb](;B[id]C[CORRECT];W[ic](;B[ia]C[CORRECT])(;B[ie];W[ia]C[CORRECT];B[ha]C[CORRECT]))(;B[ic];W[id]C[WRONG])(;B[ie];W[id]C[WRONG]))(;B[id];W[ha]C[WRONG](;B[ie];W[ic]C[WRONG])(;B[ic];W[ie]C[WRONG](;B[id];W[ic]C[WRONG])(;B[ic];W[id]C[WRONG])))(;B[hb];W[ha]C[WRONG])(;B[ic];W[id]C[WRONG])(;B[ia];W[ha]C[WRONG])(;B[ie];W[id]C[WRONG]))        
+"""
+        reader = SGFReader.from_string(sgf_str)
+
+        # AB|AW
+        black_setup_stones = reader.black_init_stones()
+        white_setup_stones = reader.white_init_stones()
+        print('AB:', [coords.to_gtp(p) for p in black_setup_stones])
+        print('AW:', [coords.to_gtp(p) for p in white_setup_stones])
+
+        # SGFReader go thru main-line only
+        # (;B[ha];W[hb] (;B[id]C[CORRECT];W[ic] (;B[ia]C[CORRECT]) (;B[ie];W[ia]C[CORRECT];B[ha]C[CORRECT]) ) \
+        # (;B[ic];W[id]C[WRONG])(;B[ie];W[id]C[WRONG]))(;B[id];W[ha]C[WRONG](;B[ie];W[ic]C[WRONG])(;B[ic];W[ie]C[WRONG](;B[id];W[ic]C[WRONG])(;B[ic];W[id]C[WRONG])))(;B[hb];W[ha]C[WRONG])(;B[ic];W[id]C[WRONG])(;B[ia];W[ha]C[WRONG])(;B[ie];W[id]C[WRONG]))
+        print('main line:')
+        for i, (move, comments) in enumerate(reader.iter_comments()):
+            print(i, move, comments)
+
 
 if __name__ == '__main__':
     unittest.main()

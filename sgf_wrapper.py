@@ -11,6 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+""" SGF grammar:
+  Collection = GameTree+
+  GameTree   = '(' Sequence GameTree* ')'
+  Sequence   = Node+
+  Node       = ';' Property*
+"""
 
 """
 Code to extract a series of positions + their next moves from an SGF.
@@ -276,6 +282,18 @@ class SGFReader(object):
 
     def white_name(self) -> str:
         return sgf_prop(self.props.get('PW'))
+
+    def black_init_stones(self) -> List:
+        ss = sgf_prop(self.props.get('AB'))
+        if not ss:
+            return []
+        return [coords.from_sgf(s) for s in ss]
+
+    def white_init_stones(self) -> List:
+        ss = sgf_prop(self.props.get('AW'))
+        if not ss:
+            return []
+        return [coords.from_sgf(s) for s in ss]
 
     def not_handicap(self) -> bool:
         """ HA """
