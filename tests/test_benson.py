@@ -230,23 +230,25 @@ class TestMaskedScoring(test_utils.MinigoUnitTest):
             ......XX.
         ''' + self.EMPTY_ROW * 4)
 
+    @staticmethod
+    def create_mask_topright(nrows, ncols) -> np.array:
+        mask = np.zeros((9, 9), dtype=np.int8)
+        for i in range(nrows):
+            for j in range(1, ncols+1):
+                mask[i, -j] = 1
+        return mask
+
     def test_masked_score(self):
         board = self.case10kyu_1()
-        mask = np.zeros((9, 9), dtype=np.int8)
-        for i in range(5):
-            for j in range(1, 6):
-                mask[i, -j] = 1
+        mask = self.create_mask_topright(5, 5)
 
         pos = go.Position(board, komi=0)
         score_tromp = pos.score_tromp()
         score_masked = pos.score_tromp(mask=mask)
         print('Score: Tromp=%.1f, score within 5x5 mask=%.1f' % (score_tromp, score_masked))
 
-        mask = np.zeros((9, 9), dtype=np.int8)
+        mask = self.create_mask_topright(3, 3)
         # 3x3 corner: 1 black, 1 dame, white area=7
-        for i in range(3):
-            for j in range(1, 4):
-                mask[i, -j] = 1
         score_masked = pos.score_tromp(mask=mask)
         print('Score: Tromp=%.1f, score within 3x3 mask=%.1f' % (score_tromp, score_masked))
         assert score_masked == -6
@@ -272,5 +274,36 @@ class TestMaskedScoring(test_utils.MinigoUnitTest):
         """
         """
         fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題４級.sgf'
-        fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題１０級.sgf'
         assert os.path.isfile(fname)
+        reader = SGFReader.from_file_compatible(fname)
+        assert len(reader.black_init_stones()) == 9 and len(reader.white_init_stones()) == 6
+
+        for pwc in reader.iter_pwcs():
+            break
+        pos = pwc.position  # type: go.Position
+        pos.komi = 0
+
+        mask4x6 = self.create_mask_topright(4, 6)
+        score_tromp = pos.score_tromp()
+        score_masked = pos.score_tromp(mask=mask4x6)
+        print(score_tromp, score_masked)
+        # no enclosed region
+        assert score_tromp == 3
+        assert score_tromp == score_masked + 1
+
+        mask3x5 = self.create_mask_topright(3, 5)
+        assert pos.score_tromp(mask=mask3x5) == -5
+
+        assert pos.to_play == go.BLACK
+        pos_enclosed = pos.play_move(coords.from_gtp('E9')).play_move(coords.from_gtp('F9')).\
+            play_move(coords.from_gtp('D9')).play_move(coords.from_gtp('J7')).play_move(coords.from_gtp('J6'))
+        assert pos_enclosed.score_tromp(mask=mask3x5) == -11
+        # still white majority, but margin is thin!
+        assert pos_enclosed.score_tromp(mask=mask4x6) == -2
+
+        # play correct solution, where a big white chain is captured
+        for i, pwc in enumerate(reader.iter_pwcs()):
+            print(i, pwc.position.n, coords.to_gtp(pwc.next_move))
+        final_pos = pwc.position.play_move(pwc.next_move)
+        assert final_pos.score_tromp(mask=mask3x5) == 9 - 5
+        assert final_pos.score_tromp(mask=mask4x6) == 12
