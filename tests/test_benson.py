@@ -271,39 +271,39 @@ class TestMaskedScoring(test_utils.MinigoUnitTest):
                 len(region.stones), num_opp_stones))
 
     def test_masked_score_from_sgf(self):
-        """
+        """ how to define the mask
         """
         fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題４級.sgf'
         assert os.path.isfile(fname)
         reader = SGFReader.from_file_compatible(fname)
         assert len(reader.black_init_stones()) == 9 and len(reader.white_init_stones()) == 6
 
-        for pwc in reader.iter_pwcs():
-            break
-        pos = pwc.position  # type: go.Position
+        pos = reader.first_pos()
         pos.komi = 0
 
-        mask4x6 = self.create_mask_topright(4, 6)
-        score_tromp = pos.score_tromp()
-        score_masked = pos.score_tromp(mask=mask4x6)
-        print(score_tromp, score_masked)
-        # no enclosed region
-        assert score_tromp == 3
-        assert score_tromp == score_masked + 1
-
         mask3x5 = self.create_mask_topright(3, 5)
-        assert pos.score_tromp(mask=mask3x5) == -5
+        mask4x6 = self.create_mask_topright(4, 6)
+        maskwhite = (pos.board == go.WHITE).astype(np.int8)  # all white stones
 
+        # no enclosed region: score is driven by black/white stones count
+        assert pos.score_tromp() == 3
+        assert pos.score_tromp(mask=mask4x6) == 2
+        assert pos.score_tromp(mask=mask3x5) == -5
+        assert pos.score_tromp(mask=maskwhite) == -6
+
+        # beginner end-game play -> white corner is now enclosed
         assert pos.to_play == go.BLACK
         pos_enclosed = pos.play_move(coords.from_gtp('E9')).play_move(coords.from_gtp('F9')).\
             play_move(coords.from_gtp('D9')).play_move(coords.from_gtp('J7')).play_move(coords.from_gtp('J6'))
         assert pos_enclosed.score_tromp(mask=mask3x5) == -11
         # still white majority, but margin is thin!
         assert pos_enclosed.score_tromp(mask=mask4x6) == -2
+        assert pos_enclosed.score_tromp(mask=maskwhite) == -6
 
-        # play correct solution, where a big white chain is captured
+        # play correct solution, where black captures a white chain
         for i, pwc in enumerate(reader.iter_pwcs()):
             print(i, pwc.position.n, coords.to_gtp(pwc.next_move))
         final_pos = pwc.position.play_move(pwc.next_move)
         assert final_pos.score_tromp(mask=mask3x5) == 9 - 5
         assert final_pos.score_tromp(mask=mask4x6) == 12
+        assert final_pos.score_tromp(mask=maskwhite) == 2

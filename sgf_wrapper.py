@@ -340,6 +340,17 @@ class SGFReader(object):
         else:
             return pos
 
+    def first_pos(self) -> go.Position:
+        """ for puzzles w/ HB|HW setup
+        """
+        # self.last_pos(up_to=0) doesn't work, why?
+
+        for pwc in self.iter_pwcs():
+            break
+        pos = pwc.position
+        assert pos.to_play == go.BLACK   # is this always true?
+        return pos
+
     def iter_comments(self) -> Iterable[Tuple[str, List[str]]]:
         """ this provides access to node comments
 
