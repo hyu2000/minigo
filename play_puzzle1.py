@@ -13,10 +13,14 @@ from absl import logging, app
 
 
 class BBox(namedtuple('BBox', ['row0', 'col0', 'row1', 'col1'])):
-    pass
+    """ top-left, bottom-right in minigo coord style """
+    def grow(self, delta: int):
+        return BBox(max(0, self.row0 - delta), max(0, self.col0 - delta),
+                    min(go.N-1, self.row1 + delta), min(go.N-1, self.col1 + delta))
 
 
 class LnDPuzzle:
+    """ helper to figure out basics of an LnD puzzle """
     # tolerance to the edge of the board
     SNAP_EDGE_THRESH = 1
 
@@ -40,7 +44,7 @@ class LnDPuzzle:
         return BBox(min(a.row0, b.row0), min(a.col0, b.col0), max(a.row1, b.row1), max(a.col1, b.col1))
 
     @classmethod
-    def solve_boundary(cls, board: np.array):
+    def solve_boundary(cls, board: np.array) -> tuple[BBox, BBox, int]:
         """ given a puzzle board, figure out who's surrounding, corner/center area (for the surrounded)
 
         Attacker is more on the peripheral, or has more stones there (maybe by a weighted sum)
@@ -80,15 +84,18 @@ def test_mask():
     print(mask0)
 
 
-def test_corner_area():
+def test_puzzle_helper():
     sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題４級.sgf'
+    # sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題４級(２).sgf'
     reader = SGFReader.from_file_compatible(sgf_fname)
     pos = reader.first_pos()
     black_box, white_box, attack_side = LnDPuzzle.solve_boundary(pos.board)
     assert attack_side == go.BLACK
     print("black", black_box)
     print("white", white_box)
+    white_enlarged = white_box.grow(1)
     # white policy area: 0..3, 3..8
+    assert white_enlarged.col0 == 3 and white_enlarged.row1 == 3
 
 
 def play_puzzle():
