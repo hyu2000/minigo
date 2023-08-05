@@ -87,9 +87,9 @@ def test_mask():
 
 
 def test_puzzle_helper():
-    sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題４級.sgf'
     sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題９級.sgf'
-    sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題４級(３).sgf'
+    sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題4級(3).sgf'
+    sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題4級.sgf'
     reader = SGFReader.from_file_compatible(sgf_fname)
     pos = reader.first_pos()
     black_box, white_box, attack_side = LnDPuzzle.solve_boundary(pos.board)
@@ -103,7 +103,7 @@ def test_puzzle_helper():
 
 def test_puzzle_helper_bulk():
     sgf_dir = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death'
-    sgf_fnames = glob.glob(f'{sgf_dir}/総合問題５級*.sgf')
+    sgf_fnames = glob.glob(f'{sgf_dir}/総合問題5級*.sgf')
     print('found', len(sgf_fnames))
     for sgf_fname in sgf_fnames:
         basename = os.path.split(sgf_fname)[-1]
