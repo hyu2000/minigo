@@ -67,11 +67,19 @@ class LnDPuzzle:
             return black_boundary, white_boundary, attack_side
         return black_boundary, white_boundary, attack_side
 
+    @classmethod
+    def fill_rest_of_board(cls, board: np.array):
+        """
+        Away from the puzzle area, fill an area with defender stones, about half the size.
+        Surround it with one layer of attacker stones.
+        """
+        black_box, white_box, attack_side = LnDPuzzle.solve_boundary(board)
 
-def rect_mask(i0, i1, j0, j1) -> np.array:
+
+def rect_mask(bbox: BBox) -> np.array:
     """ all inclusive """
     mask = np.zeros((go.N, go.N), dtype=np.int8)
-    mask[i0:i1+1, j0:j1+1] = 1
+    mask[bbox.row0:bbox.row1+1, bbox.col0:bbox.col1+1] = 1
     return mask
 
 
@@ -88,8 +96,8 @@ def test_mask():
 
 def test_puzzle_helper():
     sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題９級.sgf'
-    sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題4級(3).sgf'
     sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題4級.sgf'
+    sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題4級(2).sgf'
     reader = SGFReader.from_file_compatible(sgf_fname)
     pos = reader.first_pos()
     black_box, white_box, attack_side = LnDPuzzle.solve_boundary(pos.board)
@@ -97,13 +105,13 @@ def test_puzzle_helper():
     print("black", black_box)
     print("white", white_box)
     white_enlarged = white_box.grow(1)
-    # white policy area: 0..3, 3..8
+    # 総合問題4級.sgf  white policy area: 0..3, 3..8
     assert white_enlarged.col0 == 3 and white_enlarged.row1 == 3
 
 
 def test_puzzle_helper_bulk():
     sgf_dir = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death'
-    sgf_fnames = glob.glob(f'{sgf_dir}/総合問題5級*.sgf')
+    sgf_fnames = glob.glob(f'{sgf_dir}/総合問題6級*.sgf')
     print('found', len(sgf_fnames))
     for sgf_fname in sgf_fnames:
         basename = os.path.split(sgf_fname)[-1]
@@ -120,6 +128,8 @@ def test_puzzle_helper_bulk():
 def play_puzzle():
     """ see how my models work on puzzles
     Similar to what KataGo would do
+
+    Seems raw policy is pretty flat --> MCTS is doing most of the work. Masked MCTS?
     """
     num_readouts = 400
     model_id = 'model12_2'
@@ -128,10 +138,11 @@ def play_puzzle():
     player = MCTSPlayer(dnn)
 
     sgf_fname = '/Users/hyu/PycharmProjects/dlgo/9x9/games/Pro/9x9/Minigo/890826.sgf'
-    sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題４級.sgf'
+    sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題4級(2).sgf'
     reader = SGFReader.from_file_compatible(sgf_fname)
     pos = reader.first_pos()
-    white_mask = mask_to_policy(rect_mask(0, 3, 3, 8))
+    black_box, white_box, attack_side = LnDPuzzle.solve_boundary(pos.board)
+    white_mask = mask_to_policy(rect_mask(white_box.grow(1)))
 
     player.initialize_game(pos)
     # Must run this once at the start to expand the root node.
