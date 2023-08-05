@@ -1,3 +1,5 @@
+import glob
+import os
 from collections import namedtuple
 from typing import Tuple
 
@@ -86,7 +88,8 @@ def test_mask():
 
 def test_puzzle_helper():
     sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題４級.sgf'
-    # sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題４級(２).sgf'
+    sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題９級.sgf'
+    sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題４級(３).sgf'
     reader = SGFReader.from_file_compatible(sgf_fname)
     pos = reader.first_pos()
     black_box, white_box, attack_side = LnDPuzzle.solve_boundary(pos.board)
@@ -96,6 +99,22 @@ def test_puzzle_helper():
     white_enlarged = white_box.grow(1)
     # white policy area: 0..3, 3..8
     assert white_enlarged.col0 == 3 and white_enlarged.row1 == 3
+
+
+def test_puzzle_helper_bulk():
+    sgf_dir = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death'
+    sgf_fnames = glob.glob(f'{sgf_dir}/総合問題５級*.sgf')
+    print('found', len(sgf_fnames))
+    for sgf_fname in sgf_fnames:
+        basename = os.path.split(sgf_fname)[-1]
+        print(f'Processing {basename}')
+        reader = SGFReader.from_file_compatible(sgf_fname)
+        pos = reader.first_pos()
+        black_box, white_box, attack_side = LnDPuzzle.solve_boundary(pos.board)
+        if attack_side == 0:
+            continue
+        print(go.color_str(attack_side), black_box, white_box)
+        # assert attack_side == go.BLACK
 
 
 def play_puzzle():
