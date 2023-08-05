@@ -117,8 +117,9 @@ class MCTSNode(object):
     def child_Q(self):
         return self.child_W / (1 + self.child_N)
 
+    @staticmethod
     @lru_cache(maxsize=None)
-    def child_U_scaler(cls, n: float) -> float:
+    def child_U_scaler(n: float) -> float:
         return (math.log1p((1.0 + n) / FLAGS.c_puct_base) + FLAGS.c_puct_init) * 2.0 * math.sqrt(max(1, n - 1))
 
     @property
