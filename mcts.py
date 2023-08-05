@@ -17,6 +17,7 @@
 All terminology here (Q, U, N, p_UCT) uses the same notation as in the
 AlphaGo (AG) paper.
 """
+from functools import cache, lru_cache
 from typing import Dict
 import collections
 import math
@@ -116,12 +117,14 @@ class MCTSNode(object):
     def child_Q(self):
         return self.child_W / (1 + self.child_N)
 
+    @lru_cache(maxsize=None)
+    def child_U_scaler(cls, n: float) -> float:
+        return (math.log1p((1.0 + n) / FLAGS.c_puct_base) + FLAGS.c_puct_init) * 2.0 * math.sqrt(max(1, n - 1))
+
     @property
     def child_U(self):
         # can we simplify this a bit more?
-        n = self.N
-        return (math.log1p((1.0 + n) / FLAGS.c_puct_base) + FLAGS.c_puct_init) * \
-               2.0 * math.sqrt(max(1, n - 1)) * self.child_prior / (1 + self.child_N)
+        return self.child_U_scaler(self.N) * self.child_prior / (1 + self.child_N)
 
     @property
     def Q(self) -> float:
