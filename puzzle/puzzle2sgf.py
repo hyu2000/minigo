@@ -1,6 +1,8 @@
 #!/usr/bin/python
-""" downloaded from
+""" this script was downloaded from
 https://github.com/merrillite/puzzle2sgf
+
+It downloads puzzles from OGS, save as sgfs.
 
 https://apidocs.online-go.com/
 """
@@ -179,7 +181,9 @@ def download_collection(start_puzzle_id: int, out_dir: str):
         time.sleep(SLEEP_SECS)
         url = 'https://online-go.com/api/v1/puzzles/' + str(puzzle['id'])
         response_json = requests.get(url, cookies=cookies).json()
-        puzzle_json = response_json['puzzle']
+        puzzle_json = response_json.get('puzzle')
+        if puzzle_json is None:
+            continue
         # puzzle_type: 'life_and_death'
         width, height = puzzle_json['width'], puzzle_json['height']
         puzzle_rank = puzzle_json.get('puzzle_rank')
@@ -187,7 +191,8 @@ def download_collection(start_puzzle_id: int, out_dir: str):
             collection_json = response_json['collection']
             collection_name = collection_json['name']
             collection_dir = f'{out_dir}/{collection_name}'
-            os.mkdir(collection_dir)
+            if not os.path.exists(collection_dir):
+                os.mkdir(collection_dir)
 
         out_fname = f"{collection_dir}/{puzzle['name']}.sgf"
         with open(out_fname, 'w', encoding="utf-8") as file:
@@ -243,4 +248,4 @@ if __name__ == '__main__':
     out_dir = '/Users/hyu/Downloads/go-puzzle9'
     # main()
     # download_all()
-    download_collection(45137, out_dir)
+    download_collection(10496, out_dir)
