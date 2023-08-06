@@ -16,6 +16,20 @@ from absl import logging, app
 
 class BBox(namedtuple('BBox', ['row0', 'col0', 'row1', 'col1'])):
     """ top-left, bottom-right in minigo coord style """
+
+    def nrows(self):
+        return 1 + self.row1 - self.row0
+
+    def ncols(self):
+        return 1 + self.col1 - self.col0
+
+    def area(self) -> int:
+        return self.nrows() * self.ncols()
+
+    def area_opposite_bbox(self) -> int:
+        """ size of the bbox opposite of this one """
+        return (go.N - self.nrows()) * (go.N - self.ncols())
+
     def grow(self, delta: int):
         return BBox(max(0, self.row0 - delta), max(0, self.col0 - delta),
                     min(go.N-1, self.row1 + delta), min(go.N-1, self.col1 + delta))
@@ -67,6 +81,33 @@ class LnDPuzzle:
             return black_boundary, white_boundary, attack_side
         return black_boundary, white_boundary, attack_side
 
+    @staticmethod
+    def easy_oppo_area_case(black_box: BBox, white_box: BBox):
+        """ Assuming Black is on the attack.
+        white_box is more accurately the contested area; black may have extra stones on the outside for safety
+
+        Easiest way to carve out safe area for the defender: entire rows/cols, or a combination (L-shaped).
+        Ideally with 1 extra row separated from white_box.grow(1).
+        """
+        area_needed = (go.N * go.N - white_box.area()) / 2
+        white_box_grown = white_box.grow(1)
+        max_gap_from_white_box = max(black_box.nrows() - white_box.nrows(), black_box.ncols() - white_box.ncols())
+
+        # case 1: L-shape is big enough
+        area_L_shape = go.N * go.N - black_box.area()
+        if area_L_shape >= area_needed:
+            # now make sure we have enough gap from white box
+            gap = max_gap_from_white_box + (area_L_shape - area_needed) / go.N
+            if gap >= 3:
+                return 1
+            else:
+                print('### not enough gap', black_box, max_gap_from_white_box, area_L_shape, area_needed, gap, '\n')
+                return
+        print('### L-shape not big enough:', black_box, area_L_shape, area_needed, '\n')
+        return 0
+
+        # long_edge = go.N - min(black_box.ncols(), black_box.nrows())
+
     @classmethod
     def fill_rest_of_board(cls, board: np.array):
         """
@@ -74,6 +115,12 @@ class LnDPuzzle:
         Surround it with one layer of attacker stones.
         """
         black_box, white_box, attack_side = LnDPuzzle.solve_boundary(board)
+        assert attack_side != 0
+        # see if away from puzzle by at least delta, whether we have enough space
+        if attack_side == 1:
+            n_full_rows = cls.easy_oppo_area_case(black_box, white_box)
+        else:
+            n_full_rows = cls.easy_oppo_area_case(white_box, black_box)
 
 
 def rect_mask(bbox: BBox) -> np.array:
@@ -88,16 +135,23 @@ def mask_to_policy(board: np.array) -> np.array:
     return np.append(board.flatten(), 1)
 
 
-def test_mask():
+def test_bbox():
     print()
-    mask0 = rect_mask(0, 3, 3, 8)
+    bbox = BBox(0, 3, 3, 8)
+    mask0 = rect_mask(bbox)
     print(mask0)
+    assert bbox.area() == 24
+
+    oppo_area = (go.N * go.N - bbox.area()) // 2
+    rows_needed = oppo_area / go.N
+    print(bbox.nrows(), bbox.ncols(), 'need', rows_needed)
 
 
-def test_puzzle_helper():
-    sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題９級.sgf'
+def test_puzzle_boundary():
+    # snap should allow edge_thresh=2?
+    sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題5級(9).sgf'
     sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題4級.sgf'
-    sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題4級(2).sgf'
+    sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題4級(4).sgf'
     reader = SGFReader.from_file_compatible(sgf_fname)
     pos = reader.first_pos()
     black_box, white_box, attack_side = LnDPuzzle.solve_boundary(pos.board)
@@ -109,9 +163,9 @@ def test_puzzle_helper():
     assert white_enlarged.col0 == 3 and white_enlarged.row1 == 3
 
 
-def test_puzzle_helper_bulk():
+def test_puzzle_bulk():
     sgf_dir = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death'
-    sgf_fnames = glob.glob(f'{sgf_dir}/総合問題6級*.sgf')
+    sgf_fnames = glob.glob(f'{sgf_dir}/総合問題4級*.sgf')
     print('found', len(sgf_fnames))
     for sgf_fname in sgf_fnames:
         basename = os.path.split(sgf_fname)[-1]
@@ -120,9 +174,20 @@ def test_puzzle_helper_bulk():
         pos = reader.first_pos()
         black_box, white_box, attack_side = LnDPuzzle.solve_boundary(pos.board)
         if attack_side == 0:
+            print('no clear attack_side, skipping')
             continue
         print(go.color_str(attack_side), black_box, white_box)
-        # assert attack_side == go.BLACK
+        LnDPuzzle.fill_rest_of_board(pos.board)
+
+
+def test_fill_board():
+    sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題5級(9).sgf'
+    reader = SGFReader.from_file_compatible(sgf_fname)
+    pos = reader.first_pos()
+    black_box, white_box, attack_side = LnDPuzzle.solve_boundary(pos.board)
+    # assert attack_side == go.BLACK
+
+    LnDPuzzle.fill_rest_of_board(pos.board)
 
 
 def play_puzzle():
@@ -134,15 +199,19 @@ def play_puzzle():
     num_readouts = 400
     model_id = 'model12_2'
     model_fname = f'{myconf.EXP_HOME}/../9x9-exp2/checkpoints/{model_id}.mlpackage'
-    dnn = dual_net.load_net(model_fname)
-    player = MCTSPlayer(dnn)
+    dnn_underlyer = dual_net.load_net(model_fname)
 
     sgf_fname = '/Users/hyu/PycharmProjects/dlgo/9x9/games/Pro/9x9/Minigo/890826.sgf'
     sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題4級(2).sgf'
     reader = SGFReader.from_file_compatible(sgf_fname)
     pos = reader.first_pos()
     black_box, white_box, attack_side = LnDPuzzle.solve_boundary(pos.board)
-    white_mask = mask_to_policy(rect_mask(white_box.grow(1)))
+    policy_mask = mask_to_policy(rect_mask(white_box.grow(1)))
+    print(f'Solving %s, mask:', os.path.basename(sgf_fname))
+    print(policy_mask[:81].reshape((9, 9)))
+
+    dnn = dual_net.MaskedNet(dnn_underlyer, policy_mask)
+    player = MCTSPlayer(dnn)
 
     player.initialize_game(pos)
     # Must run this once at the start to expand the root node.
@@ -166,7 +235,7 @@ def play_puzzle():
         move_global = active.pick_move()[1]
         pi = active.root.children_as_pi()
         print(pi[:81].reshape((9, 9)))
-        pi *= white_mask
+        pi *= policy_mask
         move = coords.from_flat(pi.argmax())
         logging.info('%d %s: dnn picks %s, val=%.1f, global %s -> masked %s', pos.n, go.color_str(pos.to_play),
                      move_dnn, val_estimate, coords.to_gtp(move_global), coords.to_gtp(move))
