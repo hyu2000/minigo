@@ -4,10 +4,41 @@ Basically we want to fill the rest of the board, so that the only focus is on th
 
 We don't need to be super-exact, just enough to discourage a bot to play outside Tsumego.
 """
+import itertools
+from typing import Tuple
+
 import numpy as np
 
+import coords
 import go
 from sgf_wrapper import SGFReader
+
+
+def find_chainlike(board: np.ndarray, c: Tuple, include_diagonal=True) -> Tuple[set, set]:
+    """ generalizing from go.find_reached(), which is equivalent include_diagonal=False.
+    find the chain c is in, as well as the boundary around it
+    """
+    color = board[c]
+    chain = {c}
+    boundary = set()
+    frontier = [c]
+    while frontier:
+        current = frontier.pop()
+        chain.add(current)
+        neighbors = go.NEIGHBORS[current]
+        if include_diagonal:
+            neighbors = itertools.chain(go.NEIGHBORS[current], go.DIAGONALS[current])
+        for n in neighbors:
+            if board[n] == color:
+                if n not in chain:
+                    frontier.append(n)
+            else:
+                boundary.add(n)
+    return chain, boundary
+
+
+def grow(chain: set):
+    """ conv """
 
 
 class Framer:
@@ -26,6 +57,20 @@ class Framer:
             # check p is not taken?
             board[p] = color
         return board
+
+
+def test_chainlike():
+    sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題4級(3).sgf'
+    reader = SGFReader.from_file_compatible(sgf_fname)
+    pos = reader.first_pos()
+    board = pos.board
+    white_coord = coords.from_gtp('F9')
+    chain, boundary = find_chainlike(board, white_coord, include_diagonal=False)
+    assert len(chain) == 4
+    print(len(boundary))
+    chain, boundary = find_chainlike(board, white_coord)
+    assert len(chain) == 7
+    print(len(boundary))
 
 
 def test_surround():
