@@ -1,3 +1,11 @@
+""" SGF grammar: FF4 allows subtree
+https://www.red-bean.com/sgf/sgf4.html
+  Collection = GameTree+
+  GameTree   = "(" Sequence GameTree* ")"
+  Sequence   = Node+
+  Node       = ";" Property*
+"""
+
 # map from numerical coordinates to letters used by SGF
 SGF_POS = " abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 

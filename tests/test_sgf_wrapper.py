@@ -11,11 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import re
 import unittest
 import go
 from absl import logging
-from sgf_wrapper import replay_sgf, translate_sgf_move, make_sgf, make_sgf_from_gtp_moves, SGFReader
+from sgf_wrapper import replay_sgf, translate_sgf_move, make_sgf, make_sgf_from_gtp_moves, SGFReader, add_init_stones
 
 import coords
 from tests import test_utils
@@ -68,6 +68,79 @@ class TestSgfGeneration(test_utils.MinigoUnitTest):
         print(sgf_str)
         with open('/Users/hyu/Downloads/make_sgf_from_gtp.4visits.sgf', 'w') as f:
             f.write(sgf_str)
+
+    def test_parse_LnD(self):
+        """ understand how sgf node works: variation """
+        # too hard to parse by hand
+        sgf_str = """
+        (;FF[4]CA[UTF-8]AP[puzzle2sgf:0.1]GM[1]GN[総合問題１０級]SZ[9]AB[he][ge][gd][gc][fb][fa][ec]AW[ib][gb][ga][hc][hd]PL[B]C[黒先白死：Black to kill
+
+        コウやセキは失敗：Kou and Seki are failures
+        ](
+            ;B[ha];W[hb] (
+            ;B[id]C[CORRECT];W[ic] (;B[ia]C[CORRECT]) (;B[ie];W[ia]C[CORRECT];B[ha]C[CORRECT]) 
+            ) (
+            ;B[ic];W[id]C[WRONG]
+            ) (
+            ;B[ie];W[id]C[WRONG]
+            )
+        ) (
+            ;B[id];W[ha]C[WRONG] (;B[ie];W[ic]C[WRONG]) (;B[ic];W[ie]C[WRONG](;B[id];W[ic]C[WRONG])(;B[ic];W[id]C[WRONG])))(;B[hb];W[ha]C[WRONG])(;B[ic];W[id]C[WRONG])(;B[ia];W[ha]C[WRONG])(;B[ie];W[id]C[WRONG])
+        )        
+        """
+        for pwc in replay_sgf(sgf_str):
+            print(pwc)
+
+    def test_modify_LnD_puzzle_dev(self):
+        """ change init board setup, but keep game tree """
+        # sgf.py not super clear
+        sgf_str = """
+        (;FF[4]CA[UTF-8]AP[puzzle2sgf:0.1]GM[1]GN[総合問題１０級]SZ[9]AB[he][ge][gd][gc][fb][fa][ec]AW[ib][gb][ga][hc][hd]PL[B]C[黒先白死：Black to kill
+
+        コウやセキは失敗：Kou and Seki are failures
+        ](;B[ha];W[hb](;B[id]C[CORRECT];W[ic](;B[ia]C[CORRECT])(;B[ie];W[ia]C[CORRECT];B[ha]C[CORRECT]))(;B[ic];W[id]C[WRONG])(;B[ie];W[id]C[WRONG]))(;B[id];W[ha]C[WRONG](;B[ie];W[ic]C[WRONG])(;B[ic];W[ie]C[WRONG](;B[id];W[ic]C[WRONG])(;B[ic];W[id]C[WRONG])))(;B[hb];W[ha]C[WRONG])(;B[ic];W[id]C[WRONG])(;B[ia];W[ha]C[WRONG])(;B[ie];W[id]C[WRONG]))        
+        """
+        pattern = r'(A[BW].+?)C\['  # assume C immediately follow AB|AW
+        match = re.search(pattern, sgf_str)
+        print(match)
+        substr = match.group(1)
+        # verify
+
+        add_blacks = 'C7 E5'
+        add_whites = 'B6 C5 D4'
+        ab_str = ''.join('[%s]' % coords.to_sgf(coords.from_gtp(x)) for x in add_blacks.split())
+        aw_str = ''.join('[%s]' % coords.to_sgf(coords.from_gtp(x)) for x in add_whites.split())
+        # add new stones to the beginning
+        nstr = substr.replace('AB', f'AB{ab_str}')
+        nstr = nstr.replace('AW', f'AW{aw_str}')
+        print(nstr)
+
+        # another way
+        def process_match(match):
+            s = match.group(0)
+            nstr = s.replace('AB', f'AB{ab_str}')
+            nstr = nstr.replace('AW', f'AW{aw_str}')
+            return nstr
+        new_sgf = re.sub(pattern, process_match, sgf_str)
+        print(new_sgf)
+        assert len(new_sgf) == len(sgf_str) + len(ab_str) + len(aw_str)
+
+    def test_modify_LnD_puzzle(self):
+        """ change init board setup, but keep game tree """
+        # sgf.py not super clear
+        sgf_str = """
+        (;FF[4]CA[UTF-8]AP[puzzle2sgf:0.1]GM[1]GN[総合問題１０級]SZ[9]AB[he][ge][gd][gc][fb][fa][ec]AW[ib][gb][ga][hc][hd]PL[B]C[黒先白死：Black to kill
+
+        コウやセキは失敗：Kou and Seki are failures
+        ](;B[ha];W[hb](;B[id]C[CORRECT];W[ic](;B[ia]C[CORRECT])(;B[ie];W[ia]C[CORRECT];B[ha]C[CORRECT]))(;B[ic];W[id]C[WRONG])(;B[ie];W[id]C[WRONG]))(;B[id];W[ha]C[WRONG](;B[ie];W[ic]C[WRONG])(;B[ic];W[ie]C[WRONG](;B[id];W[ic]C[WRONG])(;B[ic];W[id]C[WRONG])))(;B[hb];W[ha]C[WRONG])(;B[ic];W[id]C[WRONG])(;B[ia];W[ha]C[WRONG])(;B[ie];W[id]C[WRONG]))        
+        """
+        add_blacks = 'C7 E5'
+        add_whites = 'B6 C5 D4'
+        black_coords = (coords.from_gtp(x) for x in add_blacks.split())
+        white_coords = (coords.from_gtp(x) for x in add_whites.split())
+        new_sgf = add_init_stones(sgf_str, black_coords, white_coords)
+        with open('/Users/hyu/Downloads/test_modify_sgf.sgf', 'w') as f:
+            f.write(new_sgf)
 
 
 class TestSgfWrapper(test_utils.MinigoUnitTest):
@@ -256,7 +329,7 @@ GC[not broadcast]
             print(i, move, comments)
         assert i == 35
 
-    def test_read_lnd_sgf(self):
+    def test_read_LnD_sgf(self):
         """ see how we handle LND puzzle sgfs: AB|AW and variations
         https://homepages.cwi.nl/~aeb/go/misc/sgfnotes.html
         """
@@ -274,6 +347,7 @@ GC[not broadcast]
         white_setup_stones = reader.white_init_stones()
         print('AB:', [coords.to_gtp(p) for p in black_setup_stones])
         print('AW:', [coords.to_gtp(p) for p in white_setup_stones])
+        assert reader.player_to_start() == go.BLACK
 
         # SGFReader go thru main-line only
         # (;B[ha];W[hb] (;B[id]C[CORRECT];W[ic] (;B[ia]C[CORRECT]) (;B[ie];W[ia]C[CORRECT];B[ha]C[CORRECT]) ) \
