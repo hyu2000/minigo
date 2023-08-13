@@ -11,12 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-""" SGF grammar:
-  Collection = GameTree+
-  GameTree   = '(' Sequence GameTree* ')'
-  Sequence   = Node+
-  Node       = ';' Property*
-"""
 
 """
 Code to extract a series of positions + their next moves from an SGF.
@@ -27,6 +21,7 @@ Most of the complexity here is dealing with two features of SGF:
 - Plays don't necessarily alternate colors; they can be repeated B or W moves
   This feature is used to handle free handicap placement.
 """
+import re
 from typing import Tuple, Optional, Iterable, List
 
 import numpy as np
@@ -233,6 +228,32 @@ def replay_sgf_file(sgf_fname: str):
             yield pwc
 
 
+def add_init_stones(sgf_str, black_coords, white_coords) -> str:
+    """ quick hack to add more setup stones to sgf str
+    This assumes AB|AW tag already exists
+    """
+    # we try to limit where replace happens: typically there is a comment at the root node,
+    # there might be other tags before C
+    pattern = re.compile(r'(A[BW].+?)C\[')
+    # match = re.search(pattern, sgf_str)
+    # if not match:
+    #     logging.warning('no setup stones found!')
+    #     return sgf_str
+
+    ab_str = ''.join('[%s]' % coords.to_sgf(x) for x in black_coords)
+    aw_str = ''.join('[%s]' % coords.to_sgf(x) for x in white_coords)
+
+    def process_match(match):
+        s = match.group(0)
+        # add new stones to the beginning
+        nstr = s.replace('AB', f'AB{ab_str}')
+        nstr = nstr.replace('AW', f'AW{aw_str}')
+        return nstr
+
+    new_sgf = re.sub(pattern, process_match, sgf_str, count=1)
+    return new_sgf
+
+
 class SGFReader(object):
     UNKNOWN_MARGIN = 1000
     MISSING_MARGIN = 2000
@@ -294,6 +315,18 @@ class SGFReader(object):
         if not ss:
             return []
         return [coords.from_sgf(s) for s in ss]
+
+    def player_to_start(self) -> int:
+        player = sgf_prop(self.props.get('PL'))
+        if not player:
+            return go.BLACK
+        letter = player[0].upper()
+        if letter == 'B':
+            return go.BLACK
+        elif letter == 'W':
+            return go.WHITE
+        else:
+            return 0
 
     def not_handicap(self) -> bool:
         """ HA """
