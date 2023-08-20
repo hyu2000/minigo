@@ -228,7 +228,15 @@ def replay_sgf_file(sgf_fname: str):
             yield pwc
 
 
-def add_init_stones(sgf_str, black_coords, white_coords) -> str:
+def add_init_stones_file(sgf_fname, black_coords, white_coords, new_fname):
+    with open(sgf_fname, 'r') as f:
+        sgf_str = f.read()
+        new_sgf_str = add_init_stones(sgf_str, black_coords, white_coords)
+    with open(new_fname, 'w') as f:
+        f.write(new_sgf_str)
+
+
+def add_init_stones(sgf_str, black_coords: List, white_coords: List) -> str:
     """ quick hack to add more setup stones to sgf str
     This assumes AB|AW tag already exists
     """
