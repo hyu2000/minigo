@@ -86,7 +86,7 @@ class Framer:
         can_grow = board_size - area_left - area_before
         print(f'grow_to({area_left}): {i+1} iter: needs {can_grow} blacks')
         assert len(boundary) >= can_grow
-        for c in itertools.islice(boundary, can_grow):
+        for c in sorted(boundary)[:can_grow]:
             board[c] = go.BLACK
 
         # simple frame the white boundary
