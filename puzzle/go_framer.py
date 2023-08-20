@@ -11,7 +11,7 @@ import numpy as np
 
 import coords
 import go
-from sgf_wrapper import SGFReader
+from sgf_wrapper import SGFReader, add_init_stones_file
 
 
 def find_chainlike(board: np.ndarray, c: Tuple, include_diagonal=True) -> Tuple[set, set]:
@@ -62,6 +62,42 @@ class Framer:
             board[p] = color
         return board
 
+    @staticmethod
+    def grow_to(board: np.array, area_left: int):
+        """ grow puzzle area layer by layer
+
+        1. puzzle area is dense. The first iteration typically fills it
+        """
+        board_size = np.prod(board.shape)
+        board = abs(board)  # make it all black
+        coord_init = tuple(np.argwhere(board)[0])
+
+        MAX_ITER = 5
+        for i in range(MAX_ITER):
+            chain, boundary = find_chainlike(board, coord_init)
+            area_before = np.sum(board)
+            area_after = area_before + len(boundary)
+            if area_after + area_left > board_size:
+                break
+            for c in boundary:
+                board[c] = go.BLACK
+
+        area_before = np.sum(board)
+        can_grow = board_size - area_left - area_before
+        print(f'grow_to({area_left}): {i+1} iter: needs {can_grow} blacks')
+        assert len(boundary) >= can_grow
+        for c in itertools.islice(boundary, can_grow):
+            board[c] = go.BLACK
+
+        # simple frame the white boundary
+        chain, white_boundary = find_chainlike(board, coord_init)
+        # derive final black boundary
+        board = board - 1  # flip
+        coord_white = tuple(np.argwhere(board)[0])
+        chain, black_boundary = find_chainlike(board, coord_white)
+
+        return black_boundary, white_boundary
+
 
 def test_chainlike():
     sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題4級(3).sgf'
@@ -87,20 +123,39 @@ def test_chainlike():
 
 def test_grow_puzzle_margin():
     """ take a puzzle, grow a couple rounds, see if the outer boundary makes sense """
-    sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題4級(2).sgf'
+    sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題4級(4).sgf'
     reader = SGFReader.from_file_compatible(sgf_fname)
     pos = reader.first_pos()
     board = pos.board
 
-    board = abs(board)
+    board = abs(board)  # make it all black
     coord_init = coords.from_gtp('D7')
-    for i in range(1):
+    coord_init = tuple(np.argwhere(board)[0])  # any stone in the original puzzle
+    for i in range(2):
         chain, boundary = find_chainlike(board, coord_init)
         for c in boundary:
             board[c] = go.BLACK
+
+    boundary_black = boundary
     # just find boundary in the end
     chain, boundary = find_chainlike(board, coord_init)
     print('boundary:', ' '.join(sorted([coords.to_gtp(c) for c in boundary])))
+
+    out_fname = '/Users/hyu/Downloads/test_framer.sgf'
+    add_init_stones_file(sgf_fname, boundary_black, boundary, out_fname)
+
+
+def test_grow_to():
+    """ grow a puzzle a few rounds, until just a certain space is left """
+    sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題4級(3).sgf'
+    reader = SGFReader.from_file_compatible(sgf_fname)
+    pos = reader.first_pos()
+    board = pos.board
+    white_corner_size = 16
+    white_area_other = (np.prod(board.shape) - white_corner_size) // 2
+    black_boundary, white_boundary = Framer.grow_to(board, white_area_other)
+    out_fname = '/Users/hyu/Downloads/test_framer.sgf'
+    add_init_stones_file(sgf_fname, black_boundary, white_boundary, out_fname)
 
 
 def test_surround():
