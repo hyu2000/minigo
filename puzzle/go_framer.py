@@ -5,12 +5,15 @@ Basically we want to fill the rest of the board, so that the only focus is on th
 We don't need to be super-exact, just enough to discourage a bot to play outside Tsumego.
 """
 import itertools
+import logging
 from typing import Tuple
 
 import numpy as np
 
+import myconf
 import coords
 import go
+from puzzle.play_puzzle1 import LnDPuzzle
 from sgf_wrapper import SGFReader, add_init_stones_file
 
 
@@ -44,8 +47,8 @@ def grow(chain: set):
 
 
 class Framer:
-    def __init__(self, board: np.array):
-        self.puzzle = board
+    def __init__(self, sgf_fname):
+        self.sgf_fname = sgf_fname
 
     @staticmethod
     def surround(board: np.array, coord: tuple, opposite_stone=True):
@@ -63,10 +66,18 @@ class Framer:
         return board
 
     @staticmethod
-    def grow_to(board: np.array, area_left: int):
-        """ grow puzzle area layer by layer
+    def grow_to(board: np.array, area_left: int) -> Tuple:
+        """ Grow puzzle area layer by layer, until the size of the rest of the board is area_left.
 
-        1. puzzle area is dense. The first iteration typically fills it
+        Without loss of generality, assume black surrounds white in the puzzle. The idea is to grow
+        the black area outward, so that we don't disturb the puzzle itself; add a black border at
+        the peripheral, next to a white border which surrounds the empty white space that is of size area_left.
+
+        Returns the final boundaries, both black and white.
+
+        Comment:
+        1. puzzle area is dense. The first (or several) iteration typically fills it
+        2. in general, when we grow two iterations, black layer should have enough eye-space
         """
         board_size = np.prod(board.shape)
         board = abs(board)  # make it all black
@@ -97,6 +108,23 @@ class Framer:
         chain, black_boundary = find_chainlike(board, coord_white)
 
         return black_boundary, white_boundary
+
+    def frame1(self, out_sgf_fname):
+        reader = SGFReader.from_file_compatible(self.sgf_fname)
+        pos = reader.first_pos()
+        board = pos.board
+
+        # figure out who encircles whom
+        black_bbox, white_bbox, attack_side = LnDPuzzle.solve_boundary(board)
+        corner_size = LnDPuzzle.contested_area(board, white_bbox if attack_side == go.BLACK else black_bbox, attack_side)
+        defender_area_other = (np.prod(board.shape) - corner_size) // 2
+        logging.info(f'attacker %s, corner size={corner_size}, area_left={defender_area_other}', go.color_str(attack_side))
+        attacker_boundary, defender_boundary = Framer.grow_to(board, defender_area_other)
+
+        if attack_side == go.BLACK:
+            add_init_stones_file(self.sgf_fname, attacker_boundary, defender_boundary, out_sgf_fname)
+        else:
+            add_init_stones_file(self.sgf_fname, defender_boundary, attacker_boundary, out_sgf_fname)
 
 
 def test_chainlike():
@@ -156,6 +184,13 @@ def test_grow_to():
     black_boundary, white_boundary = Framer.grow_to(board, white_area_other)
     out_fname = '/Users/hyu/Downloads/test_framer.sgf'
     add_init_stones_file(sgf_fname, black_boundary, white_boundary, out_fname)
+
+
+def test_frame1():
+    sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題4級(4).sgf'
+    framer = Framer(sgf_fname)
+    out_fname = '/Users/hyu/Downloads/test_framer4(4).sgf'
+    framer.frame1(out_fname)
 
 
 def test_surround():
