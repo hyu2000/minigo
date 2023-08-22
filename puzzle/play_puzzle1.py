@@ -81,6 +81,14 @@ class LnDPuzzle:
             return black_boundary, white_boundary, attack_side
         return black_boundary, white_boundary, attack_side
 
+    @staticmethod
+    def contested_area(board: np.array, defender_bbox: BBox, attack_side: int) -> int:
+        """ size of the contested area: basically just exclude attacker stones inside bbox
+        defender_bbox is obtained from solve_boundary()
+        """
+        bbox = defender_bbox
+        return np.sum(board[bbox.row0:(1+bbox.row1), bbox.col0:(1+bbox.col1)] != attack_side)
+
     # ----------- methods below are incomplete wip
     @staticmethod
     def verify_standardize_to_top_right(black_box: BBox, white_box: BBox) -> bool:
@@ -206,17 +214,21 @@ def test_puzzle_boundary():
     # snap should allow edge_thresh=2?
     sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題5級(9).sgf'
     sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題4級.sgf'
-    sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題4級(4).sgf'
+    # sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題4級(4).sgf'
     reader = SGFReader.from_file_compatible(sgf_fname)
     pos = reader.first_pos()
     black_box, white_box, attack_side = LnDPuzzle.solve_boundary(pos.board)
     assert attack_side == go.BLACK
     print("black", black_box)
     print("white", white_box)
+
     white_enlarged = white_box.grow(1)
     # 総合問題4級.sgf  white policy area: 0..3, 3..8
     assert white_enlarged.col0 == 3 and white_enlarged.row1 == 3
 
+    contested_area = LnDPuzzle.contested_area(pos.board, white_box, attack_side)
+    print(f'contested area = {contested_area}')
+    assert contested_area == 14
 
 def test_puzzle_bulk():
     sgf_dir = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death'
@@ -289,7 +301,7 @@ def play_puzzle():
 
         move_global = active.pick_move()[1]
         pi = active.root.children_as_pi()
-        print(pi[:81].reshape((9, 9)))
+        print(pi[:81].reshape((9, 9)), active.root.Q)
         pi *= policy_mask
         move = coords.from_flat(pi.argmax())
         logging.info('%d %s: dnn picks %s, val=%.1f, global %s -> masked %s', pos.n, go.color_str(pos.to_play),
