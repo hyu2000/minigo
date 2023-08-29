@@ -224,6 +224,22 @@ class A0JaxNet(DualNetwork):
         return probs.numpy(), values_black
 
 
+class MaskedNet(DualNetwork):
+    def __init__(self, dnn: DualNetwork, policy_mask: np.array):
+        self.dnn = dnn
+        self.mask = policy_mask
+
+    def run(self, position: go.Position):
+        probs, values = self.run_many([position])
+        return probs[0], values[0]
+
+    def run_many(self, positions: List[go.Position]) -> Tuple[np.ndarray, np.ndarray]:
+        probs, values = self.dnn.run_many(positions)
+        # np will broadcast mask along the batch dimension
+        probs = np.multiply(probs, self.mask)
+        return probs, values
+
+
 class CoreMLNet(DualNetwork):
     """ use coreml for prediction """
 

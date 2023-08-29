@@ -64,6 +64,26 @@ SEND_TWO_RETURN_ONE = go.Position(
 
 
 class TestMctsNodes(test_utils.MinigoUnitTest):
+
+    def test_basic_usage(self):
+        """
+        try to understand this comment:     # Must run this once at the start to expand the root node.
+        Only affects parallel readout? Before root is expanded, multiple select_leaf() returns root always
+
+        Added first_root_expansion() to relieve the eye sore
+        """
+        np.random.seed(1)
+        probs = np.array([.02] * (go.N * go.N + 1))
+        probs = probs + np.random.random([go.N * go.N + 1]) * 0.001
+        black_root = mcts.MCTSNode(go.Position())
+
+        node = black_root.select_leaf()
+        assert node == black_root
+        node.incorporate_results(probs, 0, black_root)
+        black_leaf = black_root.select_leaf()
+        assert black_leaf.position.n == 1
+        assert black_leaf.fmove
+
     def test_upper_bound_confidence(self):
         probs = np.array([.02] * (go.N * go.N + 1))
         root = mcts.MCTSNode(go.Position())

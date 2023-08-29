@@ -81,7 +81,7 @@ class MCTSNode(object):
     """
     TOTAL_MOVES = go.N * go.N + 1
 
-    def __init__(self, position, fmove=None, parent=None):
+    def __init__(self, position, fmove=None, parent=None, focus_area=None):
         if parent is None:
             parent = DummyNode()
         self.parent = parent
@@ -94,6 +94,9 @@ class MCTSNode(object):
             legal_moves = zobrist_util.legal_moves_sans_symmetry(self.position)
         else:
             legal_moves = self.position.all_legal_moves()
+        self.focus_area = focus_area  # keep a reference to pass onto children
+        if focus_area is not None:
+            legal_moves = np.logical_and(legal_moves, focus_area)
         self.illegal_moves = 1 - legal_moves
         self.child_N = np.zeros([go.N * go.N + 1], dtype=np.float32)
         self.child_W = np.zeros([go.N * go.N + 1], dtype=np.float32)
@@ -110,8 +113,7 @@ class MCTSNode(object):
 
     @property
     def child_action_score(self):
-        return (self.child_Q * self.position.to_play +
-                self.child_U - 1000 * self.illegal_moves)
+        return self.child_Q * self.position.to_play + self.child_U - 1000 * self.illegal_moves
 
     @property
     def child_Q(self):
@@ -120,12 +122,14 @@ class MCTSNode(object):
     @staticmethod
     @lru_cache(maxsize=None)
     def child_U_scaler(n: float) -> float:
+        """ self.N is a float (version of int)
+        """
         return (math.log1p((1.0 + n) / FLAGS.c_puct_base) + FLAGS.c_puct_init) * 2.0 * math.sqrt(max(1, n - 1))
 
     @property
     def child_U(self):
         # can we simplify this a bit more?
-        return self.child_U_scaler(self.N) * self.child_prior / (1 + self.child_N)
+        return MCTSNode.child_U_scaler(self.N) * self.child_prior / (1 + self.child_N)
 
     @property
     def Q(self) -> float:
@@ -151,6 +155,17 @@ class MCTSNode(object):
     def Q_perspective(self) -> float:
         """Return value of position, from perspective of player to play."""
         return self.Q * self.position.to_play
+
+    def first_root_expansion(self, dnn):
+        """ ctor doesn't expand node. For search root, we need to expand it so that inject_noise/etc would work.
+        For a typical selfplay, nodes are reused so this is the only time manual expansion is needed
+        """
+        if self.is_expanded:
+            logging.info('first_root_expansion: node already expanded, skipping')
+            return
+
+        prob, val = dnn.run(self.position)
+        self.incorporate_results(prob, val, self)
 
     def select_leaf(self) -> 'MCTSNode':
         """ select a leaf for evaluation/expansion
@@ -179,8 +194,8 @@ class MCTSNode(object):
         if fcoord not in self.children:
             new_position = self.position.play_move(
                 coords.from_flat(fcoord))
-            self.children[fcoord] = MCTSNode(
-                new_position, fmove=fcoord, parent=self)
+            self.children[fcoord] = MCTSNode(new_position, fmove=fcoord, parent=self,
+                                             focus_area=self.focus_area)
         return self.children[fcoord]
 
     def add_virtual_loss(self, up_to):

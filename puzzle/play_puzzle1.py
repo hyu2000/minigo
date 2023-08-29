@@ -83,13 +83,17 @@ class LnDPuzzle:
 
     @staticmethod
     def contested_area(board: np.array, defender_bbox: BBox, attack_side: int) -> int:
-        """ size of the contested area: basically just exclude attacker stones inside bbox
+        """ size of the contested area: a simple estimate, basically just exclude attacker stones inside bbox
+        Could be very off if many dead attacker stones inside the bbox.
+
         defender_bbox is obtained from solve_boundary()
         """
         bbox = defender_bbox
         return np.sum(board[bbox.row0:(1+bbox.row1), bbox.col0:(1+bbox.col1)] != attack_side)
 
-    # ----------- methods below are incomplete wip
+    # -----------------------------------------------------------------------
+    # methods below are incomplete wip
+    # -----------------------------------------------------------------------
     @staticmethod
     def verify_standardize_to_top_right(black_box: BBox, white_box: BBox) -> bool:
         """ """
@@ -230,6 +234,7 @@ def test_puzzle_boundary():
     print(f'contested area = {contested_area}')
     assert contested_area == 14
 
+
 def test_puzzle_bulk():
     sgf_dir = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death'
     sgf_fnames = glob.glob(f'{sgf_dir}/総合問題4級*.sgf')
@@ -264,30 +269,27 @@ def play_puzzle():
     Seems raw policy is pretty flat --> MCTS is doing most of the work. Masked MCTS?
     """
     num_readouts = 400
-    model_id = 'model12_2'
+    model_id = 'model12_3'
     model_fname = f'{myconf.EXP_HOME}/../9x9-exp2/checkpoints/{model_id}.mlpackage'
     dnn_underlyer = dual_net.load_net(model_fname)
 
-    sgf_fname = '/Users/hyu/PycharmProjects/dlgo/9x9/games/Pro/9x9/Minigo/890826.sgf'
     sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題4級(2).sgf'
+    # sgf_fname = '/Users/hyu/Downloads/test_framer4(4).sgf'
     reader = SGFReader.from_file_compatible(sgf_fname)
     pos = reader.first_pos()
     black_box, white_box, attack_side = LnDPuzzle.solve_boundary(pos.board)
     policy_mask = mask_to_policy(rect_mask(white_box.grow(1)))
-    print(f'Solving %s, mask:', os.path.basename(sgf_fname))
+    print(f'Solving %s, mask size=%d:' % (os.path.basename(sgf_fname), np.sum(policy_mask)))
     print(policy_mask[:81].reshape((9, 9)))
 
-    dnn = dual_net.MaskedNet(dnn_underlyer, policy_mask)
+    # dnn = dual_net.MaskedNet(dnn_underlyer, policy_mask)
+    dnn = dnn_underlyer
     player = MCTSPlayer(dnn)
 
-    player.initialize_game(pos)
-    # Must run this once at the start to expand the root node.
-    first_node = player.root.select_leaf()
-    assert first_node == player.root
-    prob, val = dnn.run(first_node.position)
-    first_node.incorporate_results(prob, val, first_node)
+    player.initialize_game(pos, focus_area=policy_mask)
+    player.root.first_root_expansion(dnn)
 
-    for i in range(6):
+    for i in range(10):
         # dnn prediction
         move_probs, val_estimate = dnn.run(pos)
         move_dnn = coords.flat_to_gtp(move_probs.argmax())
@@ -302,13 +304,13 @@ def play_puzzle():
         move_global = active.pick_move()[1]
         pi = active.root.children_as_pi()
         print(pi[:81].reshape((9, 9)), active.root.Q)
-        pi *= policy_mask
-        move = coords.from_flat(pi.argmax())
-        logging.info('%d %s: dnn picks %s, val=%.1f, global %s -> masked %s', pos.n, go.color_str(pos.to_play),
-                     move_dnn, val_estimate, coords.to_gtp(move_global), coords.to_gtp(move))
+        # pi *= policy_mask
+        # move = coords.from_flat(pi.argmax())
+        logging.info('%d %s: dnn picks %s, val=%.1f, global %s ', pos.n, go.color_str(pos.to_play),
+                     move_dnn, val_estimate, coords.to_gtp(move_global))
 
-        active.play_move(move)
-        pos = pos.play_move(move)
+        active.play_move(move_global)
+        pos = pos.play_move(move_global)
         if player.root.is_done():
             player.set_result(player.root.position.result(), was_resign=False)
             break

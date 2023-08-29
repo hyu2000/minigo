@@ -123,14 +123,15 @@ class MCTSPlayer(MCTSPlayerInterface):
     def get_result_string(self):
         return self.result_string
 
-    def initialize_game(self, position: go.Position = None, root: mcts.MCTSNode = None):
+    def initialize_game(self, position: go.Position = None, root: mcts.MCTSNode = None,
+                        focus_area: np.array = None):
         """
         root: allows tree reuse
         """
         if position is None:
             position = go.Position()
         if root is None:
-            self.root = mcts.MCTSNode(position)
+            self.root = mcts.MCTSNode(position, focus_area=focus_area)
         else:
             assert root.position == position
             self.root = root
@@ -190,6 +191,7 @@ class MCTSPlayer(MCTSPlayerInterface):
                 self.searches_pi.append(self.root.children_as_pi(False
                     # squash=self.root.position.n < self.temp_threshold
                 ))
+                # also record v
             else:
                 self.searches_pi.append(None)
         else:
@@ -246,7 +248,8 @@ class MCTSPlayer(MCTSPlayerInterface):
                 dbg(self.show_path_to_root(leaf))
             # if game is over, override the value estimate with the true score
             if leaf.is_done():
-                value = leaf.position.score()
+                # value = leaf.position.score()
+                value = leaf.position.score_tromp(mask=self.root.focus_area)
                 leaf.raw_margin = value
                 win_loss = np.sign(value)
                 leaf.backup_value(win_loss, up_to=self.root)
