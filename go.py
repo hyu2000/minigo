@@ -706,6 +706,7 @@ class Position:
             place_stones(working_board, territory_color, territory)
 
         if mask is not None:
+            mask = mask[:N*N].reshape((N, N))
             working_board[mask == 0] = 0
         return np.count_nonzero(working_board == BLACK) - np.count_nonzero(working_board == WHITE) - self.komi
 

@@ -273,7 +273,7 @@ class TestMaskedScoring(test_utils.MinigoUnitTest):
     def test_masked_score_from_sgf(self):
         """ how to define the mask
         """
-        fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題４級.sgf'
+        fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題4級.sgf'
         assert os.path.isfile(fname)
         reader = SGFReader.from_file_compatible(fname)
         assert len(reader.black_init_stones()) == 9 and len(reader.white_init_stones()) == 6
