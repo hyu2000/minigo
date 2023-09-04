@@ -96,12 +96,7 @@ def play(network, init_position=None, init_root=None):
 
     player = MCTSPlayer(network, resign_threshold=resign_threshold)
     player.initialize_game(position=init_position, root=init_root)
-
-    # Must run this once at the start to expand the root node.
-    if not player.root.is_expanded:
-        first_node = player.root.select_leaf()
-        prob, val = network.run(first_node.position)
-        first_node.incorporate_results(prob, val, first_node)
+    player.root.first_root_expansion(network)
 
     while True:
         start = time.time()
@@ -168,13 +163,13 @@ def create_dir_if_needed(selfplay_dir=None, holdout_dir=None, sgf_dir=None):
         utils.ensure_dir_exists(holdout_dir)
 
 
-def run_game(dnn, init_position: go.Position=None, init_root: mcts.MCTSNode=None,
+def run_game(dnn, init_position: go.Position=None,
              game_id=None,
              selfplay_dir=None, holdout_dir=None,
              sgf_dir=None, holdout_pct=0.05) -> Tuple[MCTSPlayer, str]:
     """Takes a played game and record results and game data."""
     with utils.logged_timer(f"Playing game {game_id}"):
-        player = play(dnn, init_position=init_position, init_root=init_root)
+        player = play(dnn, init_position=init_position)
 
     if game_id:
         output_name = '{}-{}'.format(os.path.splitext(os.path.basename(game_id))[0], utils.microseconds_since_midnight())
@@ -276,11 +271,9 @@ def main(argv):
     create_dir_if_needed(selfplay_dir=FLAGS.selfplay_dir, holdout_dir=FLAGS.holdout_dir,
                          sgf_dir=myconf.SELFPLAY_DIR)
 
-    shared_tree = mcts.MCTSNode(init_position)
     player, sgf_fname = run_game(
         network,
         init_position=init_position, game_id=init_sgf,
-        init_root=shared_tree,
         selfplay_dir=FLAGS.selfplay_dir,
         holdout_dir=FLAGS.holdout_dir,
         # selfplay_dir=f'{myconf.EXP_HOME}/selfplay/tfdata',
@@ -289,7 +282,6 @@ def main(argv):
         sgf_dir=f'{myconf.SELFPLAY_DIR}'
         # sgf_dir=FLAGS.sgf_dir
     )
-    print(len(shared_tree.children))
 
 
 if __name__ == '__main__':

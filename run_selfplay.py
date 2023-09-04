@@ -56,30 +56,22 @@ def play_games(num_games=500):
                          sgf_dir=FLAGS.sgf_dir)
 
     init_position_sampler = InitPositions(None, None)
-    for i_batch in grouper(FLAGS.num_games_share_tree, iter(range(num_games))):
-        if FLAGS.num_games_share_tree > 1:
-            logging.info(f'\nStarting new batch : %d games', len(i_batch))
+    for i in range(num_games):
         init_position = init_position_sampler.sample()
-        shared_tree = mcts.MCTSNode(init_position)
-        for i in i_batch:
-            player, sgf_fname = run_game(network,
-                                         init_position=init_position,
-                                         init_root=shared_tree,
-                                         selfplay_dir=FLAGS.selfplay_dir,
-                                         holdout_dir=FLAGS.holdout_dir,
-                                         holdout_pct=FLAGS.holdout_pct,
-                                         sgf_dir=FLAGS.sgf_dir,
-                                         game_id=str(i)
-                                         )
-            # margin_est = player.black_margin_no_komi
-            moves = [coords.to_gtp(x.move) for x in player.root.position.recent]
-            history_str = format_game_summary(moves, player.result_string, sgf_fname=sgf_fname)
+        player, sgf_fname = run_game(network,
+                                     init_position=init_position,
+                                     selfplay_dir=FLAGS.selfplay_dir,
+                                     holdout_dir=FLAGS.holdout_dir,
+                                     holdout_pct=FLAGS.holdout_pct,
+                                     sgf_dir=FLAGS.sgf_dir,
+                                     game_id=str(i)
+                                     )
+        # margin_est = player.black_margin_no_komi
+        moves = [coords.to_gtp(x.move) for x in player.root.position.recent]
+        history_str = format_game_summary(moves, player.result_string, sgf_fname=sgf_fname)
 
-            # ru_rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-
-            logging.info(f'game {i}: %s', history_str)
-
-        del shared_tree
+        # ru_rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        logging.info(f'game {i}: %s', history_str)
 
     logging.info(f'Done with {num_games} games')
 
