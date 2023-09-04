@@ -248,4 +248,10 @@ if __name__ == '__main__':
     out_dir = '/Users/hyu/Downloads/go-puzzle9'
     # main()
     # download_all()
-    download_collection(10496, out_dir)
+    """
+    10496 Ralph's Cho Chikun Tsumegos
+    15438 Beginning Shapes  23 puzzles, mostly 9x9
+    42928 Wang Zhi et al.'s 1000 Tsumegos, 60% 9x9, some 7x7, 11x11
+    2312  How to Play Go +, 51 puzzles, mostly 9x9
+    """
+    download_collection(2312, out_dir)
