@@ -81,7 +81,7 @@ class MCTSNode(object):
     """
     TOTAL_MOVES = go.N * go.N + 1
 
-    def __init__(self, position, fmove=None, parent=None, focus_area=None):
+    def __init__(self, position, fmove=None, parent=None):
         if parent is None:
             parent = DummyNode()
         self.parent = parent
@@ -94,9 +94,6 @@ class MCTSNode(object):
             legal_moves = zobrist_util.legal_moves_sans_symmetry(self.position)
         else:
             legal_moves = self.position.all_legal_moves()
-        self.focus_area = focus_area  # keep a reference to pass onto children
-        if focus_area is not None:
-            legal_moves = np.logical_and(legal_moves, focus_area)
         self.illegal_moves = 1 - legal_moves
         self.child_N = np.zeros([go.N * go.N + 1], dtype=np.float32)
         self.child_W = np.zeros([go.N * go.N + 1], dtype=np.float32)
@@ -194,8 +191,7 @@ class MCTSNode(object):
         if fcoord not in self.children:
             new_position = self.position.play_move(
                 coords.from_flat(fcoord))
-            self.children[fcoord] = MCTSNode(new_position, fmove=fcoord, parent=self,
-                                             focus_area=self.focus_area)
+            self.children[fcoord] = MCTSNode(new_position, fmove=fcoord, parent=self)
         return self.children[fcoord]
 
     def add_virtual_loss(self, up_to):

@@ -131,7 +131,7 @@ class MCTSPlayer(MCTSPlayerInterface):
         if position is None:
             position = go.Position()
         if root is None:
-            self.root = mcts.MCTSNode(position, focus_area=focus_area)
+            self.root = mcts.MCTSNode(position)
         else:
             assert root.position == position
             self.root = root
@@ -142,6 +142,7 @@ class MCTSPlayer(MCTSPlayerInterface):
         # keep track of where in the game MCTS gets involved
         self.init_root = self.root
         self.move_infos = [coords.to_gtp(x.move) for x in self.root.position.recent]
+        self.focus_area = focus_area
 
     def suggest_move(self, position):
         """Used for playing a single game.
@@ -249,7 +250,7 @@ class MCTSPlayer(MCTSPlayerInterface):
             # if game is over, override the value estimate with the true score
             if leaf.is_done():
                 # value = leaf.position.score()
-                value = leaf.position.score_tromp(mask=self.root.focus_area)
+                value = leaf.position.score_tromp(mask=self.focus_area)
                 leaf.raw_margin = value
                 win_loss = np.sign(value)
                 leaf.backup_value(win_loss, up_to=self.root)
