@@ -112,7 +112,7 @@ def test_puzzle_boundary():
     # snap should allow edge_thresh=2?
     sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題5級(9).sgf'
     sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題4級.sgf'
-    sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題4級(4).sgf'
+    # sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題4級(4).sgf'
     reader = SGFReader.from_file_compatible(sgf_fname)
     pos = reader.first_pos()
     black_box, white_box, attack_side = LnDPuzzle.solve_boundary(pos.board)
@@ -136,7 +136,7 @@ def test_puzzle_bulk():
     from sgf_wrapper import SGFReader
 
     sgf_dir = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death'
-    sgf_fnames = sorted(glob.glob(f'{sgf_dir}/総合問題4級*.sgf'))
+    sgf_fnames = sorted(glob.glob(f'{sgf_dir}/総合問題5級*.sgf'))
     print('found', len(sgf_fnames))
     for sgf_fname in sgf_fnames:
         basename = os.path.split(sgf_fname)[-1]
@@ -149,4 +149,11 @@ def test_puzzle_bulk():
             continue
         contested_area = LnDPuzzle.contested_area(pos.board, white_box if attack_side == go.BLACK else black_box, attack_side)
         print(contested_area)
+
+        # check defender owns the area for now
+        komi = pos.komi
+        score = pos.score_tromp(mask=contested_area)
+        print(f'komi={komi}, attack_side={attack_side}, score={score}')
+        assert komi == 0
+        assert score * attack_side < 0
 

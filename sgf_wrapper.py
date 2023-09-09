@@ -389,6 +389,7 @@ class SGFReader(object):
         for pwc in self.iter_pwcs():
             break
         pos = pwc.position
+        pos.to_play = self.player_to_start()
         assert pos.to_play == go.BLACK   # is this always true?
         return pos
 
