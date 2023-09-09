@@ -1,6 +1,4 @@
-import glob
 import os
-from collections import namedtuple
 from typing import Tuple
 
 import numpy as np
@@ -9,7 +7,7 @@ import coords
 import go
 import k2net as dual_net
 import myconf
-from puzzle.lnd_puzzle import BBox, LnDPuzzle
+from puzzle.lnd_puzzle import BBox, LnDPuzzle, rect_mask
 from sgf_wrapper import SGFReader
 from strategies import MCTSPlayer
 from absl import logging, app
@@ -116,66 +114,10 @@ class LnDFramer0:
         # add border to oppo_area
 
 
-def rect_mask(bbox: BBox) -> np.array:
-    """ all inclusive """
-    mask = np.zeros((go.N, go.N), dtype=np.int8)
-    mask[bbox.row0:bbox.row1+1, bbox.col0:bbox.col1+1] = 1
-    return mask
-
 
 def mask_to_policy(board: np.array) -> np.array:
     """ return a flattened policy, always allow pass """
     return np.append(board.flatten(), 1)
-
-
-def test_bbox():
-    print()
-    bbox = BBox(0, 3, 3, 8)
-    mask0 = rect_mask(bbox)
-    print(mask0)
-    assert bbox.area() == 24
-
-    oppo_area = (go.N * go.N - bbox.area()) // 2
-    rows_needed = oppo_area / go.N
-    print(bbox.nrows(), bbox.ncols(), 'need', rows_needed)
-
-
-def test_puzzle_boundary():
-    # snap should allow edge_thresh=2?
-    sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題5級(9).sgf'
-    sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題4級.sgf'
-    # sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題4級(4).sgf'
-    reader = SGFReader.from_file_compatible(sgf_fname)
-    pos = reader.first_pos()
-    black_box, white_box, attack_side = LnDPuzzle.solve_boundary(pos.board)
-    assert attack_side == go.BLACK
-    print("black", black_box)
-    print("white", white_box)
-
-    white_enlarged = white_box.grow(1)
-    # 総合問題4級.sgf  white policy area: 0..3, 3..8
-    assert white_enlarged.col0 == 3 and white_enlarged.row1 == 3
-
-    contested_area = LnDPuzzle.contested_area(pos.board, white_box, attack_side)
-    print(f'contested area = {contested_area}')
-    assert contested_area == 14
-
-
-def test_puzzle_bulk():
-    sgf_dir = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death'
-    sgf_fnames = glob.glob(f'{sgf_dir}/総合問題4級*.sgf')
-    print('found', len(sgf_fnames))
-    for sgf_fname in sgf_fnames:
-        basename = os.path.split(sgf_fname)[-1]
-        print(f'Processing {basename}')
-        reader = SGFReader.from_file_compatible(sgf_fname)
-        pos = reader.first_pos()
-        black_box, white_box, attack_side = LnDPuzzle.solve_boundary(pos.board)
-        if attack_side == 0:
-            print('no clear attack_side, skipping')
-            continue
-        print(go.color_str(attack_side), black_box, white_box)
-        LnDFramer0.fill_rest_of_board(pos.board)
 
 
 def test_fill_board():

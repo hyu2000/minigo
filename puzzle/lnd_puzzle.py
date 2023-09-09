@@ -1,3 +1,4 @@
+import os
 from collections import namedtuple
 
 import numpy as np
@@ -73,11 +74,79 @@ class LnDPuzzle:
         return black_boundary, white_boundary, attack_side
 
     @staticmethod
-    def contested_area(board: np.array, defender_bbox: BBox, attack_side: int) -> int:
-        """ size of the contested area: a simple estimate, basically just exclude attacker stones inside bbox
+    def contested_area(board: np.array, defender_bbox: BBox, attack_side: int) -> np.array:
+        """ contested area: a simple estimate, basically just exclude attacker stones inside bbox
         Could be very off if many dead attacker stones inside the bbox.
 
         defender_bbox is obtained from solve_boundary()
         """
         bbox = defender_bbox
-        return np.sum(board[bbox.row0:(1+bbox.row1), bbox.col0:(1+bbox.col1)] != attack_side)
+        mask = np.zeros(board.shape)
+        mask[bbox.row0:(1 + bbox.row1), bbox.col0:(1 + bbox.col1)] = \
+            board[bbox.row0:(1 + bbox.row1), bbox.col0:(1 + bbox.col1)] != attack_side
+        return mask
+
+
+def rect_mask(bbox: BBox) -> np.array:
+    """ all inclusive """
+    mask = np.zeros((go.N, go.N), dtype=np.int8)
+    mask[bbox.row0:bbox.row1+1, bbox.col0:bbox.col1+1] = 1
+    return mask
+
+
+def test_bbox():
+    print()
+    bbox = BBox(0, 3, 3, 8)
+    mask0 = rect_mask(bbox)
+    print(mask0)
+    assert bbox.area() == 24
+
+    oppo_area = (go.N * go.N - bbox.area()) // 2
+    rows_needed = oppo_area / go.N
+    print(bbox.nrows(), bbox.ncols(), 'need', rows_needed)
+
+
+def test_puzzle_boundary():
+    from sgf_wrapper import SGFReader
+
+    # snap should allow edge_thresh=2?
+    sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題5級(9).sgf'
+    sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題4級.sgf'
+    sgf_fname = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death/総合問題4級(4).sgf'
+    reader = SGFReader.from_file_compatible(sgf_fname)
+    pos = reader.first_pos()
+    black_box, white_box, attack_side = LnDPuzzle.solve_boundary(pos.board)
+    assert attack_side == go.BLACK
+    print("black", black_box)
+    print("white", white_box)
+
+    white_enlarged = white_box.grow(1)
+    # 総合問題4級.sgf  white policy area: 0..3, 3..8
+    assert white_enlarged.col0 == 3 and white_enlarged.row1 == 3
+
+    contested_area = LnDPuzzle.contested_area(pos.board, white_box, attack_side)
+    print(contested_area)
+    contested_size = np.sum(contested_area)
+    print(f'contested area size = {contested_size}')
+    assert contested_size == 14
+
+
+def test_puzzle_bulk():
+    import glob
+    from sgf_wrapper import SGFReader
+
+    sgf_dir = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death'
+    sgf_fnames = sorted(glob.glob(f'{sgf_dir}/総合問題4級*.sgf'))
+    print('found', len(sgf_fnames))
+    for sgf_fname in sgf_fnames:
+        basename = os.path.split(sgf_fname)[-1]
+        print(f'\nProcessing {basename}')
+        reader = SGFReader.from_file_compatible(sgf_fname)
+        pos = reader.first_pos()
+        black_box, white_box, attack_side = LnDPuzzle.solve_boundary(pos.board)
+        if attack_side == 0:
+            print('no clear attack_side, skipping')
+            continue
+        contested_area = LnDPuzzle.contested_area(pos.board, white_box if attack_side == go.BLACK else black_box, attack_side)
+        print(contested_area)
+

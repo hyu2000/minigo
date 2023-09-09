@@ -116,7 +116,8 @@ class Framer:
 
         # figure out who encircles whom
         black_bbox, white_bbox, attack_side = LnDPuzzle.solve_boundary(board)
-        corner_size = LnDPuzzle.contested_area(board, white_bbox if attack_side == go.BLACK else black_bbox, attack_side)
+        contested_area = LnDPuzzle.contested_area(board, white_bbox if attack_side == go.BLACK else black_bbox, attack_side)
+        corner_size = np.sum(contested_area)
         defender_area_other = (np.prod(board.shape) - corner_size) // 2
         logging.info(f'attacker %s, corner size={corner_size}, area_left={defender_area_other}', go.color_str(attack_side))
         attacker_boundary, defender_boundary = Framer.grow_to(board, defender_area_other)
