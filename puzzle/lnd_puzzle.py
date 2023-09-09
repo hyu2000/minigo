@@ -3,6 +3,7 @@ from collections import namedtuple
 
 import numpy as np
 
+import coords
 import go
 
 
@@ -136,8 +137,9 @@ def test_puzzle_bulk():
     from sgf_wrapper import SGFReader
 
     sgf_dir = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death'
-    sgf_fnames = sorted(glob.glob(f'{sgf_dir}/総合問題5級*.sgf'))
-    print('found', len(sgf_fnames))
+    sgf_fnames = sorted(glob.glob(f'{sgf_dir}/総合問題4級*.sgf'))
+    # sgf_fnames = sorted(glob.glob(f'{sgf_dir}/*.sgf'))
+    print('found', len(sgf_fnames), 'puzzles')
     for sgf_fname in sgf_fnames:
         basename = os.path.split(sgf_fname)[-1]
         print(f'\nProcessing {basename}')
@@ -153,7 +155,48 @@ def test_puzzle_bulk():
         # check defender owns the area for now
         komi = pos.komi
         score = pos.score_tromp(mask=contested_area)
-        print(f'komi={komi}, attack_side={attack_side}, score={score}')
         assert komi == 0
         assert score * attack_side < 0
 
+        last_pos = reader.last_pos()
+        last_score = last_pos.score_tromp(mask=contested_area)
+        print(f'komi={komi}, attack_side={attack_side}, score={score}, steps={last_pos.n - pos.n}, last_score={last_score}')
+
+
+def test_puzzle_final_score():
+    """ see if we can extract the human label of the puzzle
+
+    Amigo: game main-line is the right sequence, but doesn't always finish playing, so we don't have a clean label
+    """
+    import glob
+    from sgf_wrapper import SGFReader
+
+    sgf_dir = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death'
+    sgf_fnames = sorted(glob.glob(f'{sgf_dir}/急所を見つけよう*.sgf'))
+    # sgf_fnames = sorted(glob.glob(f'{sgf_dir}/*.sgf'))
+    print('found', len(sgf_fnames), 'puzzles')
+    for sgf_fname in sgf_fnames:
+        basename = os.path.split(sgf_fname)[-1]
+        print(f'\nProcessing {basename}')
+        reader = SGFReader.from_file_compatible(sgf_fname)
+        pos = reader.first_pos()
+        black_box, white_box, attack_side = LnDPuzzle.solve_boundary(pos.board)
+        if attack_side == 0:
+            print('no clear attack_side, skipping')
+            continue
+        contested_area = LnDPuzzle.contested_area(pos.board, white_box if attack_side == go.BLACK else black_box, attack_side)
+        # print(contested_area)
+        contested_size = int(np.sum(contested_area))
+
+        # check defender owns the area for now
+        komi = pos.komi
+        score = pos.score_tromp(mask=contested_area)
+        assert komi == 0
+        assert score * attack_side < 0
+
+        last_pos = reader.last_pos()
+        last_score = last_pos.score_tromp(mask=contested_area)
+        print(f'attack_side={attack_side}, size={contested_size}, score={score} -> last_score={last_score} result={reader.result_str()} steps={last_pos.n - pos.n}, ')
+        moves = [coords.to_gtp(pwc.next_move) for pwc in reader.iter_pwcs()]
+        killed = score * last_score < 0
+        print(' '.join(moves), 'killed' if killed else '')
