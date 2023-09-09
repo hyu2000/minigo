@@ -13,7 +13,7 @@ import numpy as np
 import myconf
 import coords
 import go
-from puzzle.play_puzzle1 import LnDPuzzle
+from puzzle.lnd_puzzle import LnDPuzzle
 from sgf_wrapper import SGFReader, add_init_stones_file
 
 
