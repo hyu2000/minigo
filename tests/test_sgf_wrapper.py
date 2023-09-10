@@ -69,6 +69,10 @@ class TestSgfGeneration(test_utils.MinigoUnitTest):
         with open('/Users/hyu/Downloads/make_sgf_from_gtp.4visits.sgf', 'w') as f:
             f.write(sgf_str)
 
+    def test_make_sgf_with_setup_stones(self):
+        """ does AB|AW allow empty cases: AB[]AW[]: Yes """
+        pass
+
     def test_parse_LnD(self):
         """ understand how sgf node works: variation """
         # too hard to parse by hand
@@ -336,6 +340,35 @@ GC[not broadcast]
         # https://online-go.com/puzzle/67916
         sgf_str = """
 (;FF[4]CA[UTF-8]AP[puzzle2sgf:0.1]GM[1]GN[総合問題１０級]SZ[9]AB[he][ge][gd][gc][fb][fa][ec]AW[ib][gb][ga][hc][hd]PL[B]C[黒先白死：Black to kill
+
+コウやセキは失敗：Kou and Seki are failures
+](;B[ha];W[hb](;B[id]C[CORRECT];W[ic](;B[ia]C[CORRECT])(;B[ie];W[ia]C[CORRECT];B[ha]C[CORRECT]))(;B[ic];W[id]C[WRONG])(;B[ie];W[id]C[WRONG]))(;B[id];W[ha]C[WRONG](;B[ie];W[ic]C[WRONG])(;B[ic];W[ie]C[WRONG](;B[id];W[ic]C[WRONG])(;B[ic];W[id]C[WRONG])))(;B[hb];W[ha]C[WRONG])(;B[ic];W[id]C[WRONG])(;B[ia];W[ha]C[WRONG])(;B[ie];W[id]C[WRONG]))        
+"""
+        reader = SGFReader.from_string(sgf_str)
+
+        # AB|AW
+        black_setup_stones = reader.black_init_stones()
+        white_setup_stones = reader.white_init_stones()
+        print('AB:', [coords.to_gtp(p) for p in black_setup_stones])
+        print('AW:', [coords.to_gtp(p) for p in white_setup_stones])
+        assert reader.player_to_start() == go.BLACK
+
+        pos = reader.first_pos()
+        print(pos.board)
+
+        # SGFReader go thru main-line only
+        # (;B[ha];W[hb] (;B[id]C[CORRECT];W[ic] (;B[ia]C[CORRECT]) (;B[ie];W[ia]C[CORRECT];B[ha]C[CORRECT]) ) \
+        # (;B[ic];W[id]C[WRONG])(;B[ie];W[id]C[WRONG]))(;B[id];W[ha]C[WRONG](;B[ie];W[ic]C[WRONG])(;B[ic];W[ie]C[WRONG](;B[id];W[ic]C[WRONG])(;B[ic];W[id]C[WRONG])))(;B[hb];W[ha]C[WRONG])(;B[ic];W[id]C[WRONG])(;B[ia];W[ha]C[WRONG])(;B[ie];W[id]C[WRONG]))
+        print('main line:')
+        for i, (move, comments) in enumerate(reader.iter_comments()):
+            print(i, move, comments)
+
+    def test_read_LnD_empty_AB(self):
+        """ see how we handle LND puzzle with empty AB|AW
+        """
+        # https://online-go.com/puzzle/67916
+        sgf_str = """
+(;FF[4]CA[UTF-8]AP[puzzle2sgf:0.1]GM[1]GN[総合問題１０級]SZ[9]AB[]AW[]PL[B]C[黒先白死：Black to kill
 
 コウやセキは失敗：Kou and Seki are failures
 ](;B[ha];W[hb](;B[id]C[CORRECT];W[ic](;B[ia]C[CORRECT])(;B[ie];W[ia]C[CORRECT];B[ha]C[CORRECT]))(;B[ic];W[id]C[WRONG])(;B[ie];W[id]C[WRONG]))(;B[id];W[ha]C[WRONG](;B[ie];W[ic]C[WRONG])(;B[ic];W[ie]C[WRONG](;B[id];W[ic]C[WRONG])(;B[ic];W[id]C[WRONG])))(;B[hb];W[ha]C[WRONG])(;B[ic];W[id]C[WRONG])(;B[ia];W[ha]C[WRONG])(;B[ie];W[id]C[WRONG]))        

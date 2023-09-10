@@ -36,7 +36,7 @@ from absl import logging
 
 
 SGF_TEMPLATE = '''(;GM[1]FF[4]CA[UTF-8]AP[Minigo_sgfgenerator]RU[{ruleset}]
-SZ[{boardsize}]KM[{komi}]PW[{white_name}]PB[{black_name}]RE[{result}]C[{game_comment}]
+SZ[{boardsize}]{add_blacks}{add_whites}KM[{komi}]PW[{white_name}]PB[{black_name}]RE[{result}]C[{game_comment}]
 {game_moves})'''
 
 PROGRAM_IDENTIFIER = "Minigo"
@@ -61,6 +61,8 @@ def make_sgf(
     result_string,
     ruleset="Chinese",
     komi=7.5,
+    black_setup_stones=None,
+    white_setup_stones=None,
     white_name=PROGRAM_IDENTIFIER,
     black_name=PROGRAM_IDENTIFIER,
     game_comment=' ',
@@ -78,6 +80,12 @@ def make_sgf(
     """
     assert len(game_comment) > 0   # wgo won't show *any* comment if it's empty. ' ' will do
     boardsize = go.N
+    add_blacks = ''
+    if black_setup_stones:
+        add_blacks = 'AB' + ''.join(f'[{coords.to_sgf(x)}]' for x in black_setup_stones)
+    add_whites = ''
+    if white_setup_stones:
+        add_whites = 'AW' + ''.join(f'[{coords.to_sgf(x)}]' for x in white_setup_stones)
     game_moves = ''.join(translate_sgf_move(*z)
                          for z in itertools.zip_longest(move_history, comments))
     result = result_string
@@ -390,7 +398,6 @@ class SGFReader(object):
             break
         pos = pwc.position
         pos.to_play = self.player_to_start()
-        assert pos.to_play == go.BLACK   # is this always true?
         return pos
 
     def iter_comments(self) -> Iterable[Tuple[str, List[str]]]:
