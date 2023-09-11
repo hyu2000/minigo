@@ -248,10 +248,25 @@ if __name__ == '__main__':
     out_dir = '/Users/hyu/Downloads/go-puzzle9'
     # main()
     # download_all()
+    """  https://online-go.com/puzzles
+    How to Play Go +, 51 puzzles, mostly 9x9      https://online-go.com/puzzle/2312
+        sgf: MA to mark multiple capture spots in multi small puzzles
+    Beginning Shapes  23 puzzles, mostly 9x9      https://online-go.com/puzzle/15438
+    【2択】詰碁解けたら寝ろシリーズ【9-18級】easy 2-choice question, 103 puzzles,   https://online-go.com/puzzle/69105
+    Amigo no igo - 詰碁2023 - Life and Death, 146 puzzles,                    https://online-go.com/puzzle/68892
+    Wang Zhi et al.'s 1000 Tsumegos, 60 puzzles, 60% 9x9, some 7x7, 11x11,   https://online-go.com/puzzle/42928
+    
+    end-game:
+    官子強化書 初級篇 9x9 Yose questions beginner, 39 puzzles,      https://online-go.com/puzzle/59003
+    官子強化書 中級篇 9x9 Yose questions Intermediate, 30 puzzles,  https://online-go.com/puzzle/59161
+    官子強化書 上級篇 9x9 Yose questions advance, 30 puzzles,       https://online-go.com/puzzle/59240
+      komi=0! probably Japanese scoring?
+    
+    advanced:
+    Ralph's Cho Chikun Tsumegos, 99 puzzles,            https://online-go.com/puzzle/10496
+    Practical Tsumegos, 24 puzzles, 9k-3d, some 9x9     https://online-go.com/puzzle/45320
+
+    not really puzzles, full game tactics:
+    9x9collection, 34 puzzles,       https://online-go.com/puzzle/45137
     """
-    10496 Ralph's Cho Chikun Tsumegos
-    15438 Beginning Shapes  23 puzzles, mostly 9x9
-    42928 Wang Zhi et al.'s 1000 Tsumegos, 60% 9x9, some 7x7, 11x11
-    2312  How to Play Go +, 51 puzzles, mostly 9x9
-    """
-    download_collection(2312, out_dir)
+    download_collection(59240, out_dir)
