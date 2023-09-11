@@ -1,5 +1,6 @@
 import os
 from collections import namedtuple
+from typing import Tuple
 
 import numpy as np
 
@@ -82,10 +83,19 @@ class LnDPuzzle:
         defender_bbox is obtained from solve_boundary()
         """
         bbox = defender_bbox
-        mask = np.zeros(board.shape)
+        mask = np.zeros(board.shape, dtype=np.uint8)
         mask[bbox.row0:(1 + bbox.row1), bbox.col0:(1 + bbox.col1)] = \
             board[bbox.row0:(1 + bbox.row1), bbox.col0:(1 + bbox.col1)] != attack_side
         return mask
+
+    @staticmethod
+    def solve_contested_area(board: np.array) -> Tuple[np.array, int]:
+        """ convenience method """
+        black_box, white_box, attack_side = LnDPuzzle.solve_boundary(board)
+        assert attack_side != 0
+        defender_bbox = white_box if attack_side == go.BLACK else black_box
+        contested_area = LnDPuzzle.contested_area(board, defender_bbox, attack_side)
+        return contested_area, attack_side
 
 
 def rect_mask(bbox: BBox) -> np.array:
@@ -138,7 +148,7 @@ def test_puzzle_bulk():
 
     sgf_dir = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death'
     sgf_fnames = sorted(glob.glob(f'{sgf_dir}/総合問題4級*.sgf'))
-    # sgf_fnames = sorted(glob.glob(f'{sgf_dir}/*.sgf'))
+    sgf_fnames = sorted(glob.glob(f'/Users/hyu/Downloads/go-puzzle9/Beginning Shapes/Problem 4.sgf'))
     print('found', len(sgf_fnames), 'puzzles')
     for sgf_fname in sgf_fnames:
         basename = os.path.split(sgf_fname)[-1]
@@ -180,11 +190,7 @@ def test_puzzle_final_score():
         print(f'\nProcessing {basename}')
         reader = SGFReader.from_file_compatible(sgf_fname)
         pos = reader.first_pos()
-        black_box, white_box, attack_side = LnDPuzzle.solve_boundary(pos.board)
-        if attack_side == 0:
-            print('no clear attack_side, skipping')
-            continue
-        contested_area = LnDPuzzle.contested_area(pos.board, white_box if attack_side == go.BLACK else black_box, attack_side)
+        contested_area, attack_side = LnDPuzzle.solve_contested_area(pos.board)
         # print(contested_area)
         contested_size = int(np.sum(contested_area))
 

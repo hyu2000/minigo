@@ -196,7 +196,7 @@ def download_collection(start_puzzle_id: int, out_dir: str):
 
         out_fname = f"{collection_dir}/{puzzle['name']}.sgf"
         with open(out_fname, 'w', encoding="utf-8") as file:
-            print(f'Writing to {out_fname}: {width} {height} {puzzle_rank}')
+            print(f'Writing to {out_fname}: {width} {height} rank={puzzle_rank}')
             writePuzzle(file, puzzle_json)
 
 

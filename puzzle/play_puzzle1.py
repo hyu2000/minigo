@@ -131,7 +131,7 @@ def test_fill_board():
 
 
 def play_puzzle():
-    """ see how my models work on puzzles
+    """ see how my models work on puzzles (after filling rest of the board)
     Similar to what KataGo would do
 
     Seems raw policy is pretty flat --> MCTS is doing most of the work. Masked MCTS?
@@ -156,7 +156,6 @@ def play_puzzle():
     player = MCTSPlayer(dnn)
 
     player.initialize_game(pos, focus_area=policy_mask)
-    player.root.first_root_expansion(dnn)
 
     for i in range(10):
         # dnn prediction
