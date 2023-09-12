@@ -42,11 +42,15 @@ class Puzzle9DataSet1:
         self._sgf_list = []
         for glob_pattern in self.collection_patterns:
             sgfs = glob.glob(glob_pattern)
-            # todo exclude multi puzzles on the same board
-            sgfs = [x for x in sgfs if not x.endswith('Problem 14.sgf')]
+            sgfs = [x for x in sgfs
+                    # if not x.endswith('Problem 14.sgf')   # two puzzles on the board  todo include
+                    # not x.endswith('2023.06.12.sgf') and  # attack side 2 lines from edge
+                    # not x.endswith('2023.07.13.sgf')  # capture in the middle, not corner
+                    ]
             self._sgf_list.extend(sorted(sgfs))
 
     def __len__(self):
+        # a bit over-estimate: a few puzzles will be filtered out if boundary solver fails
         return len(self._sgf_list)
 
     def game_generator(self, shuffle: bool = False) -> Iterable[GameInfo]:
@@ -63,8 +67,14 @@ class Puzzle9DataSet1:
                 continue
 
             pos = reader.first_pos()
-            contested_area, attack_side = LnDPuzzle.solve_contested_area(pos.board)
+            try:
+                contested_area, attack_side = LnDPuzzle.solve_contested_area(pos.board)
+            except AssertionError:
+                print(f'Solving puzzle boundary failed {basename}')
+                continue
             max_moves = int(np.sum(contested_area) * 2)
+            # num_mainline_moves = reader.last_pos().n - pos.n
+            # print(f'{basename} mainline: {num_mainline_moves} contested: {max_moves / 2}')
             max_moves = min(myconf.BOARD_SIZE_SQUARED, max_moves)
             yield GameInfo(basename, pos, contested_area,
                            init_root=None, max_moves=max_moves, sgf_reader=reader)
@@ -77,6 +87,8 @@ class Puzzle9DataSet1:
 
 def test_dataset():
     ds = Puzzle9DataSet1()
-    for ginfo in itertools.islice(ds.game_generator(), 10):
+    ds_size = len(ds)
+    assert ds_size == 126
+    for ginfo in itertools.islice(ds.game_generator(), ds_size):
         print(ginfo.game_id, ginfo.max_moves)
 
