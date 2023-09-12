@@ -46,7 +46,7 @@ class LnDPuzzle:
         imin, jmin = stone_coords.min(axis=0)
         imax, jmax = stone_coords.max(axis=0)
         imin, jmin = cls.snap(imin, 0), cls.snap(jmin, 0)
-        imax, jmax = cls.snap(imax, go.N), cls.snap(jmax, go.N-1)
+        imax, jmax = cls.snap(imax, go.N-1), cls.snap(jmax, go.N-1)
         return BBox(imin, jmin, imax, jmax)
 
     @staticmethod
@@ -148,7 +148,9 @@ def test_puzzle_bulk():
 
     sgf_dir = '/Users/hyu/Downloads/go-puzzle9/Amigo no igo - 詰碁2023 - Life and Death'
     sgf_fnames = sorted(glob.glob(f'{sgf_dir}/総合問題4級*.sgf'))
-    sgf_fnames = sorted(glob.glob(f'/Users/hyu/Downloads/go-puzzle9/Beginning Shapes/Problem 4.sgf'))
+    # it works for the standard atari position
+    sgf_fnames = sorted(glob.glob(f'/Users/hyu/Downloads/go-puzzle9/How to Play Go +/Capturing Stones 1.7.sgf'))
+    sgf_fnames = sorted(glob.glob(f'/Users/hyu/Downloads/go-puzzle9/Beginning Shapes/Problem 18.sgf'))
     print('found', len(sgf_fnames), 'puzzles')
     for sgf_fname in sgf_fnames:
         basename = os.path.split(sgf_fname)[-1]

@@ -250,6 +250,7 @@ if __name__ == '__main__':
     # download_all()
     """  https://online-go.com/puzzles
     How to Play Go +, 51 puzzles, mostly 9x9      https://online-go.com/puzzle/2312
+        skills: Capture Stones (including ladders!); LnD; Joseki (not puzzle)
         sgf: MA to mark multiple capture spots in multi small puzzles
     Beginning Shapes  23 puzzles, mostly 9x9      https://online-go.com/puzzle/15438
     【2択】詰碁解けたら寝ろシリーズ【9-18級】easy 2-choice question, 103 puzzles,   https://online-go.com/puzzle/69105

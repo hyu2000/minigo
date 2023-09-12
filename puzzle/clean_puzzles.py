@@ -70,4 +70,5 @@ def test_batch_check():
     sgf_pattern = f'{sgf_dir}/Amigo no igo - 詰碁2023 - Life and Death/*'
     sgf_pattern = f'{sgf_dir}/Beginning Shapes/*'
     sgf_pattern = f'{sgf_dir}/easy 2-choice question*/*'
+    sgf_pattern = f'{sgf_dir}/How to Play Go +/*'
     batch_check_puzzles(sgf_pattern)
