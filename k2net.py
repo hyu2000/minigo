@@ -14,11 +14,11 @@ import myconf
 
 
 def get_features():
-    return features_lib.REDUX_FEATURES  # DLGO_FEATURES
+    return features_lib.EXP3_FEATURES  # REDUX_FEATURES # DLGO_FEATURES
 
 
 def get_features_planes():
-    return features_lib.REDUX_FEATURES_PLANES  # DLGO_FEATURES_PLANES
+    return features_lib.EXP3_FEATURES_PLANES
 
 
 Conv2D = keras.layers.Conv2D
@@ -173,28 +173,43 @@ class DualNetwork:
         return 'unknown'
 
 
-class TFDualNetwork(DualNetwork):
+class GCNetwork:
+    """ goal-conditioned DualNetwork
+    For now, goal is game-specific
+    """
+    def run(self, position: go.Position, goal) -> Tuple[Any, float]:
+        pass
+
+    def run_many(self, positions: List[go.Position], goal) -> Tuple[np.ndarray, np.ndarray]:
+        pass
+
+    def model_id(self):
+        return 'unknown'
+
+
+class TFDualNetwork(GCNetwork):
     def __init__(self, save_file):
-        self.model_id = save_file
+        self.model_id = save_file or 'random-init'
         model = build_model_for_eval()
-        model.load_weights(save_file)
+        if save_file:
+            model.load_weights(save_file)
         self.model = model
 
-    def run(self, position: go.Position):
-        probs, values = self.run_many([position])
+    def run(self, position: go.Position, goal):
+        probs, values = self.run_many([position], goal)
         return probs[0], values[0]
 
     # @tf.function(experimental_relax_shapes=True)
-    @tf.function(input_signature=(tf.TensorSpec(shape=[None, 9, 9, 11], dtype=tf.uint8),))
+    @tf.function(input_signature=(tf.TensorSpec(shape=[None, 9, 9, 12], dtype=tf.uint8),))
     def tf_run(self, input):
         """ https://www.tensorflow.org/guide/function
         """
         print('tracing...')
         return self.model(input, training=False)
 
-    def run_many(self, positions: List[go.Position]) -> Tuple[np.ndarray, np.ndarray]:
+    def run_many(self, positions: List[go.Position], goal) -> Tuple[np.ndarray, np.ndarray]:
         f = get_features()
-        processed = [features_lib.extract_features(p, f) for p in positions]
+        processed = [features_lib.extract_features(p, f, goal) for p in positions]
         # model.predict() doc suggests to use __call__ for small batch
         # probs, values = self.model(tf.convert_to_tensor(processed), training=False)
         probs, values = self.tf_run(tf.convert_to_tensor(processed, dtype=tf.uint8))
@@ -240,20 +255,20 @@ class MaskedNet(DualNetwork):
         return probs, values
 
 
-class CoreMLNet(DualNetwork):
+class CoreMLNet(GCNetwork):
     """ use coreml for prediction """
 
     def __init__(self, save_file):
         self.model_id = save_file
         self.model = self.load_mlmodel(save_file)
 
-    def run(self, position: go.Position):
-        probs, values = self.run_many([position])
+    def run(self, position: go.Position, goal):
+        probs, values = self.run_many([position], goal)
         return probs[0], values[0]
 
-    def run_many(self, positions: List[go.Position]) -> Tuple[np.ndarray, np.ndarray]:
+    def run_many(self, positions: List[go.Position], goal) -> Tuple[np.ndarray, np.ndarray]:
         f = get_features()
-        processed = [features_lib.extract_features(p, f) for p in positions]
+        processed = [features_lib.extract_features(p, f, goal) for p in positions]
         nparray = np.stack(processed).astype(np.float16)
         results = self.model.predict({'input': nparray})
         probs, values = results['Identity'], results['Identity_1']
@@ -263,7 +278,8 @@ class CoreMLNet(DualNetwork):
     def convert_tf2_to_coreml(save_file):
         import coremltools as ct
         model = build_model_for_eval()
-        model.load_weights(save_file)
+        if save_file:
+            model.load_weights(save_file)
         mlmodel = ct.convert(model,
                              source='tensorflow',
                              convert_to="mlprogram",
@@ -277,17 +293,18 @@ class CoreMLNet(DualNetwork):
         return ct.models.MLModel(mlmodel_fname)
 
 
-class DummyNetwork(DualNetwork):
+class DummyNetwork(GCNetwork):
     """ same interface as DualNetwork. Flat policy, Tromp score as value """
     def __init__(self):
         self.model_id = 'dummy'
 
-    def run(self, position):
-        probs, values = self.run_many([position])
+    def run(self, position, goal):
+        probs, values = self.run_many([position], goal)
         return probs[0], values[0]
 
     @staticmethod
     def zeroout_edges(probs: np.ndarray):
+        # not allow edge moves when position.n < 10
         prototype = probs
         for irow in (0, go.N - 1):
             prototype[irow * go.N: (irow+1) * go.N] = 0
@@ -296,11 +313,10 @@ class DummyNetwork(DualNetwork):
         prototype[go.N - 1: go.N * go.N: go.N] = 0
         return probs / np.sum(probs)
 
-    def run_many(self, positions: List[go.Position]) -> Tuple[np.ndarray, np.ndarray]:
+    def run_many(self, positions: List[go.Position], goal) -> Tuple[np.ndarray, np.ndarray]:
         probs = np.ones(myconf.TOTAL_MOVES) / myconf.TOTAL_MOVES
-        # not allow edge plays when position.n < 10
-        if positions[0].n < 10:
-            probs = self.zeroout_edges(probs)
+        # if positions[0].n < 10:
+        #     probs = self.zeroout_edges(probs)
         probs = np.tile(probs, (len(positions), 1))
         values = np.array([p.score() for p in positions])
         return probs, np.sign(values)
@@ -322,7 +338,7 @@ def load_net(model_fpath):
         if model_fpath.endswith('.mlpackage'):
             network = CoreMLNet(model_fpath)
         elif model_fpath.endswith('.h5'):
-            network = DualNetwork(model_fpath)
+            network = TFDualNetwork(model_fpath)
         else:  # saved_model
             assert os.path.isfile(f'{model_fpath}/saved_model.pb')
             network = A0JaxNet(model_fpath)
@@ -367,11 +383,11 @@ def test_batch_convert_tf2_to_coreml():
 
 
 def test_convert_tf2_to_coreml():
-    MODEL_DIR = f'{myconf.EXP_HOME}/checkpoints/bootstrap_try2'
-    generation = 1
-    for epoch in range(12, 13, 1):
+    MODEL_DIR = f'{myconf.EXP_HOME}/checkpoints'
+    generation = 0
+    for epoch in range(1):
         fname = f'{MODEL_DIR}/model{generation}_{epoch}.h5'
-        mlmodel = CoreMLNet.convert_tf2_to_coreml(fname)
+        mlmodel = CoreMLNet.convert_tf2_to_coreml(None)  #fname)
         mlmodel.save(f'{MODEL_DIR}/model{generation}_{epoch}.mlpackage')
 
 

@@ -234,7 +234,7 @@ DLGO_FEATURES = [
 DLGO_FEATURES_PLANES = sum(f.planes for f in DLGO_FEATURES)
 
 
-""" redux: based on DEFAULT_FEATURES """
+""" redux: based on DEFAULT_FEATURES. Used in 9x9 exp2 """
 REDUX_FEATURES = [
     stone_color_feature,
     color_to_play_feature,
@@ -242,7 +242,7 @@ REDUX_FEATURES = [
     recent_move_feature3,
     would_capture_feature,
 ]
-REDUX_FEATURES_PLANES = sum(f.planes for f in REDUX_FEATURES)
+REDUX_FEATURES_PLANES = sum(f.planes for f in REDUX_FEATURES)  # 11
 
 
 """ a0jax: """
@@ -253,5 +253,16 @@ A0JAX_FEATURES = [
 A0JAX_FEATURES_PLANES = sum(f.planes for f in REDUX_FEATURES)
 
 
-def extract_features(position, features):
-    return np.concatenate([feature(position) for feature in features], axis=2)
+""" REDUX_FEATURES + focus area. Used in 9x9 exp3 """
+EXP3_FEATURES = REDUX_FEATURES
+EXP3_FEATURES_PLANES = 1 + sum(f.planes for f in EXP3_FEATURES)  # 12
+
+
+def extract_features(position, features, goal: np.array=None):
+    """ goal right now is the mask: go.N * go.N """
+    pos_features = np.concatenate([feature(position) for feature in features], axis=2)
+    if goal is None:
+        return pos_features
+    goal_features = np.expand_dims(goal, axis=2)
+    return np.concatenate([pos_features, goal_features], axis=2)
+
