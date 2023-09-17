@@ -7,11 +7,13 @@ import glob
 import itertools
 import os
 import random
+from collections import Counter
 from typing import Iterable
 
 import attr
 import numpy as np
 
+import coords
 import go
 import myconf
 from puzzle.lnd_puzzle import LnDPuzzle
@@ -47,6 +49,7 @@ class Puzzle9DataSet1:
                     # not x.endswith('2023.06.12.sgf') and  # attack side 2 lines from edge
                     # not x.endswith('2023.07.13.sgf')  # capture in the middle, not corner
                     ]
+            # todo version sort?
             self._sgf_list.extend(sorted(sgfs))
 
     def __len__(self):
@@ -92,3 +95,40 @@ def test_dataset():
     for ginfo in itertools.islice(ds.game_generator(), ds_size):
         print(ginfo.game_id, ginfo.max_moves)
 
+
+def guess_winner(comment: str) -> int:
+    winner = 0
+    if 'black to kill' in comment:
+        winner = 1
+    elif 'black to live' in comment:
+        winner = 1
+    elif 'white to kill' in comment:
+        winner = -1
+    elif 'white to live' in comment:
+        winner = -1
+    return winner
+
+
+def test_solve_info():
+    """ extract human annotated results, as well as first moves
+
+    All 6 unknown winner are from "Beginner shape".
+    [(1, 106), (0, 6), (-1, 6)]
+    """
+    ds = Puzzle9DataSet1()
+    ds_size = len(ds)
+    counter = Counter()
+    for ginfo in itertools.islice(ds.game_generator(), ds_size):
+        reader = ginfo.sgf_reader
+        comments = reader.root_comments()
+        comment = comments[0].lower()
+        winner = guess_winner(comment)
+        print(ginfo.game_id, winner, comments)
+        counter[winner] += 1
+
+        moves = [pwc.next_move for pwc in itertools.islice(reader.iter_pwcs(), 4)]
+        gtp_moves = ' '.join([coords.to_gtp(x) for x in moves])
+        print(gtp_moves)
+        print()
+
+    print(counter.most_common())

@@ -332,6 +332,10 @@ class SGFReader(object):
             return []
         return [coords.from_sgf(s) for s in ss]
 
+    def root_comments(self) -> List[str]:
+        """ a node can have multiple comments """
+        return self.props.get('C')
+
     def player_to_start(self) -> int:
         player = sgf_prop(self.props.get('PL'))
         if not player:
