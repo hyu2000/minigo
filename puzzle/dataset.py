@@ -70,7 +70,7 @@ class Puzzle9DataSet1:
             try:
                 contested_area, attack_side = LnDPuzzle.solve_contested_area(pos.board)
             except AssertionError:
-                print(f'Solving puzzle boundary failed {basename}')
+                print(f'Solving puzzle boundary failed {basename}, skipping')
                 continue
             max_moves = int(np.sum(contested_area) * 2)
             # num_mainline_moves = reader.last_pos().n - pos.n
@@ -80,7 +80,7 @@ class Puzzle9DataSet1:
                            init_root=None, max_moves=max_moves, sgf_reader=reader)
 
     def game_iter(self, start=0, stop=None, shuffle=False) -> Iterable[GameInfo]:
-        """ """
+        """ produce the desired number of games by it.cycle() """
         gen = self.game_generator(shuffle)
         return itertools.islice(itertools.cycle(gen), start, stop)
 
