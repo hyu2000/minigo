@@ -123,12 +123,12 @@ def test_solve_info():
         comments = reader.root_comments()
         comment = comments[0].lower()
         winner = guess_winner(comment)
-        print(ginfo.game_id, winner, comments)
         counter[winner] += 1
 
-        moves = [pwc.next_move for pwc in itertools.islice(reader.iter_pwcs(), 4)]
+        moves = [pwc.next_move for pwc in itertools.islice(reader.iter_pwcs(), 2)]
         gtp_moves = ' '.join([coords.to_gtp(x) for x in moves])
-        print(gtp_moves)
-        print()
+        game_id = ginfo.game_id.removesuffix('.sgf')
+        print('%-16s %-6s %s' % (game_id, 'black' if winner > 0 else 'white' if winner < 0 else '-', gtp_moves))
+
 
     print(counter.most_common())
