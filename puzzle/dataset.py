@@ -155,8 +155,10 @@ I0917 07:02:06.878863 8445583488 run_selfplay.py:97] game 194 score: G1 H1 F1 G2
     """
     SEARCH_KEY_MOVE_IN_FIRST_N = 8
 
-    # for ginfo in itertools.islice(ds.game_generator(), 4):
-    for ginfo in ds.game_generator():
+    print(f'Scoring {sgf_dir} ...')
+    total_puzzle_solved = 0  # completely solved
+    total_sgfs = 0
+    for ginfo in ds.game_generator():  # itertools.islice(ds.game_generator(), 4):
         winner_annotated = ginfo.guess_winner_from_comment()
         if winner_annotated == 0:
             continue
@@ -176,8 +178,12 @@ I0917 07:02:06.878863 8445583488 run_selfplay.py:97] game 194 score: G1 H1 F1 G2
         num_sgfs = len(sgfs)
         print(f'{game_id}: result-match= {num_result_agree}/{num_sgfs}, first-move-match= {num_first_move_agree}/{num_sgfs}, '
               f'occured={count_key_move_occured}/{num_sgfs}')
+        total_sgfs += num_sgfs
+        if num_result_agree == num_sgfs == num_first_move_agree and num_sgfs > 0:
+            total_puzzle_solved += 1
+    print(f'Summary: {total_sgfs} sgfs, completely solved puzzle: {total_puzzle_solved}')
 
 
 def test_score_selfplay():
     ds = Puzzle9DataSet1()
-    score_selfplay_records(ds, f'{myconf.EXP_HOME}/selfplay1/sgf/full')
+    score_selfplay_records(ds, f'{myconf.EXP_HOME}/selfplay3-try1/sgf/full')
