@@ -1,6 +1,10 @@
-# Beginning Shapes
-Problem 1        black  H1
-Problem 2        white  E1
+## tracking progress
+### Beginning Shapes
+                                random wrong found-key-move      solved
+                                                          sometimes for-good
+Problem 1        black  H1               0                             1,2    
+                                                                          In selfplay3, after black H1, white still think it could salvage the game, so it keeps playing
+Problem 2        white  E1                          1                   2
 Problem 3        black  G1
 Problem 4        white  E6 E5
 Problem 5        black  E5
@@ -18,7 +22,7 @@ Problem 21       -      J1 G1
 Problem 22       -      H3 H2
 Problem 23       -      J1 H2
 
-# easy 2-choice question
+### easy 2-choice question
 2023.02.24       black  F9
 2023.02.25       black  A8 C9
 2023.02.26       black  J8 G6

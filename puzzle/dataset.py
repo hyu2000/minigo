@@ -12,12 +12,27 @@ from typing import Iterable
 
 import attr
 import numpy as np
+from natsort import natsorted
 
 import coords
 import go
 import myconf
 from puzzle.lnd_puzzle import LnDPuzzle
 from sgf_wrapper import SGFReader
+
+
+def guess_winner(comment: str) -> int:
+    """ infer puzzle outcome from root node comment """
+    winner = 0
+    if 'black to kill' in comment:
+        winner = 1
+    elif 'black to live' in comment:
+        winner = 1
+    elif 'white to kill' in comment:
+        winner = -1
+    elif 'white to live' in comment:
+        winner = -1
+    return winner
 
 
 @attr.s
@@ -28,6 +43,12 @@ class GameInfo:
     init_root = attr.ib(default=None)
     max_moves: int = attr.ib(default=myconf.BOARD_SIZE_SQUARED*2)  # increase for full game
     sgf_reader: SGFReader = attr.ib(default=None)
+
+    def guess_winner_from_comment(self) -> int:
+        comments = self.sgf_reader.root_comments()
+        comment = comments[0].lower()
+        return guess_winner(comment)
+
 
 
 class Puzzle9DataSet1:
@@ -49,8 +70,8 @@ class Puzzle9DataSet1:
                     # not x.endswith('2023.06.12.sgf') and  # attack side 2 lines from edge
                     # not x.endswith('2023.07.13.sgf')  # capture in the middle, not corner
                     ]
-            # todo version sort?
-            self._sgf_list.extend(sorted(sgfs))
+            # natsort will put "problem 2" ahead of "problem 11"
+            self._sgf_list.extend(natsorted(sgfs))
 
     def __len__(self):
         # a bit over-estimate: a few puzzles will be filtered out if boundary solver fails
@@ -63,7 +84,7 @@ class Puzzle9DataSet1:
             sgf_list = sgf_list[:]
             random.shuffle(sgf_list)
         for sgf_fname in sgf_list:
-            basename = os.path.basename(sgf_fname)
+            basename = os.path.basename(sgf_fname).removesuffix('.sgf')
             reader = SGFReader.from_file_compatible(sgf_fname)
             if reader.board_size() != go.N:
                 print(f'skipping {basename}, not 9x9')
@@ -96,19 +117,6 @@ def test_dataset():
         print(ginfo.game_id, ginfo.max_moves)
 
 
-def guess_winner(comment: str) -> int:
-    winner = 0
-    if 'black to kill' in comment:
-        winner = 1
-    elif 'black to live' in comment:
-        winner = 1
-    elif 'white to kill' in comment:
-        winner = -1
-    elif 'white to live' in comment:
-        winner = -1
-    return winner
-
-
 def test_solve_info():
     """ extract human annotated results, as well as first moves
 
@@ -130,5 +138,46 @@ def test_solve_info():
         game_id = ginfo.game_id.removesuffix('.sgf')
         print('%-16s %-6s %s' % (game_id, 'black' if winner > 0 else 'white' if winner < 0 else '-', gtp_moves))
 
-
     print(counter.most_common())
+
+
+def score_selfplay_records(ds: Puzzle9DataSet1, sgf_dir):
+    """ evaluate selfplay records to help track progress
+    1. outcome agreement with puzzle comment
+    2. first move agreement
+    3. % moves are inside focus area
+
+Example:   Problem 3        black  G1
+I0917 00:29:15.007936 8445583488 run_selfplay.py:97] game 76 score: G1 D5 H1 D7 A1 B2 .. 26 .. G1 B9    W+9.0   Problem 3-1755004578
+I0917 00:04:02.988984 8445583488 run_selfplay.py:97] game 47 score: G1 H1 F1 G2 F1 G1 .. 26 .. J2 H2    B+10.0  Problem 3-242985527
+I0917 07:02:06.878863 8445583488 run_selfplay.py:97] game 194 score: G1 H1 F1 G2 F1 G1 .. 26 .. J1 A2   B+6.0   Problem 3-25326875535
+--> Problem 3: 2/3 result matches, 3/3 first move matches, 2/3 both matches.
+    """
+    SEARCH_KEY_MOVE_IN_FIRST_N = 8
+
+    # for ginfo in itertools.islice(ds.game_generator(), 4):
+    for ginfo in ds.game_generator():
+        winner_annotated = ginfo.guess_winner_from_comment()
+        if winner_annotated == 0:
+            continue
+        first_move_solution = next(ginfo.sgf_reader.iter_pwcs()).next_move
+
+        game_id = ginfo.game_id
+        sgfs = glob.glob(f'{sgf_dir}/{game_id}-*.sgf')
+        num_result_agree, num_first_move_agree = 0, 0
+        count_key_move_occured = 0
+        for sgf in sgfs:
+            reader = SGFReader.from_file_compatible(sgf)
+            first_moves = [x.next_move for x in itertools.islice(reader.iter_pwcs(), SEARCH_KEY_MOVE_IN_FIRST_N)]
+            num_result_agree += reader.result() == winner_annotated
+            num_first_move_agree += first_moves[0] == first_move_solution
+            count_key_move_occured += first_move_solution in set(first_moves)
+
+        num_sgfs = len(sgfs)
+        print(f'{game_id}: result-match= {num_result_agree}/{num_sgfs}, first-move-match= {num_first_move_agree}/{num_sgfs}, '
+              f'occured={count_key_move_occured}/{num_sgfs}')
+
+
+def test_score_selfplay():
+    ds = Puzzle9DataSet1()
+    score_selfplay_records(ds, f'{myconf.EXP_HOME}/selfplay1/sgf/full')
