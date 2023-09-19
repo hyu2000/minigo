@@ -2,8 +2,7 @@
 ### Beginning Shapes
                                 random wrong found-key-move      solved
                                                           sometimes for-good
-Problem 1        black  H1               0                             1,2    
-                                                                          In selfplay3, after black H1, white still think it could salvage the game, so it keeps playing
+Problem 1        black  H1               0                            1,2
 Problem 2        white  E1                          1                   2
 Problem 3        black  G1
 Problem 4        white  E6 E5
@@ -123,3 +122,21 @@ Problem 23       -      J1 H2
 2023.09.08       black  B9 B7
 2023.09.10       black  C8 B8
 2023.09.11       black  B8 B9
+
+### understanding fast learning
+Problem 1        black  H1               0                            1,2
+    selfplay0: result-match= 0/16, first-move-match= 0/16, occured=0/16
+    selfplay1: result-match= 6/7, first-move-match= 6/7, occured=7/7
+     selfplay1: black moved at H1 first, but thinks it would lose. Value on turns positive much later.
+     selfplay2: first move H1 is positive. Funny it also thinks G1/J1 is positive too.
+     selfplay3: after black H1, white still think it could salvage the game, so it keeps playing
+
+Mystery how it made the leap, as it never saw H1 move in selfplay0. From another puzzle? Not likely it learns how
+to generalize across puzzles at this stage?
+  Problem 2 is similar in a sense, but it hadn't made as fast a progress as Problem 1.
+  My intuition is that MCTS would need to randomly bump into H1 first, see the difference it makes, before it
+can devote time on it. Maybe there are other mechanisms in play?
+
+Problem 2        white  E1                          1                   2
+    selfplay0: result-match= 0/16, first-move-match= 0/16, occured=1/16 
+    selfplay1: result-match= 5/9, first-move-match= 0/9, occured=8/9 
