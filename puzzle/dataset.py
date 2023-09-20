@@ -8,7 +8,7 @@ import itertools
 import os
 import random
 from collections import Counter
-from typing import Iterable
+from typing import Iterable, List, Optional
 
 import attr
 import numpy as np
@@ -117,6 +117,24 @@ def test_dataset():
         print(ginfo.game_id, ginfo.max_moves)
 
 
+def find_mainline_moves(reader: SGFReader) -> Optional[List[str]]:
+    """ It turns out mainline might lead to the wrong solution.
+    Returns gtp moves for correct mainline, None otherwise
+    """
+    tuples = list(reader.iter_comments())
+    gtp_moves    = [x[0] for x in tuples]
+    all_comments = [x[1] for x in tuples]
+    assert len(all_comments[-1]) == 1
+    final_comment = all_comments[-1][0].lower()
+    correct_in_mainline = 'correct' in final_comment
+    wrong_in_mainline = 'wrong' in final_comment
+    assert correct_in_mainline ^ wrong_in_mainline
+    if correct_in_mainline:
+        return gtp_moves
+    else:
+        return None
+
+
 def test_solve_info():
     """ extract human annotated results, as well as first moves
 
@@ -127,25 +145,18 @@ def test_solve_info():
     ds_size = len(ds)
     counter = Counter()
     for ginfo in itertools.islice(ds.game_generator(), ds_size):
+        game_id = ginfo.game_id.removesuffix('.sgf')
         reader = ginfo.sgf_reader
         root_comment = reader.root_comments()[0].lower()
         winner = guess_winner(root_comment)
         counter[winner] += 1
 
-        moves = [pwc.next_move for pwc in itertools.islice(reader.iter_pwcs(), 2)]
-        gtp_moves = ' '.join([coords.to_gtp(x) for x in moves])
-
-        # it turns out mainline might lead to the wrong solution
-        all_comments = [comments for (gtp_move, comments) in reader.iter_comments()]
-        assert len(all_comments[-1]) == 1
-        final_comment = all_comments[-1][0].lower()
-        correct_in_mainline = 'correct' in final_comment
-        wrong_in_mainline = 'wrong' in final_comment
-        assert correct_in_mainline ^ wrong_in_mainline
-
-        game_id = ginfo.game_id.removesuffix('.sgf')
-        print('%-16s %-6s %s %s' % (game_id, 'black' if winner > 0 else 'white' if winner < 0 else '-',
-                                    gtp_moves, 'correct' if correct_in_mainline else 'wrong'))
+        solution_moves = find_mainline_moves(reader)
+        if solution_moves is None:
+            print(f'{game_id} mainline wrong, skipping')
+            continue
+        print('%-16s %-6s %s' % (game_id, 'black' if winner > 0 else 'white' if winner < 0 else '-',
+                                 ' '.join(solution_moves[:2])))
 
     print(counter.most_common())
 
@@ -163,13 +174,18 @@ Problem 2: result-match= 8/8, first-move-match= 8/8, occured=8/8 *solved
     SEARCH_KEY_MOVE_IN_FIRST_N = 60
 
     print(f'Scoring {sgf_dir}, key-move-search in {SEARCH_KEY_MOVE_IN_FIRST_N} ...')
+    total_puzzle_used = 0  # puzzle with complete info
     total_puzzle_solved = 0  # completely solved
     total_sgfs = 0
     for ginfo in ds.game_generator():  # itertools.islice(ds.game_generator(), 4):
         winner_annotated = ginfo.guess_winner_from_comment()
         if winner_annotated == 0:
             continue
-        first_move_solution = next(ginfo.sgf_reader.iter_pwcs()).next_move
+        solution_moves = find_mainline_moves(ginfo.sgf_reader)
+        if solution_moves is None:  # skip if mainline is wrong
+            continue
+        total_puzzle_used += 1
+        first_move_solution = coords.from_gtp(solution_moves[0])
 
         game_id = ginfo.game_id
         sgfs = glob.glob(f'{sgf_dir}/{game_id}-*.sgf')
@@ -189,9 +205,9 @@ Problem 2: result-match= 8/8, first-move-match= 8/8, occured=8/8 *solved
         total_puzzle_solved += solved
         print(f'{game_id}: result-match= {num_result_agree}/{num_sgfs}, first-move-match= {num_first_move_agree}/{num_sgfs}, '
               f'occured={count_key_move_occured}/{num_sgfs} %s' % ('*solved' if solved else ''))
-    print(f'Summary for {sgf_dir}:\n  {total_sgfs} sgfs, completely solved puzzle: {total_puzzle_solved}')
+    print(f'Summary for {sgf_dir}:\n  {total_sgfs} sgfs, completely solved puzzle: {total_puzzle_solved} / {total_puzzle_used}')
 
 
 def test_score_selfplay():
     ds = Puzzle9DataSet1()
-    score_selfplay_records(ds, f'{myconf.EXP_HOME}/selfplay3/sgf/full')
+    score_selfplay_records(ds, f'{myconf.EXP_HOME}/selfplay1/sgf/full')
