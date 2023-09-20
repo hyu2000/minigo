@@ -128,15 +128,24 @@ def test_solve_info():
     counter = Counter()
     for ginfo in itertools.islice(ds.game_generator(), ds_size):
         reader = ginfo.sgf_reader
-        comments = reader.root_comments()
-        comment = comments[0].lower()
-        winner = guess_winner(comment)
+        root_comment = reader.root_comments()[0].lower()
+        winner = guess_winner(root_comment)
         counter[winner] += 1
 
         moves = [pwc.next_move for pwc in itertools.islice(reader.iter_pwcs(), 2)]
         gtp_moves = ' '.join([coords.to_gtp(x) for x in moves])
+
+        # it turns out mainline might lead to the wrong solution
+        all_comments = [comments for (gtp_move, comments) in reader.iter_comments()]
+        assert len(all_comments[-1]) == 1
+        final_comment = all_comments[-1][0].lower()
+        correct_in_mainline = 'correct' in final_comment
+        wrong_in_mainline = 'wrong' in final_comment
+        assert correct_in_mainline ^ wrong_in_mainline
+
         game_id = ginfo.game_id.removesuffix('.sgf')
-        print('%-16s %-6s %s' % (game_id, 'black' if winner > 0 else 'white' if winner < 0 else '-', gtp_moves))
+        print('%-16s %-6s %s %s' % (game_id, 'black' if winner > 0 else 'white' if winner < 0 else '-',
+                                    gtp_moves, 'correct' if correct_in_mainline else 'wrong'))
 
     print(counter.most_common())
 
@@ -147,15 +156,13 @@ def score_selfplay_records(ds: Puzzle9DataSet1, sgf_dir):
     2. first move agreement
     3. % moves are inside focus area
 
-Example:   Problem 3        black  G1
-I0917 00:29:15.007936 8445583488 run_selfplay.py:97] game 76 score: G1 D5 H1 D7 A1 B2 .. 26 .. G1 B9    W+9.0   Problem 3-1755004578
-I0917 00:04:02.988984 8445583488 run_selfplay.py:97] game 47 score: G1 H1 F1 G2 F1 G1 .. 26 .. J2 H2    B+10.0  Problem 3-242985527
-I0917 07:02:06.878863 8445583488 run_selfplay.py:97] game 194 score: G1 H1 F1 G2 F1 G1 .. 26 .. J1 A2   B+6.0   Problem 3-25326875535
---> Problem 3: 2/3 result matches, 3/3 first move matches, 2/3 both matches.
+Example:
+Problem 1: result-match= 7/8, first-move-match= 8/8, occured=8/8
+Problem 2: result-match= 8/8, first-move-match= 8/8, occured=8/8 *solved
     """
-    SEARCH_KEY_MOVE_IN_FIRST_N = 8
+    SEARCH_KEY_MOVE_IN_FIRST_N = 60
 
-    print(f'Scoring {sgf_dir} ...')
+    print(f'Scoring {sgf_dir}, key-move-search in {SEARCH_KEY_MOVE_IN_FIRST_N} ...')
     total_puzzle_solved = 0  # completely solved
     total_sgfs = 0
     for ginfo in ds.game_generator():  # itertools.islice(ds.game_generator(), 4):
@@ -182,9 +189,9 @@ I0917 07:02:06.878863 8445583488 run_selfplay.py:97] game 194 score: G1 H1 F1 G2
         total_puzzle_solved += solved
         print(f'{game_id}: result-match= {num_result_agree}/{num_sgfs}, first-move-match= {num_first_move_agree}/{num_sgfs}, '
               f'occured={count_key_move_occured}/{num_sgfs} %s' % ('*solved' if solved else ''))
-    print(f'Summary: {total_sgfs} sgfs, completely solved puzzle: {total_puzzle_solved}')
+    print(f'Summary for {sgf_dir}:\n  {total_sgfs} sgfs, completely solved puzzle: {total_puzzle_solved}')
 
 
 def test_score_selfplay():
     ds = Puzzle9DataSet1()
-    score_selfplay_records(ds, f'{myconf.EXP_HOME}/selfplay3-try2/sgf/full')
+    score_selfplay_records(ds, f'{myconf.EXP_HOME}/selfplay3/sgf/full')
