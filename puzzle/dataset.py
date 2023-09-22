@@ -109,14 +109,6 @@ class Puzzle9DataSet1:
         return itertools.islice(itertools.cycle(gen), start, stop)
 
 
-def test_dataset():
-    ds = Puzzle9DataSet1()
-    ds_size = len(ds)
-    assert ds_size == 126
-    for ginfo in itertools.islice(ds.game_generator(), ds_size):
-        print(ginfo.game_id, ginfo.max_moves)
-
-
 def find_mainline_moves(reader: SGFReader) -> Optional[List[str]]:
     """ It turns out mainline might lead to the wrong solution.
     Returns gtp moves for correct mainline, None otherwise
@@ -133,6 +125,14 @@ def find_mainline_moves(reader: SGFReader) -> Optional[List[str]]:
         return gtp_moves
     else:
         return None
+
+
+def test_dataset():
+    ds = Puzzle9DataSet1()
+    ds_size = len(ds)
+    assert ds_size == 126
+    for ginfo in itertools.islice(ds.game_generator(), ds_size):
+        print(ginfo.game_id, ginfo.max_moves)
 
 
 def test_solve_info():
