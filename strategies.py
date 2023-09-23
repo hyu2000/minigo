@@ -19,7 +19,7 @@ from typing import Tuple, Any
 
 import numpy as np
 
-from absl import flags
+from absl import flags, logging
 
 import coords
 import go
@@ -107,7 +107,7 @@ class MCTSPlayer(MCTSPlayerInterface):
         self.verbosity = FLAGS.verbose
         self.temp_threshold = FLAGS.softpick_move_cutoff
 
-        self.initialize_game()
+        # self.initialize_game()
         self.root = None  # type: mcts.MCTSNode
         self.resign_threshold = resign_threshold or FLAGS.resign_threshold
         self.timed_match = timed_match
@@ -143,6 +143,20 @@ class MCTSPlayer(MCTSPlayerInterface):
         self.init_root = self.root
         self.move_infos = [coords.to_gtp(x.move) for x in self.root.position.recent]
         self.focus_area = focus_area
+
+        self._first_root_expansion()
+
+    def _first_root_expansion(self):
+        """ For search root, we need to expand it so that inject_noise/etc would work.
+        For a typical selfplay, nodes are reused so this is the only time manual expansion is needed
+        """
+        root = self.root
+        if root.is_expanded:
+            logging.info('first_root_expansion: node already expanded, skipping')
+            return
+
+        prob, val = self.network.run(root.position, self.focus_area)
+        root.incorporate_results(prob, val, root)
 
     def suggest_move(self, position):
         """Used for playing a single game.
@@ -199,10 +213,10 @@ class MCTSPlayer(MCTSPlayerInterface):
             self.searches_pi.append(None)
 
         comment = self.root.describe_less_details(target_move=coords.to_flat(c))
-        score_details = new_root.position.score_benson()
-        if score_details.final:
-            # game will stop after this, so append info here
-            comment = f'{comment}\n\nBenson final score={score_details.score}'
+        # score_details = new_root.position.score_benson()
+        # if score_details.final:
+        #     # game will stop after this, so append info here
+        #     comment = f'{comment}\n\nBenson final score={score_details.score}'
         self.comments.append(comment)
 
         self.root = new_root
@@ -258,8 +272,7 @@ class MCTSPlayer(MCTSPlayerInterface):
             leaf.add_virtual_loss(up_to=self.root)
             leaves.append(leaf)
         if leaves:
-            move_probs, values = self.network.run_many(
-                [leaf.position for leaf in leaves])
+            move_probs, values = self.network.run_many([leaf.position for leaf in leaves], self.focus_area)
             for leaf, move_prob, value in zip(leaves, move_probs, values):
                 leaf.revert_virtual_loss(up_to=self.root)
                 leaf.incorporate_results(move_prob, value, up_to=self.root)
@@ -289,16 +302,26 @@ class MCTSPlayer(MCTSPlayerInterface):
         """Returns true if the player resigned. No further moves should be played"""
         return self.root.Q_perspective < self.resign_threshold
 
-    def set_result(self, winner, was_resign, black_margin_no_komi=None):
+    def set_result(self, winner, was_resign, score=None, black_margin_no_komi=None):
         self.result = winner
         self.black_margin_no_komi = black_margin_no_komi if black_margin_no_komi is not None else winner
+        winner_side = 'B' if winner == go.BLACK else 'W'
         if was_resign:
-            string = "B+R" if winner == go.BLACK else "W+R"
+            string = f"{winner_side}+R"
         else:
-            string = self.root.position.result_string() if winner != 0 else 'VOID'
+            if winner == 0:
+                string = 'VOID'
+            elif score is not None:
+                string = f'{winner_side}+%.1f' % abs(score)
+            else:  # this doesn't take into account focus_area
+                string = self.root.position.result_string()
         self.result_string = string
 
-    def to_sgf(self, use_comments=True):
+    def to_sgf(self, use_comments=True, init_sgf_reader: sgf_wrapper.SGFReader =None):
+        """
+        Args:
+            init_sgf_reader: this provides setup stones (for puzzles)
+        """
         assert self.result_string is not None
         pos = self.root.position
         if use_comments:
@@ -313,6 +336,8 @@ class MCTSPlayer(MCTSPlayerInterface):
         else:
             comments = []
         return sgf_wrapper.make_sgf(pos.recent, self.result_string, komi=pos.komi,
+                                    black_setup_stones=init_sgf_reader.black_init_stones() if init_sgf_reader else None,
+                                    white_setup_stones=init_sgf_reader.white_init_stones() if init_sgf_reader else None,
                                     white_name=os.path.basename(self.network.model_id) or "Unknown",
                                     black_name=os.path.basename(self.network.model_id) or "Unknown",
                                     comments=comments)

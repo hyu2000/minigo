@@ -299,14 +299,17 @@ def train_local():
 
 def train_local0():
     model = compile_dual()
+    # model = load_model(f'{myconf.MODELS_DIR}/model0_0.h5')
     data_dir = f'{myconf.FEATURES_DIR}'
-    ds_train = load_selfplay_data(f'{data_dir}/train')
-    ds_val   = load_selfplay_data(f'{data_dir}/val1')
+    data_dir = f'{myconf.SELFPLAY_DIR}/enhance'
+    ds_train = load_selfplay_data(f'{data_dir}/train', subtype='full')
+    # ds_val   = load_selfplay_data(f'{data_dir}/val1')
     callbacks = [
-        keras.callbacks.ModelCheckpoint(f'{myconf.MODELS_DIR}/model1_epoch{{epoch}}.h5'),
+        keras.callbacks.ModelCheckpoint(f'{myconf.MODELS_DIR}/model1_{{epoch}}.h5'),
         # keras.callbacks.EarlyStopping(monitor='val_loss', patience=2)
     ]
-    history = model.fit(ds_train.shuffle(4000).batch(64), validation_data=ds_val.batch(64),
+    history = model.fit(ds_train.shuffle(4000).batch(64),
+                        # validation_data=ds_val.batch(64),
                         epochs=5, callbacks=callbacks)
     return model
 
@@ -326,16 +329,16 @@ def _ds_take_every(dataset: tf.data.Dataset, n):
 
 def train(argv: List):
     assert len(argv) >= 4
-    train_dir  = argv[1]  # can be a dir pattern, e.g. "tfrecords/enhance*/train"
+    train_dir  = argv[1]  # can be a dir pattern, e.g. "tfrecords/enhance*/train". Needs quote.
     model_dir  = argv[2]
     start_iter = int(argv[3])
     val_dir = argv[4] if len(argv) > 4 else None
 
     new_iter = start_iter + 1
-    START_EPOCH = 2
-    print(f'train on {train_dir}: {start_iter} -> {new_iter}')
+    START_EPOCH = 4
+    print(f'train on {train_dir}: {start_iter}_{START_EPOCH} -> {new_iter}')
 
-    model_file = f'{model_dir}/model{start_iter}_epoch{START_EPOCH}.h5'
+    model_file = f'{model_dir}/model{start_iter}_{START_EPOCH}.h5'
     if start_iter == 0 and not os.path.exists(model_file):
         logging.info('Using random initialization')
         model = compile_dual()
@@ -346,7 +349,7 @@ def train(argv: List):
         ds_val = load_selfplay_data(val_dir, 'full')
 
     callbacks = [
-        keras.callbacks.ModelCheckpoint(f'{model_dir}/model{new_iter}_epoch{{epoch}}.h5'),
+        keras.callbacks.ModelCheckpoint(f'{model_dir}/model{new_iter}_{{epoch}}.h5'),
         # keras.callbacks.EarlyStopping(monitor='val_loss', patience=2)
     ]
     if val_dir:
@@ -368,7 +371,7 @@ def train(argv: List):
 
 if __name__ == '__main__':
     train(sys.argv)
-    # train_local()
+    # train_local0()
     # test_save_model()
     # test_eval_model()
     # label_top50()

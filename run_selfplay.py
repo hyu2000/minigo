@@ -1,3 +1,4 @@
+import itertools
 import resource
 from typing import List, Optional
 
@@ -7,7 +8,7 @@ import coords
 import go
 import mcts
 import myconf
-from cserver.dnn_server import DNNStub
+from puzzle.dataset import Puzzle9DataSet1
 from selfplay import run_game, create_dir_if_needed
 import k2net as dual_net
 from katago.analysis_engine import KataDualNetwork, KataModels
@@ -41,13 +42,8 @@ class InitPositions:
         return self.rng.choice(self.init_positions, p=self.open_probs)
 
 
-def load_kata_network(model_file):
-    logging.info('loading Kata %s', model_file)
-    return KataDualNetwork(model_file)
-
-
 def play_games(num_games=500):
-    """ """
+    """ full games """
     network = dual_net.load_net(FLAGS.load_file)
     # network = DNNStub(model_file=FLAGS.load_file)
     # network = load_kata_network(KataModels.MODEL_B6_4k)
@@ -76,6 +72,33 @@ def play_games(num_games=500):
     logging.info(f'Done with {num_games} games')
 
 
+def play_puzzles(num_games=500):
+    """ """
+    network = dual_net.load_net(FLAGS.load_file)
+    # network = DNNStub(model_file=FLAGS.load_file)
+    # network = load_kata_network(KataModels.MODEL_B6_4k)
+
+    create_dir_if_needed(selfplay_dir=FLAGS.selfplay_dir, holdout_dir=FLAGS.holdout_dir,
+                         sgf_dir=FLAGS.sgf_dir)
+
+    puzzle_set = Puzzle9DataSet1(Puzzle9DataSet1.EASY_COLLECTIONS)
+    for i, game_info in enumerate(puzzle_set.game_iter(stop=num_games, shuffle=True)):
+        player, sgf_fname = run_game(network, game_info,
+                                     selfplay_dir=FLAGS.selfplay_dir,
+                                     holdout_dir=FLAGS.holdout_dir,
+                                     holdout_pct=FLAGS.holdout_pct,
+                                     sgf_dir=FLAGS.sgf_dir,
+                                     )
+        # margin_est = player.black_margin_no_komi
+        moves = [coords.to_gtp(x.move) for x in player.root.position.recent]
+        history_str = format_game_summary(moves, player.result_string, sgf_fname=sgf_fname, first_n=6)
+
+        # ru_rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        logging.info(f'game {i} score: %s', history_str)
+
+    logging.info(f'Done with {num_games} games')
+
+
 def _examine_tree(root: mcts.MCTSNode, thresh: int):
     """ see how many nodes have enough visits """
     n = 0
@@ -87,23 +110,25 @@ def _examine_tree(root: mcts.MCTSNode, thresh: int):
 
 
 def main(argv):
-    play_games(num_games=FLAGS.num_games)
+    play_puzzles(num_games=FLAGS.num_games)
 
 
 def main_local(argv):
-    FLAGS.load_file = f'{myconf.MODELS_DIR}/model11_3.mlpackage'
+    FLAGS.load_file = '/Users/hyu/PycharmProjects/a0-jax/exp-go9/tfmodel/model-218'
+    FLAGS.load_file = f'{myconf.MODELS_DIR}/model4_4.mlpackage'
+
     FLAGS.sgf_dir = f'{myconf.SELFPLAY_DIR}/sgf'
     FLAGS.selfplay_dir = f'{myconf.SELFPLAY_DIR}/train'
     FLAGS.holdout_dir = f'{myconf.SELFPLAY_DIR}/val'
-    FLAGS.num_readouts = 400
+    FLAGS.num_readouts = 200
     FLAGS.parallel_readouts = 16
     FLAGS.holdout_pct = 0
-    FLAGS.softpick_move_cutoff = 6
-    FLAGS.dirichlet_noise_weight = 0.25
+    FLAGS.softpick_move_cutoff = 0
+    FLAGS.dirichlet_noise_weight = 0  #.25
     FLAGS.resign_threshold = -1.0
-    FLAGS.reduce_symmetry_before_move = 3
+    FLAGS.reduce_symmetry_before_move = 0
     FLAGS.verbose = 0
-    play_games(num_games=5)
+    play_puzzles(num_games=20)
 
 
 if __name__ == '__main__':

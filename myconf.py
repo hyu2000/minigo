@@ -15,6 +15,7 @@ BOARD_SIZE = 9
 BOARD_SIZE_SQUARED = BOARD_SIZE * BOARD_SIZE
 # w/ pass, but no resign
 TOTAL_MOVES = BOARD_SIZE_SQUARED + 1
+FULL_BOARD_FOCUS = np.ones((BOARD_SIZE, BOARD_SIZE), dtype=np.uint8)
 
 # dirs
 EXP_HOME = '/Users/hyu/PycharmProjects/dlgo/9x9'

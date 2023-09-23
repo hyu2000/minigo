@@ -21,6 +21,7 @@ import socket
 import time
 from typing import Tuple
 
+import attr
 from absl import app, flags, logging
 import numpy as np
 import tensorflow as tf
@@ -30,6 +31,7 @@ import go
 import k2net as dual_net
 import mcts
 import preprocessing
+from puzzle.dataset import GameInfo
 from sgf_wrapper import SGFReader
 from strategies import MCTSPlayer
 import utils
@@ -81,7 +83,7 @@ def should_full_search(player: MCTSPlayer) -> Tuple[bool, int]:
     return False, current_readouts + FLAGS.num_fast_readouts
 
 
-def play(network, init_position=None, init_root=None):
+def play(network, game_info: GameInfo):
     """Plays out a self-play match, returning a MCTSPlayer object containing:
         - the final position
         - the n x 362 tensor of floats representing the mcts search probabilities
@@ -95,8 +97,7 @@ def play(network, init_position=None, init_root=None):
         resign_threshold = None
 
     player = MCTSPlayer(network, resign_threshold=resign_threshold)
-    player.initialize_game(position=init_position, root=init_root)
-    player.root.first_root_expansion(network)
+    player.initialize_game(position=game_info.init_position, root=game_info.init_root, focus_area=game_info.focus_area)
 
     while True:
         start = time.time()
@@ -124,19 +125,21 @@ def play(network, init_position=None, init_root=None):
         player.add_move_info(_format_move_info(move, best_move))
         orig_root.uninject_noise()
 
-        benson_score_details = player.root.position.score_benson()
-        if benson_score_details.final:  # end the game when score is final
-            player.set_result(np.sign(benson_score_details.score), was_resign=False)
-            break
+        # todo benson score with mask
+        # benson_score_details = player.root.position.score_benson()
+        # if benson_score_details.final:  # end the game when score is final
+        #     player.set_result(np.sign(benson_score_details.score), was_resign=False)
+        #     break
         if player.root.position.is_game_over():  # pass-pass
-            if np.sign(player.root.Q) != np.sign(benson_score_details.score):
-                logging.warning(f'Benson score {benson_score_details.score:.1f} is non-final. root.Q={player.root.Q:.1f}')
-            player.set_result(np.sign(benson_score_details.score), was_resign=False)
+            score = player.root.position.score_tromp(mask=game_info.focus_area)
+            player.set_result(np.sign(score), was_resign=False, score=score)
             break
-        if player.root.position.n >= FLAGS.max_game_length:
+        if player.root.position.n >= game_info.max_moves:
             # this is likely super-ko, should ignore game
-            logging.warning(f'game exceeds {FLAGS.max_game_length}, void')
-            player.set_result(0, was_resign=False)
+            # player.set_result(0, was_resign=False)
+            score = player.root.position.score_tromp(mask=game_info.focus_area)
+            logging.warning(f'game exceeds {game_info.max_moves} moves, final score={score}')
+            player.set_result(np.sign(score), was_resign=False, score=score)
             break
 
         if (FLAGS.verbose >= 2) or (FLAGS.verbose >= 1 and player.root.position.n % 10 == 7):
@@ -163,40 +166,38 @@ def create_dir_if_needed(selfplay_dir=None, holdout_dir=None, sgf_dir=None):
         utils.ensure_dir_exists(holdout_dir)
 
 
-def run_game(dnn, init_position: go.Position=None,
-             game_id=None,
+def run_game(dnn, game_info: GameInfo,
              selfplay_dir=None, holdout_dir=None,
              sgf_dir=None, holdout_pct=0.05) -> Tuple[MCTSPlayer, str]:
     """Takes a played game and record results and game data."""
+    game_id = game_info.game_id
     with utils.logged_timer(f"Playing game {game_id}"):
-        player = play(dnn, init_position=init_position)
+        player = play(dnn, game_info)
 
     if game_id:
-        output_name = '{}-{}'.format(os.path.splitext(os.path.basename(game_id))[0], utils.microseconds_since_midnight())
+        output_name = '{}-{}'.format(os.path.basename(game_id), utils.microseconds_since_midnight())
     else:
         output_name = '{}-{}'.format(utils.microseconds_since_midnight(), socket.gethostname())
-    game_data = player.extract_data()
     sgf_name = ''
     if sgf_dir is not None:
         sgf_name = output_name
-        # with tf.io.gfile.GFile(os.path.join(minimal_sgf_dir, '{}.sgf'.format(sgf_name)), 'w') as f:
-        #     f.write(player.to_sgf(use_comments=False))
         with tf.io.gfile.GFile(os.path.join(sgf_dir, 'full', f'{sgf_name}.sgf'), 'w') as f:
-            f.write(player.to_sgf())
+            f.write(player.to_sgf(init_sgf_reader=game_info.sgf_reader))
 
-    if player.result == 0:  # void
-        return player, sgf_name
+    # if player.result == 0:  # void
+    #     return player, sgf_name
     if selfplay_dir is None:
         return player, sgf_name
 
+    game_data = player.extract_data()
     # separate out data where we have policy target vs those we don't
     iter1, iter2 = itertools.tee(game_data)
     missing_pi = lambda x: x[1] is None
     iter1 = itertools.filterfalse(missing_pi, iter1)
     iter2 = filter(missing_pi, iter2)
     iter2 = map(lambda x: (x[0], PI_CONST, x[2]), iter2)
-    tf_full_examples = preprocessing.make_dataset_from_selfplay(iter1)
-    tf_nopi_examples = preprocessing.make_dataset_from_selfplay(iter2)
+    tf_full_examples = preprocessing.make_dataset_from_selfplay(iter1, game_info.focus_area)
+    tf_nopi_examples = preprocessing.make_dataset_from_selfplay(iter2, game_info.focus_area)
 
     tf_full_examples, tf_nopi_examples = list(tf_full_examples), list(tf_nopi_examples)
     # logging.info(f'{game_id}: %d full examples, %d value only', len(tf_full_examples), len(tf_nopi_examples))
@@ -215,37 +216,38 @@ def run_game(dnn, init_position: go.Position=None,
 
 def main9(argv):
     """Entry point for running one selfplay game."""
+    from puzzle.lnd_puzzle import LnDPuzzle
     del argv  # Unused
     flags.mark_flag_as_required('load_file')
 
-    # B+0.5, KM5.5 (B+1.5 by Chinese scoring): one dead white group (1 eye); two empty spots
-    init_sgf = '/Users/hyu/PycharmProjects/dlgo/9x9/games/Pro/9x9/Minigo/890826.sgf'
-    # init_sgf = '/Users/hyu/PycharmProjects/dlgo/9x9/games/Pro/9x9/Minigo/001203.sgf'
-    # W+3.5, KM6.5: well defined. only J9 up for grab, but black needs to protect G8 first. Also no need for B:D2
-    # init_sgf = '/Users/hyu/PycharmProjects/dlgo/9x9/games/tmp/2.sgf'
-    # B+9.5, KM5.5: finalized. two dead white stones
-    # init_sgf = '/Users/hyu/PycharmProjects/dlgo/9x9/games/tmp/jrd-tromp-07-17-29.sgf'
+    init_sgf_dir = '/Users/hyu/PycharmProjects/dlgo/puzzles9x9/Amigo no igo - 詰碁2023 - Life and Death'
+    init_sgf = f'{init_sgf_dir}/２眼を作ろう１９級.sgf'
 
     init_position = None
+    focus_area = None
     if init_sgf:
         reader = SGFReader.from_file_compatible(init_sgf)
-        init_position = reader.last_pos(ignore_final_pass=True)
+        init_position = reader.first_pos()
+        focus_area, _ = LnDPuzzle.solve_contested_area(init_position.board)
 
-    load_file = f'{myconf.MODELS_DIR}/endgame2_epoch_1.h5'
-    with utils.logged_timer("Loading weights from %s ... " % load_file):
-        network = dual_net.DualNetwork(load_file)
+    load_file = f'{myconf.MODELS_DIR}/model0_0.mlpackage'
+    if load_file:
+        network = dual_net.load_net(load_file)
+    else:
+        network = dual_net.TFDualNetwork(None)
 
-    create_dir_if_needed(selfplay_dir=FLAGS.selfplay_dir, holdout_dir=FLAGS.holdout_dir,
-                         sgf_dir=FLAGS.sgf_dir)
+    selfplay_dir = f'{myconf.EXP_HOME}/selfplay/tfdata'
+    holdout_dir = f'{myconf.EXP_HOME}/selfplay/tfdata'
+    sgf_dir = f'{myconf.SELFPLAY_DIR}'
+    create_dir_if_needed(selfplay_dir=selfplay_dir, holdout_dir=holdout_dir, sgf_dir=sgf_dir)
+
     run_game(
         network,
-        init_position=init_position, game_id=init_sgf,
-        selfplay_dir=FLAGS.selfplay_dir,
-        holdout_dir=FLAGS.holdout_dir,
-        # selfplay_dir=f'{myconf.EXP_HOME}/selfplay/tfdata',
-        # holdout_dir= f'{myconf.EXP_HOME}/selfplay/tfdata',
+        GameInfo(game_id=init_sgf, init_position=init_position, focus_area=focus_area, max_moves=10, sgf_reader=reader),
+        selfplay_dir=selfplay_dir,
+        holdout_dir=holdout_dir,
         holdout_pct=0.0,
-        sgf_dir=f'{myconf.SELFPLAY_DIR}'
+        sgf_dir=sgf_dir
         # sgf_dir=FLAGS.sgf_dir
     )
 
@@ -285,4 +287,4 @@ def main(argv):
 
 
 if __name__ == '__main__':
-    app.run(main)
+    app.run(main9)

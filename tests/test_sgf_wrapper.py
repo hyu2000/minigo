@@ -380,6 +380,7 @@ GC[not broadcast]
         white_setup_stones = reader.white_init_stones()
         print('AB:', [coords.to_gtp(p) for p in black_setup_stones])
         print('AW:', [coords.to_gtp(p) for p in white_setup_stones])
+        assert len(black_setup_stones) == 0 == len(white_setup_stones)
         assert reader.player_to_start() == go.BLACK
 
         # SGFReader go thru main-line only

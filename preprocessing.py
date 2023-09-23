@@ -264,14 +264,14 @@ def get_tpu_bt_input_tensors(games, games_nr, batch_size, feature_layout,
     return dataset
 
 
-def make_dataset_from_selfplay(data_extracts):
+def make_dataset_from_selfplay(data_extracts, goal):
     """
     Returns an iterable of tf.Examples.
     Args:
         data_extracts: An iterable of (position, pi, result) tuples
     """
     f = dual_net.get_features()
-    tf_examples = (make_tf_example(features_lib.extract_features(pos, f),
+    tf_examples = (make_tf_example(features_lib.extract_features(pos, f, goal),
                                    pi, result)
                    for pos, pi, result in data_extracts)
     return tf_examples
@@ -286,9 +286,9 @@ def calc_samples_from_reader(reader: sgf_wrapper.SGFReader) -> Iterable:
     return tf_examples
 
 
-def calc_feature_from_pos(pos) -> np.ndarray:
+def calc_feature_from_pos(pos, goal) -> np.ndarray:
     f = dual_net.get_features()
-    features = features_lib.extract_features(pos, f)
+    features = features_lib.extract_features(pos, f, goal)
     return features
 
 

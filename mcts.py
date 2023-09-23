@@ -153,17 +153,6 @@ class MCTSNode(object):
         """Return value of position, from perspective of player to play."""
         return self.Q * self.position.to_play
 
-    def first_root_expansion(self, dnn):
-        """ ctor doesn't expand node. For search root, we need to expand it so that inject_noise/etc would work.
-        For a typical selfplay, nodes are reused so this is the only time manual expansion is needed
-        """
-        if self.is_expanded:
-            logging.info('first_root_expansion: node already expanded, skipping')
-            return
-
-        prob, val = dnn.run(self.position)
-        self.incorporate_results(prob, val, self)
-
     def select_leaf(self) -> 'MCTSNode':
         """ select a leaf for evaluation/expansion
         """
