@@ -50,7 +50,6 @@ class GameInfo:
         return guess_winner(comment)
 
 
-
 class Puzzle9DataSet1:
     """ first 9x9 puzzle set
     """
@@ -58,9 +57,11 @@ class Puzzle9DataSet1:
     EASY_COLLECTIONS = [f'{PUZZLES_DIR}/Beginning Shapes/*',
                         f'{PUZZLES_DIR}/easy 2-choice question*/*'
                         ]
+    # guess_winner() doesn't work;
+    EASY_COLLECTIONS2 = [f'{PUZZLES_DIR}/How to Play Go +/Life and Death*.sgf']
 
-    def __init__(self):
-        self.collection_patterns = self.EASY_COLLECTIONS
+    def __init__(self, collection_patterns=None):
+        self.collection_patterns = collection_patterns or self.EASY_COLLECTIONS
 
         self._sgf_list = []
         for glob_pattern in self.collection_patterns:
@@ -104,7 +105,7 @@ class Puzzle9DataSet1:
                            init_root=None, max_moves=max_moves, sgf_reader=reader)
 
     def game_iter(self, start=0, stop=None, shuffle=False) -> Iterable[GameInfo]:
-        """ produce the desired number of games by it.cycle() """
+        """ convenience method: produce the desired number of games by it.cycle() """
         gen = self.game_generator(shuffle)
         return itertools.islice(itertools.cycle(gen), start, stop)
 
@@ -134,6 +135,9 @@ def test_dataset():
     for ginfo in itertools.islice(ds.game_generator(), ds_size):
         print(ginfo.game_id, ginfo.max_moves)
 
+    ds = Puzzle9DataSet1(Puzzle9DataSet1.EASY_COLLECTIONS2)
+    assert len(ds) == 20
+
 
 def test_solve_info():
     """ extract human annotated results, as well as first moves
@@ -141,7 +145,7 @@ def test_solve_info():
     All 6 unknown winner are from "Beginner shape".
     [(1, 106), (0, 6), (-1, 6)]
     """
-    ds = Puzzle9DataSet1()
+    ds = Puzzle9DataSet1(Puzzle9DataSet1.EASY_COLLECTIONS2)
     ds_size = len(ds)
     counter = Counter()
     for ginfo in itertools.islice(ds.game_generator(), ds_size):
