@@ -286,17 +286,19 @@ class TestSgfWrapper(test_utils.MinigoUnitTest):
                 print(f'\t%s #vars=%d' % (self.node_comment(node), len(node.variations)))
                 node = node.next
 
-    def visit_node(self, node):
+    def visit_node(self, node, history: tuple):
         """ """
+        node_comment = self.node_comment(node)
+        history = history + (node_comment,)
         if node.next is None:
-            print(f'reached leaf: %s' % self.node_comment(node))
+            print(f'reached leaf: path: {history}')
             return
         # depth-first
         # first visit the main path. Note node.variations is empty when there is only a main path
-        self.visit_node(node.next)
+        self.visit_node(node.next, history)
         # then visit the other variations. Note when there are multiple variations, main path is listed as one of them
         for var in node.variations[1:]:
-            self.visit_node(var)
+            self.visit_node(var, history)
 
     def test_traverse_sgf(self):
         """ traverse a puzzle sgf, visit all paths
@@ -306,7 +308,7 @@ class TestSgfWrapper(test_utils.MinigoUnitTest):
         sgf_contents = """
         (;FF[4]CA[UTF-8]AP[puzzle2sgf:0.1]GM[1]GN[Life and Death 2.2]SZ[9]
           AB[fi][fh][gg][hf][if][fg][ge]AW[gh][gi][hh][hg][ig]PL[B]C[In this position, White also has three spaces to make eyes in, only this time, it's in the corner. Can Black find a way to kill White?]
-            (;B[ih]C[V1] (;W[ii]C[WRONG1]) (;W[aa];B[ab];C[very wrong]))
+            (;B[ih]C[V1] (;W[ii]C[WRONG1]) (;W[aa];B[ab]C[very wrong]))
             (;B[hi]C[V2];W[ii]C[WRONG2])
             (;B[ii]C[V3,CORRECT])
         )
@@ -315,7 +317,9 @@ class TestSgfWrapper(test_utils.MinigoUnitTest):
         collection = sgf.parse(sgf_contents)
         assert len(collection.children) == 1
         gtree = collection.children[0]
-        self.visit_node(gtree.root)
+        for i, gtree in enumerate(gtree.children):
+            node = gtree.root
+            self.visit_node(node, ())
 
 
 class TestReader(test_utils.MinigoUnitTest):
