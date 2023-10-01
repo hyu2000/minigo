@@ -251,6 +251,72 @@ class TestSgfWrapper(test_utils.MinigoUnitTest):
             positions_w_context[-1].next_move)
         self.assertEqualPositions(final_position, final_replayed_position)
 
+    @staticmethod
+    def node_comment(node):
+        comments = node.properties.get('C')
+        if comments is None:
+            return None
+        return comments[0]
+
+    def test_visit_sgf(self):
+        """ exploratory: sgf data structure
+        """
+        import sgf
+        # How to Play Go +/Life\ and\ Death\ 2.2
+        sgf_contents = """
+(;FF[4]CA[UTF-8]AP[puzzle2sgf:0.1]GM[1]GN[Life and Death 2.2]SZ[9]
+  AB[fi][fh][gg][hf][if][fg][ge]AW[gh][gi][hh][hg][ig]PL[B]C[In this position, White also has three spaces to make eyes in, only this time, it's in the corner. Can Black find a way to kill White?]
+    (;B[ih]C[V1] (;W[ii]C[WRONG]) (;W[aa];B[ab];C[very wrong]))
+    (;B[hi]C[V2];W[ii]C[WRONG])
+    (;B[ii]C[V3,CORRECT])
+)
+"""
+
+        collection = sgf.parse(sgf_contents)
+        assert len(collection.children) == 1
+        gtree = collection.children[0]
+        assert len(gtree.children) == 3   # GameTree
+        root = gtree.root
+        assert self.node_comment(root).startswith('In this pos')
+        assert len(root.variations) == 3  # Nodes, probably not useful
+        for i, gtree in enumerate(gtree.children):
+            node = gtree.root
+            print(f'{i} %s #vars=%d' % (self.node_comment(node), len(node.variations)))
+            while node is not None:
+                print(f'\t%s #vars=%d' % (self.node_comment(node), len(node.variations)))
+                node = node.next
+
+    def visit_node(self, node):
+        """ """
+        if node.next is None:
+            print(f'reached leaf: %s' % self.node_comment(node))
+            return
+        # depth-first
+        # first visit the main path. Note node.variations is empty when there is only a main path
+        self.visit_node(node.next)
+        # then visit the other variations. Note when there are multiple variations, main path is listed as one of them
+        for var in node.variations[1:]:
+            self.visit_node(var)
+
+    def test_traverse_sgf(self):
+        """ traverse a puzzle sgf, visit all paths
+        """
+        import sgf
+        # How to Play Go +/Life\ and\ Death\ 2.2
+        sgf_contents = """
+        (;FF[4]CA[UTF-8]AP[puzzle2sgf:0.1]GM[1]GN[Life and Death 2.2]SZ[9]
+          AB[fi][fh][gg][hf][if][fg][ge]AW[gh][gi][hh][hg][ig]PL[B]C[In this position, White also has three spaces to make eyes in, only this time, it's in the corner. Can Black find a way to kill White?]
+            (;B[ih]C[V1] (;W[ii]C[WRONG1]) (;W[aa];B[ab];C[very wrong]))
+            (;B[hi]C[V2];W[ii]C[WRONG2])
+            (;B[ii]C[V3,CORRECT])
+        )
+        """
+
+        collection = sgf.parse(sgf_contents)
+        assert len(collection.children) == 1
+        gtree = collection.children[0]
+        self.visit_node(gtree.root)
+
 
 class TestReader(test_utils.MinigoUnitTest):
     """ """
