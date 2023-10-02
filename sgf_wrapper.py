@@ -378,6 +378,7 @@ class SGFReader(object):
     MISSING_MARGIN = 2000
 
     def __init__(self, sgf_contents, name='unknown'):
+        self.raw_sgf = sgf_contents
         self.root_node = get_sgf_root_node(sgf_contents)
         self.props = self.root_node.properties
         self.name = name

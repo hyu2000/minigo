@@ -308,6 +308,11 @@ class TestSgfWrapper(test_utils.MinigoUnitTest):
         # traverser.traverse_sgf('/Users/hyu/PycharmProjects/dlgo/puzzles9x9/How to Play Go +/Life and Death 2.1.sgf')
         print(f'correct/total = {cnter.num_correct_paths} / {cnter.num_paths}')
 
+        finder = VariationTraverser.CorrectPathFinder()
+        traverser = VariationTraverser(finder.path_handler)
+        traverser.traverse(sgf_contents)
+        print(finder.solution_in_gtp(), finder.comments)
+
 
 class TestReader(test_utils.MinigoUnitTest):
     """ """

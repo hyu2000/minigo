@@ -112,8 +112,21 @@ class Puzzle9DataSet1:
         return itertools.islice(itertools.cycle(gen), start, stop)
 
 
+def find_solution_moves(reader: SGFReader) -> Optional[List[str]]:
+    """
+    Returns gtp moves for a correct solution, None otherwise
+    """
+    finder = VariationTraverser.CorrectPathFinder()
+    traverser = VariationTraverser(finder.path_handler)
+    traverser.traverse(reader.raw_sgf)
+    solution = finder.correct_path
+    if solution:
+        return [coords.to_gtp(x) for x in solution]
+    return None
+
+
 def find_mainline_moves(reader: SGFReader) -> Optional[List[str]]:
-    """ It turns out mainline might lead to the wrong solution.
+    """ It turns out that mainline might lead to the wrong solution.
     Returns gtp moves for correct mainline, None otherwise
     """
     tuples = list(reader.iter_comments())
@@ -219,7 +232,7 @@ def test_score_selfplay():
     score_selfplay_records(ds, f'{myconf.EXP_HOME}/selfplay1/sgf/full')
 
 
-def test_count_correct_paths():
+def test_correct_path_stats():
     """ count num correct solutions in a puzzle """
     glob_pattern = f'{PUZZLES_DIR}/Beginning Shapes/*.sgf'
     glob_pattern = f'{PUZZLES_DIR}/easy 2-choice question*/*.sgf'
@@ -232,7 +245,6 @@ def test_count_correct_paths():
         traverser = VariationTraverser(cnter.path_handler)
         traverser.traverse_sgf(sgf_fname)
 
-        solution_finder = VariationTraverser.CorrectPathFinder()
-        traverser = VariationTraverser(solution_finder.path_handler)
-        traverser.traverse_sgf(sgf_fname)
-        print(f'{basename} \tcorrect/total = {cnter.num_correct_paths} / {cnter.num_paths}\t{solution_finder.solution_in_gtp()}')
+        reader = SGFReader.from_file_compatible(sgf_fname)
+        solution = find_solution_moves(reader)
+        print(f'{basename} \tcorrect/total = {cnter.num_correct_paths} / {cnter.num_paths}\t{solution}')
