@@ -59,7 +59,7 @@ class Puzzle9DataSet1:
     EASY_COLLECTIONS = [f'{PUZZLES_DIR}/Beginning Shapes/*',
                         f'{PUZZLES_DIR}/easy 2-choice question*/*'
                         ]
-    # guess_winner() doesn't work; mainline is mostly wrong, as the correct path is mostly the last one
+    # guess_winner() doesn't work; mainline is mostly wrong -- the correct path is mostly the last one
     EASY_COLLECTIONS2 = [f'{PUZZLES_DIR}/How to Play Go +/Life and Death*.sgf']
 
     def __init__(self, collection_patterns=None):
@@ -180,7 +180,7 @@ def test_solve_info():
     print(counter.most_common())
 
 
-def score_selfplay_records(ds: Puzzle9DataSet1, sgf_dir):
+def score_selfplay_records(ds: Puzzle9DataSet1, sgf_dir, skip_no_winner=True):
     """ evaluate selfplay records to help track progress
     1. outcome agreement with puzzle comment
     2. first move agreement
@@ -195,13 +195,18 @@ Problem 2: result-match= 8/8, first-move-match= 8/8, occured=8/8 *solved
     print(f'Scoring {sgf_dir}, key-move-search in {SEARCH_KEY_MOVE_IN_FIRST_N} ...')
     total_puzzle_used = 0  # puzzle with complete info
     total_puzzle_solved = 0  # completely solved
+    num_puzzle_no_winner = 0  # no winner annotation, or can't parse it
+    num_puzzle_no_solution = 0  # no solution marked as correct
     total_sgfs = 0
     for ginfo in ds.game_generator():  # itertools.islice(ds.game_generator(), 4):
         winner_annotated = ginfo.guess_winner_from_comment()
         if winner_annotated == 0:
-            continue
+            if skip_no_winner:
+                num_puzzle_no_winner += 1
+                continue
         solution_moves = find_solution_moves(ginfo.sgf_reader)
-        if solution_moves is None:  # skip if mainline is wrong
+        if solution_moves is None:  # skip if no correct solution
+            num_puzzle_no_solution += 1
             continue
         total_puzzle_used += 1
         first_move_solution = coords.from_gtp(solution_moves[0])
@@ -224,12 +229,18 @@ Problem 2: result-match= 8/8, first-move-match= 8/8, occured=8/8 *solved
         total_puzzle_solved += solved
         print(f'{game_id}: result-match= {num_result_agree}/{num_sgfs}, first-move-match= {num_first_move_agree}/{num_sgfs}, '
               f'occured={count_key_move_occured}/{num_sgfs} %s' % ('*solved' if solved else ''))
-    print(f'Summary for {sgf_dir}:\n  {total_sgfs} sgfs, completely solved puzzle: {total_puzzle_solved} / {total_puzzle_used}')
+    print(f'Summary for {sgf_dir}:\n  {total_sgfs} sgfs, completely solved puzzle: '
+          f'{total_puzzle_solved} / {total_puzzle_used}, '
+          f'skipping {num_puzzle_no_winner} (no winner), {num_puzzle_no_solution} (no solution)')
 
 
 def test_score_selfplay():
     ds = Puzzle9DataSet1()
-    score_selfplay_records(ds, f'{myconf.EXP_HOME}/selfplay1/sgf/full')
+    score_selfplay_records(ds, f'{myconf.EXP_HOME}/selfplay4/sgf/full')
+
+    # ds = Puzzle9DataSet1(collection_patterns=Puzzle9DataSet1.EASY_COLLECTIONS2)
+    # score_selfplay_records(ds, f'{myconf.EXP_HOME}/selfplay4-on-easy2/sgf/full', skip_no_winner=False)
+
 
 
 def test_correct_path_stats():
