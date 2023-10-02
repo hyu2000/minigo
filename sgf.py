@@ -1,9 +1,13 @@
 """ SGF grammar: FF4 allows subtree
 https://www.red-bean.com/sgf/sgf4.html
-  Collection = GameTree+
-  GameTree   = "(" Sequence GameTree* ")"
+  Collection = GameTree+                    # alternatives
+  GameTree   = "(" Sequence GameTree* ")"   # a common seq, followed by 0 or more variations
   Sequence   = Node+
   Node       = ";" Property*
+
+GameTree is a tree: multiple variations may not converge
+Terminology:
+Node -> Move
 """
 
 # map from numerical coordinates to letters used by SGF
@@ -291,7 +295,7 @@ class Parser:
             raise ParseException(ch, state)
 
 
-def parse(sgf_string):
+def parse(sgf_string) -> Collection:
     parser = Parser()
     collection = Collection(parser)
     parser.parse(sgf_string)

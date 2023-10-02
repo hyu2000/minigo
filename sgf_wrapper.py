@@ -142,7 +142,7 @@ def sgf_prop_get(props, key, default):
     return sgf_prop(props.get(key, default))
 
 
-def handle_node(pos, node):
+def handle_node(pos, node) -> go.Position:
     'A node can either add B+W stones, play as B, or play as W.'
     props = node.properties
     black_stones_added = [coords.from_sgf(
@@ -173,6 +173,10 @@ def add_stones(pos, black_stones_added, white_stones_added):
 
 def get_next_move(node):
     props = node.next.properties
+    return extract_move_and_comments(props)
+
+
+def extract_move_and_comments(props: dict):
     comments = props.get('C')
     if 'W' in props:
         return coords.from_sgf(props['W'][0]), comments
@@ -227,6 +231,31 @@ def replay_sgf(sgf_contents):
         next_move, _ = get_next_move(current_node)
         yield PositionWithContext(pos, next_move, result)
         current_node = current_node.next
+
+
+def visit_node(node, history: tuple):
+    """ recursive """
+    next_move, comments = extract_move_and_comments(node.properties)
+    history = history + (next_move,)
+    if node.next is None:
+        is_correct = 'correct' in comments[0].lower()
+        path = ' '.join(coords.to_gtp(x) for x in history)
+        print(f'reached leaf: path: {path} {is_correct}')
+        return
+    # depth-first
+    # first visit the main path. Note node.variations is empty when there is only a main path
+    visit_node(node.next, history)
+    # then visit the other variations. Note when there are multiple variations, main path is listed as one of them
+    for var in node.variations[1:]:
+        visit_node(var, history)
+
+
+def traverse_sgf(sgf_contents):
+    collection = sgf.parse(sgf_contents)
+    gtree = collection.children[0]
+    for i, gtree in enumerate(gtree.children):
+        node = gtree.root
+        visit_node(node, ())
 
 
 def replay_sgf_file(sgf_fname: str):

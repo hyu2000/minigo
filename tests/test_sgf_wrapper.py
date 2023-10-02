@@ -15,7 +15,8 @@ import re
 import unittest
 import go
 from absl import logging
-from sgf_wrapper import replay_sgf, translate_sgf_move, make_sgf, make_sgf_from_gtp_moves, SGFReader, add_init_stones
+from sgf_wrapper import (replay_sgf, translate_sgf_move, make_sgf, make_sgf_from_gtp_moves, SGFReader,
+                         add_init_stones, traverse_sgf)
 
 import coords
 from tests import test_utils
@@ -286,20 +287,6 @@ class TestSgfWrapper(test_utils.MinigoUnitTest):
                 print(f'\t%s #vars=%d' % (self.node_comment(node), len(node.variations)))
                 node = node.next
 
-    def visit_node(self, node, history: tuple):
-        """ """
-        node_comment = self.node_comment(node)
-        history = history + (node_comment,)
-        if node.next is None:
-            print(f'reached leaf: path: {history}')
-            return
-        # depth-first
-        # first visit the main path. Note node.variations is empty when there is only a main path
-        self.visit_node(node.next, history)
-        # then visit the other variations. Note when there are multiple variations, main path is listed as one of them
-        for var in node.variations[1:]:
-            self.visit_node(var, history)
-
     def test_traverse_sgf(self):
         """ traverse a puzzle sgf, visit all paths
         """
@@ -314,12 +301,7 @@ class TestSgfWrapper(test_utils.MinigoUnitTest):
         )
         """
 
-        collection = sgf.parse(sgf_contents)
-        assert len(collection.children) == 1
-        gtree = collection.children[0]
-        for i, gtree in enumerate(gtree.children):
-            node = gtree.root
-            self.visit_node(node, ())
+        traverse_sgf(sgf_contents)
 
 
 class TestReader(test_utils.MinigoUnitTest):
