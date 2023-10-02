@@ -11,10 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import glob
+import os.path
 import re
 import unittest
 import go
 from absl import logging
+
 from sgf_wrapper import (replay_sgf, translate_sgf_move, make_sgf, make_sgf_from_gtp_moves, SGFReader,
                          add_init_stones, VariationTraverser)
 
@@ -302,7 +305,20 @@ class TestSgfWrapper(test_utils.MinigoUnitTest):
         cnter = VariationTraverser.PathCounter()
         traverser = VariationTraverser(cnter.path_handler)
         traverser.traverse(sgf_contents)
+        # traverser.traverse_sgf('/Users/hyu/PycharmProjects/dlgo/puzzles9x9/How to Play Go +/Life and Death 2.1.sgf')
         print(f'correct/total = {cnter.num_correct_paths} / {cnter.num_paths}')
+
+    def test_puzzle_set_stats(self):
+        """ count num correct solutions in a puzzle """
+        glob_pattern = f'/Users/hyu/PycharmProjects/dlgo/puzzles9x9/How to Play Go +/Life and Death*.sgf'
+
+        cnter = VariationTraverser.PathCounter()
+        traverser = VariationTraverser(cnter.path_handler)
+        for sgf_fname in glob.glob(glob_pattern):
+            basename = os.path.basename(sgf_fname)
+            cnter.clear()
+            traverser.traverse_sgf(sgf_fname)
+            print(f'{basename}  correct/total = {cnter.num_correct_paths} / {cnter.num_paths}')
 
 
 class TestReader(test_utils.MinigoUnitTest):

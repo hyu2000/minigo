@@ -241,6 +241,9 @@ class VariationTraverser:
     class PathCounter:
         """ a simple path handler class """
         def __init__(self):
+            self.clear()
+
+        def clear(self):
             self.num_paths = 0
             self.num_correct_paths = 0
 
@@ -277,9 +280,15 @@ class VariationTraverser:
         assert len(collection.children) == 1
         gtree0 = collection.children[0]
 
-        for i, gtree in enumerate(gtree0.children):
+        # same pattern as visit_node()
+        self.visit_node(gtree0.root.next, ())
+        for i, gtree in enumerate(gtree0.children[1:]):
             node = gtree.root
             self.visit_node(node, ())
+
+    def traverse_sgf(self, sgf_fname):
+        with open(sgf_fname) as f:
+            self.traverse(f.read())
 
 
 def replay_sgf_file(sgf_fname: str):
