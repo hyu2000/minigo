@@ -157,7 +157,7 @@ def test_solve_info():
         winner = guess_winner(root_comment)
         counter[winner] += 1
 
-        solution_moves = find_mainline_moves(reader)
+        solution_moves = find_solution_moves(reader)
         if solution_moves is None:
             print(f'{game_id} mainline wrong, skipping')
             continue
@@ -187,7 +187,7 @@ Problem 2: result-match= 8/8, first-move-match= 8/8, occured=8/8 *solved
         winner_annotated = ginfo.guess_winner_from_comment()
         if winner_annotated == 0:
             continue
-        solution_moves = find_mainline_moves(ginfo.sgf_reader)
+        solution_moves = find_solution_moves(ginfo.sgf_reader)
         if solution_moves is None:  # skip if mainline is wrong
             continue
         total_puzzle_used += 1
@@ -225,10 +225,14 @@ def test_count_correct_paths():
     glob_pattern = f'{PUZZLES_DIR}/easy 2-choice question*/*.sgf'
     glob_pattern = f'{PUZZLES_DIR}/How to Play Go +/Life and Death*.sgf'
 
-    cnter = VariationTraverser.PathCounter()
-    traverser = VariationTraverser(cnter.path_handler)
     for sgf_fname in natsorted(glob.glob(glob_pattern)):
         basename = os.path.basename(sgf_fname)
-        cnter.clear()
+
+        cnter = VariationTraverser.PathCounter()
+        traverser = VariationTraverser(cnter.path_handler)
         traverser.traverse_sgf(sgf_fname)
-        print(f'{basename} \t\tcorrect/total = {cnter.num_correct_paths} / {cnter.num_paths}')
+
+        solution_finder = VariationTraverser.CorrectPathFinder()
+        traverser = VariationTraverser(solution_finder.path_handler)
+        traverser.traverse_sgf(sgf_fname)
+        print(f'{basename} \tcorrect/total = {cnter.num_correct_paths} / {cnter.num_paths}\t{solution_finder.solution_in_gtp()}')

@@ -234,7 +234,10 @@ def replay_sgf(sgf_contents):
 
 
 class VariationTraverser:
-    """ traverse all paths in an sgf """
+    """ traverse all paths(variations) in an sgf
+
+    When reaching the end of a path, a handler is called. See default_path_handler() for details
+    """
     def __init__(self, path_handler=None):
         self.handle_path = path_handler or self.default_path_handler
 
@@ -250,31 +253,64 @@ class VariationTraverser:
         def path_handler(self, history, comments):
             self.num_paths += 1
             if comments:
-                is_correct = 'correct' in comments[0].lower()
+                comment = comments[0].lower()
+                is_correct = 'correct' in comment and 'incorrect' not in comment
                 if is_correct:
                     self.num_correct_paths += 1
+            return False
+
+    class CorrectPathFinder:
+        """ find the first solution, i.e. with "correct" in comments """
+        def __init__(self):
+            self.correct_path = None
+            self.comments = None
+
+        def path_handler(self, history: tuple, comments: List[str]):
+            if comments:
+                comment = comments[0].lower()
+                is_correct = 'correct' in comment and 'incorrect' not in comment
+                if is_correct:
+                    self.correct_path = history
+                    self.comments = comments
+                return is_correct
+
+        def solution_in_gtp(self):
+            if self.correct_path is None:
+                return None
+            gtp_str = ' '.join(coords.to_gtp(x) for x in self.correct_path)
+            return gtp_str
 
     @staticmethod
-    def default_path_handler(history: tuple, comments: List[str]):
-        """ this gets called when a variation ends """
+    def default_path_handler(history: tuple, comments: List[str]) -> bool:
+        """ this gets called when a variation ends
+
+        Returns True if no need to visit other paths
+        """
         is_correct = 'correct' in comments[0].lower()
         path = ' '.join(coords.to_gtp(x) for x in history)
         print(f'reached leaf: path: {path} {is_correct}')
+        return False
 
-    def visit_node(self, node, history: tuple):
-        """ recursive """
+    def visit_node(self, node, history: tuple) -> bool:
+        """ recursive
+
+        Returns True to terminate search
+        """
         next_move, comments = extract_move_and_comments(node.properties)
         history = history + (next_move,)
         if node.next is None:
-            self.handle_path(history, comments)
-            return
+            should_terminate = self.handle_path(history, comments)
+            return should_terminate
 
         # depth-first
         # first visit the main path. Note node.variations is empty when there is only a main path
-        self.visit_node(node.next, history)
+        if self.visit_node(node.next, history):
+            return True
         # then visit the other variations. Note when there are multiple variations, main path is listed as one of them
         for var in node.variations[1:]:
-            self.visit_node(var, history)
+            if self.visit_node(var, history):
+                return True
+        return False
 
     def traverse(self, sgf_contents):
         collection = sgf.parse(sgf_contents)
@@ -282,10 +318,14 @@ class VariationTraverser:
         gtree0 = collection.children[0]
 
         # same pattern as visit_node()
-        self.visit_node(gtree0.root.next, ())
+        should_terminate = self.visit_node(gtree0.root.next, ())
+        if should_terminate:
+            return
         for i, gtree in enumerate(gtree0.children[1:]):
             node = gtree.root
-            self.visit_node(node, ())
+            should_terminate = self.visit_node(node, ())
+            if should_terminate:
+                return
 
     def traverse_sgf(self, sgf_fname):
         with open(sgf_fname) as f:
