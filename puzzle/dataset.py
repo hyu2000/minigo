@@ -18,7 +18,7 @@ import coords
 import go
 import myconf
 from puzzle.lnd_puzzle import LnDPuzzle
-from sgf_wrapper import SGFReader
+from sgf_wrapper import SGFReader, VariationTraverser
 
 
 def guess_winner(comment: str) -> int:
@@ -50,14 +50,16 @@ class GameInfo:
         return guess_winner(comment)
 
 
+PUZZLES_DIR = '/Users/hyu/PycharmProjects/dlgo/puzzles9x9'
+
+
 class Puzzle9DataSet1:
     """ first 9x9 puzzle set
     """
-    PUZZLES_DIR = '/Users/hyu/PycharmProjects/dlgo/puzzles9x9'
     EASY_COLLECTIONS = [f'{PUZZLES_DIR}/Beginning Shapes/*',
                         f'{PUZZLES_DIR}/easy 2-choice question*/*'
                         ]
-    # guess_winner() doesn't work;
+    # guess_winner() doesn't work; mainline is mostly wrong, as the correct path is mostly the last one
     EASY_COLLECTIONS2 = [f'{PUZZLES_DIR}/How to Play Go +/Life and Death*.sgf']
 
     def __init__(self, collection_patterns=None):
@@ -215,3 +217,18 @@ Problem 2: result-match= 8/8, first-move-match= 8/8, occured=8/8 *solved
 def test_score_selfplay():
     ds = Puzzle9DataSet1()
     score_selfplay_records(ds, f'{myconf.EXP_HOME}/selfplay1/sgf/full')
+
+
+def test_count_correct_paths():
+    """ count num correct solutions in a puzzle """
+    glob_pattern = f'{PUZZLES_DIR}/Beginning Shapes/*.sgf'
+    glob_pattern = f'{PUZZLES_DIR}/easy 2-choice question*/*.sgf'
+    glob_pattern = f'{PUZZLES_DIR}/How to Play Go +/Life and Death*.sgf'
+
+    cnter = VariationTraverser.PathCounter()
+    traverser = VariationTraverser(cnter.path_handler)
+    for sgf_fname in natsorted(glob.glob(glob_pattern)):
+        basename = os.path.basename(sgf_fname)
+        cnter.clear()
+        traverser.traverse_sgf(sgf_fname)
+        print(f'{basename} \t\tcorrect/total = {cnter.num_correct_paths} / {cnter.num_paths}')

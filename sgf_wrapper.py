@@ -249,9 +249,10 @@ class VariationTraverser:
 
         def path_handler(self, history, comments):
             self.num_paths += 1
-            is_correct = 'correct' in comments[0].lower()
-            if is_correct:
-                self.num_correct_paths += 1
+            if comments:
+                is_correct = 'correct' in comments[0].lower()
+                if is_correct:
+                    self.num_correct_paths += 1
 
     @staticmethod
     def default_path_handler(history: tuple, comments: List[str]):

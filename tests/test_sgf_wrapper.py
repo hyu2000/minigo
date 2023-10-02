@@ -308,18 +308,6 @@ class TestSgfWrapper(test_utils.MinigoUnitTest):
         # traverser.traverse_sgf('/Users/hyu/PycharmProjects/dlgo/puzzles9x9/How to Play Go +/Life and Death 2.1.sgf')
         print(f'correct/total = {cnter.num_correct_paths} / {cnter.num_paths}')
 
-    def test_puzzle_set_stats(self):
-        """ count num correct solutions in a puzzle """
-        glob_pattern = f'/Users/hyu/PycharmProjects/dlgo/puzzles9x9/How to Play Go +/Life and Death*.sgf'
-
-        cnter = VariationTraverser.PathCounter()
-        traverser = VariationTraverser(cnter.path_handler)
-        for sgf_fname in glob.glob(glob_pattern):
-            basename = os.path.basename(sgf_fname)
-            cnter.clear()
-            traverser.traverse_sgf(sgf_fname)
-            print(f'{basename}  correct/total = {cnter.num_correct_paths} / {cnter.num_paths}')
-
 
 class TestReader(test_utils.MinigoUnitTest):
     """ """
