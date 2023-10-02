@@ -233,29 +233,53 @@ def replay_sgf(sgf_contents):
         current_node = current_node.next
 
 
-def visit_node(node, history: tuple):
-    """ recursive """
-    next_move, comments = extract_move_and_comments(node.properties)
-    history = history + (next_move,)
-    if node.next is None:
+class VariationTraverser:
+    """ traverse all paths in an sgf """
+    def __init__(self, path_handler=None):
+        self.handle_path = path_handler or self.default_path_handler
+
+    class PathCounter:
+        """ a simple path handler class """
+        def __init__(self):
+            self.num_paths = 0
+            self.num_correct_paths = 0
+
+        def path_handler(self, history, comments):
+            self.num_paths += 1
+            is_correct = 'correct' in comments[0].lower()
+            if is_correct:
+                self.num_correct_paths += 1
+
+    @staticmethod
+    def default_path_handler(history: tuple, comments: List[str]):
+        """ this gets called when a variation ends """
         is_correct = 'correct' in comments[0].lower()
         path = ' '.join(coords.to_gtp(x) for x in history)
         print(f'reached leaf: path: {path} {is_correct}')
-        return
-    # depth-first
-    # first visit the main path. Note node.variations is empty when there is only a main path
-    visit_node(node.next, history)
-    # then visit the other variations. Note when there are multiple variations, main path is listed as one of them
-    for var in node.variations[1:]:
-        visit_node(var, history)
 
+    def visit_node(self, node, history: tuple):
+        """ recursive """
+        next_move, comments = extract_move_and_comments(node.properties)
+        history = history + (next_move,)
+        if node.next is None:
+            self.handle_path(history, comments)
+            return
 
-def traverse_sgf(sgf_contents):
-    collection = sgf.parse(sgf_contents)
-    gtree = collection.children[0]
-    for i, gtree in enumerate(gtree.children):
-        node = gtree.root
-        visit_node(node, ())
+        # depth-first
+        # first visit the main path. Note node.variations is empty when there is only a main path
+        self.visit_node(node.next, history)
+        # then visit the other variations. Note when there are multiple variations, main path is listed as one of them
+        for var in node.variations[1:]:
+            self.visit_node(var, history)
+
+    def traverse(self, sgf_contents):
+        collection = sgf.parse(sgf_contents)
+        assert len(collection.children) == 1
+        gtree0 = collection.children[0]
+
+        for i, gtree in enumerate(gtree0.children):
+            node = gtree.root
+            self.visit_node(node, ())
 
 
 def replay_sgf_file(sgf_fname: str):

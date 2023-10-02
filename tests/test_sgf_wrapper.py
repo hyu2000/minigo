@@ -16,7 +16,7 @@ import unittest
 import go
 from absl import logging
 from sgf_wrapper import (replay_sgf, translate_sgf_move, make_sgf, make_sgf_from_gtp_moves, SGFReader,
-                         add_init_stones, traverse_sgf)
+                         add_init_stones, VariationTraverser)
 
 import coords
 from tests import test_utils
@@ -290,7 +290,6 @@ class TestSgfWrapper(test_utils.MinigoUnitTest):
     def test_traverse_sgf(self):
         """ traverse a puzzle sgf, visit all paths
         """
-        import sgf
         # How to Play Go +/Life\ and\ Death\ 2.2
         sgf_contents = """
         (;FF[4]CA[UTF-8]AP[puzzle2sgf:0.1]GM[1]GN[Life and Death 2.2]SZ[9]
@@ -300,8 +299,10 @@ class TestSgfWrapper(test_utils.MinigoUnitTest):
             (;B[ii]C[V3,CORRECT])
         )
         """
-
-        traverse_sgf(sgf_contents)
+        cnter = VariationTraverser.PathCounter()
+        traverser = VariationTraverser(cnter.path_handler)
+        traverser.traverse(sgf_contents)
+        print(f'correct/total = {cnter.num_correct_paths} / {cnter.num_paths}')
 
 
 class TestReader(test_utils.MinigoUnitTest):
