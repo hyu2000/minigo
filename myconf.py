@@ -7,8 +7,9 @@ import logging
 from logging import getLogger
 
 
-#
 logger = logging.getLogger()
+# why do we need to explicitly set rootlogger level?
+logger.setLevel(logging.INFO)
 
 
 BOARD_SIZE = 9
@@ -27,7 +28,7 @@ SELFPLAY_DIR = f'{EXP_HOME}/selfplay'
 
 def config_logging():
     logging.basicConfig(level=logging.INFO, format='%(asctime)-15s %(levelname)s %(message)s')
-    # logger.info('logging configed')
+    logger.info('logging configed')
 
 
 config_logging()
