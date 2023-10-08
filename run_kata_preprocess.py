@@ -6,6 +6,7 @@ import random
 from collections import Counter, defaultdict
 from typing import List, Iterable
 import numpy as np
+import logging
 
 import coords
 import go
@@ -14,9 +15,14 @@ import myconf
 import sgf_wrapper
 from katago.analysis_engine import AResponse, KataModels, start_engine, ARequest, KataEngine, extract_policy_value
 from sgf_wrapper import SGFReader
-from absl import logging
+# from absl import logging
 
 from tar_dataset import KataG170DataSet
+
+KATA_MODEL_ID = KataModels.MODEL_B6_4k
+MAX_VISITS = 50
+# randomly reject this percentage of games
+REJECTION_PCTG = 0.8
 
 
 def process_one_game(engine: KataEngine, reader: SGFReader) -> List:
@@ -30,7 +36,7 @@ def process_one_game(engine: KataEngine, reader: SGFReader) -> List:
 
     turns_to_analyze = list(range(len(moves)))
     # ignore komi in the actual game: we only care about the default 5.5
-    arequest = ARequest(moves, turns_to_analyze)
+    arequest = ARequest(moves, turns_to_analyze, maxVisits=MAX_VISITS)
     try:
         responses = engine.analyze(arequest)
     except Exception as e:
@@ -42,7 +48,7 @@ def process_one_game(engine: KataEngine, reader: SGFReader) -> List:
         assert resp1.turnNumber == i
 
         pi, v = extract_policy_value(resp1)
-        features = preprocessing.calc_feature_from_pos(position)
+        features = preprocessing.calc_feature_from_pos(position, myconf.FULL_BOARD_FOCUS)
         tf_sample = preprocessing.make_tf_example(features, pi, v)
         samples.append(tf_sample)
 
@@ -89,12 +95,13 @@ def preprocess(init=False, samples_in_batch=1e5):
     if i_batch_train > 0:
         logging.info(f'#### continuing, next_batch={i_batch_train} #####')
 
-    model = KataModels.MODEL_B6_4k
-    engine = KataEngine(model)
+    engine = KataEngine(KATA_MODEL_ID)
     engine.start()
 
     samples_train = []
-    for i_game, (game_id, reader) in enumerate(ds.game_iter(start=0, stop=5)):
+    for i_game, (game_id, reader) in enumerate(ds.game_iter(start=0, stop=None)):
+        if random.random() < REJECTION_PCTG:
+            continue
         samples = process_one_game(engine, reader)
         samples_train.extend(samples)
         logging.info(f'{i_game}th game: %d samples \t\t{game_id}', len(samples))
@@ -114,8 +121,7 @@ def preprocess(init=False, samples_in_batch=1e5):
 
 
 def nottest_gen_data():
-    model = KataModels.MODEL_B6_4k
-    engine = KataEngine(model)
+    engine = KataEngine(KATA_MODEL_ID)
     engine.start()
 
     sgf_fname = '/Users/hyu/go/g170archive/sgfs-9x9-try1/s174479360.1.sgf'
@@ -137,7 +143,7 @@ def nottest_scan_batch():
 
 
 def count_num_samples():
-    """ 11/20/12 wonder how 22k games only produced the amount of data less than 2 selfplays
+    """ 11/20/22 wonder how 22k games only produced the amount of data less than 2 selfplays
     """
     data_dir = '/Users/hyu/go/g170archive/sgfs-9x9'
     ds = KataG170DataSet(data_dir)
