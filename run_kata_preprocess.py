@@ -6,23 +6,22 @@ import random
 from collections import Counter, defaultdict
 from typing import List, Iterable
 import numpy as np
-import logging
 
+import myconf
 import coords
 import go
 import preprocessing
-import myconf
 import sgf_wrapper
 from katago.analysis_engine import AResponse, KataModels, start_engine, ARequest, KataEngine, extract_policy_value
 from sgf_wrapper import SGFReader
-# from absl import logging
+import logging
 
 from tar_dataset import KataG170DataSet
 
 KATA_MODEL_ID = KataModels.MODEL_B6_4k
 MAX_VISITS = 50
 # randomly reject this percentage of games
-REJECTION_PCTG = 0.8
+REJECTION_PCTG = 0
 
 
 def process_one_game(engine: KataEngine, reader: SGFReader) -> List:
@@ -89,6 +88,7 @@ def preprocess(init=False, samples_in_batch=1e5):
     """
     data_dir = '/Users/hyu/go/g170archive/sgfs-9x9'
     ds = KataG170DataSet(data_dir)
+    logging.info(f'Starting preprocess max_visits={MAX_VISITS} ')
 
     feature_dir = f'{myconf.FEATURES_DIR}/g170'
     i_batch_train = scan_for_next_batch_number(feature_dir, init)
@@ -104,7 +104,7 @@ def preprocess(init=False, samples_in_batch=1e5):
             continue
         samples = process_one_game(engine, reader)
         samples_train.extend(samples)
-        logging.info(f'{i_game}th game: %d samples \t\t{game_id}', len(samples))
+        # logging.info(f'{i_game}th game: %d samples \t\t{game_id}', len(samples))
 
         if len(samples_train) >= samples_in_batch:
             print(f'progress: {i_game}th game ...')
