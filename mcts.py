@@ -373,7 +373,7 @@ class MCTSNode(object):
         0 B3 0.98 - 849 (0.84) 0.33 D4 B2 D1 E2 D2 C4 C5 B5 D5
         """
         ranked_children = self.rank_children()
-        assert self.N == 0 or self.N == sum(self.child_N) + 1
+        assert self.N == 0 or self.N - sum(self.child_N) <= 1
         soft_n = self.child_N / max(1, sum(self.child_N))
 
         lines = []

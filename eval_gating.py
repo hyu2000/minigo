@@ -146,9 +146,9 @@ class K2Player(BasicPlayerInterface):
         return self.model_config.model_id()
 
     def initialize_game(self, position: go.Position):
-        self.mcts_player.initialize_game(position)
+        self.mcts_player.initialize_game(position, focus_area=myconf.FULL_BOARD_FOCUS)
         first_node = self.mcts_player.root.select_leaf()
-        prob, val = self.mcts_player.network.run(first_node.position)
+        prob, val = self.mcts_player.network.run(first_node.position, self.mcts_player.focus_area)
         first_node.incorporate_results(prob, val, first_node)
 
         self.mcts_player.comments = ['init' for x in range(position.n)]
@@ -338,7 +338,7 @@ class EvaluateOneSide:
         for i in range(n):
             game_result = self.play_a_game()
             black_wins += game_result.black_margin > 0
-        logging.info(f'  {self.black_player.id()} wins {black_wins} / {n} games')
+        logging.info(f'  {self.black_player.id()} wins as black {black_wins} / {n} games against {self.white_player.id()}')
         return black_wins
 
 
@@ -354,6 +354,14 @@ def run_one_side(black_player, white_player, sgf_dir, num_games: int) -> int:
     evaluator = EvaluateOneSide(black_player, white_player, f'{sgf_dir}')
     num_blackwins = evaluator.play_games(num_games)
     return num_blackwins
+
+
+def main_debug(argv):
+    black_id = 'model7_6#50'
+    white_id = 'model7_4#50'
+    black_player = load_player(ModelConfig(black_id))
+    white_player = load_player(ModelConfig(white_id))
+    run_one_side(black_player, white_player, f'{myconf.EXP_HOME}/eval7/epochs', 2)
 
 
 def main(argv):

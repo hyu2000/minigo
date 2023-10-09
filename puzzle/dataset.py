@@ -37,12 +37,15 @@ def guess_winner(comment: str) -> int:
 
 @attr.s
 class GameInfo:
-    game_id: str = attr.ib()
+    """ basic setup of a game for selfplay.
+    todo include human label (winner, solution, etc), these are dataset specific
+    """
+    game_id: str = attr.ib()  # for info purpose (e.g. to identify a puzzle). No need to be unique
     init_position: go.Position = attr.ib(default=None)
     focus_area: np.array = attr.ib(default=None)
     init_root = attr.ib(default=None)
     max_moves: int = attr.ib(default=myconf.BOARD_SIZE_SQUARED*2)  # increase for full game
-    sgf_reader: SGFReader = attr.ib(default=None)
+    sgf_reader: SGFReader = attr.ib(default=None)   # useful for generate sgf from a puzzle setup
 
     def guess_winner_from_comment(self) -> int:
         comments = self.sgf_reader.root_comments()
@@ -240,7 +243,6 @@ def test_score_selfplay():
 
     # ds = Puzzle9DataSet1(collection_patterns=Puzzle9DataSet1.EASY_COLLECTIONS2)
     # score_selfplay_records(ds, f'{myconf.EXP_HOME}/selfplay4-on-easy2/sgf/full', skip_no_winner=False)
-
 
 
 def test_correct_path_stats():

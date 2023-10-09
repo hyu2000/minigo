@@ -279,21 +279,22 @@ def dataset_split(ds: tf.data.Dataset, train_val_ratio: int = 9) -> Tuple:
     return ds_train, ds_val
 
 
-def train_local():
+def train_bootstrap():
+    """ train on g170 data """
     # model = compile_dual()
-    model = load_model(f'{myconf.MODELS_DIR}/model1_epoch5.h5')
+    model = load_model(f'{myconf.MODELS_DIR}/model7_6.h5')
 
     data_dir = myconf.SELFPLAY_DIR
-    data_dir = f'{myconf.FEATURES_DIR}/g170'
+    data_dir = f'{myconf.FEATURES_DIR}/enhance'
     ds_all = load_selfplay_data(f'{data_dir}')
     # ds_val = load_selfplay_data(f'{data_dir}/val')
     callbacks = [
-        keras.callbacks.ModelCheckpoint(f'{myconf.MODELS_DIR}/model1_epoch{{epoch}}.h5'),
+        keras.callbacks.ModelCheckpoint(f'{myconf.MODELS_DIR}/model7_{{epoch}}.h5'),
         # keras.callbacks.EarlyStopping(monitor='val_loss', patience=2)
     ]
-    ds_train, ds_val = dataset_split(ds_all.shuffle(1000))
+    ds_train, ds_val = dataset_split(ds_all.shuffle(1000, seed=2023))
     history = model.fit(ds_train.batch(64), validation_data=ds_val.batch(64),
-                        epochs=5, callbacks=callbacks)
+                        initial_epoch=6, epochs=4, callbacks=callbacks, verbose=2)
     print(history.history)
 
 
