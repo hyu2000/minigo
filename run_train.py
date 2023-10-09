@@ -372,7 +372,7 @@ def train(argv: List):
 
 if __name__ == '__main__':
     train(sys.argv)
-    # train_local0()
+    # train_bootstrap()
     # test_save_model()
     # test_eval_model()
     # label_top50()

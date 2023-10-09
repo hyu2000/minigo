@@ -77,7 +77,7 @@ class LnDPuzzle:
 
     @staticmethod
     def contested_area(board: np.array, defender_bbox: BBox, attack_side: int) -> np.array:
-        """ contested area: a simple estimate, basically just exclude attacker stones inside bbox
+        """ contested area: a simple estimate, basically just exclude attacker stones inside defender bbox
         Could be very off if many dead attacker stones inside the bbox.
 
         defender_bbox is obtained from solve_boundary()
@@ -150,7 +150,8 @@ def test_puzzle_bulk():
     sgf_fnames = sorted(glob.glob(f'{sgf_dir}/総合問題4級*.sgf'))
     # it works for the standard atari position
     sgf_fnames = sorted(glob.glob(f'/Users/hyu/Downloads/go-puzzle9/How to Play Go +/Capturing Stones 1.7.sgf'))
-    sgf_fnames = sorted(glob.glob(f'/Users/hyu/Downloads/go-puzzle9/Beginning Shapes/Problem 18.sgf'))
+    sgf_fnames = sorted(glob.glob(f'/Users/hyu/Downloads/go-puzzle9/easy 2-choice question【2択】詰碁解けたら寝ろシリーズ【9-18級】/2023.06.12.sgf'))
+    sgf_fnames = sorted(glob.glob(f'/Users/hyu/Downloads/go-puzzle9/Beginning Shapes/Problem 5.sgf'))
     print('found', len(sgf_fnames), 'puzzles')
     for sgf_fname in sgf_fnames:
         basename = os.path.split(sgf_fname)[-1]

@@ -8,7 +8,7 @@ import coords
 import go
 import mcts
 import myconf
-from puzzle.dataset import Puzzle9DataSet1
+from puzzle.dataset import Puzzle9DataSet1, GameInfo
 from selfplay import run_game, create_dir_if_needed
 import k2net as dual_net
 from katago.analysis_engine import KataDualNetwork, KataModels
@@ -25,14 +25,17 @@ FLAGS = flags.FLAGS
 class InitPositions:
     """
     9x9: limit to lower-left-down-center triangle: C3, D3, E3, D4, E4, E5
-            open_moves, open_probs = ['C3', 'D3', 'E3', 'D4', 'E4', 'E5'], np.ones(6) / 6
-    5x5:    open_moves, open_probs = ['C2', 'B2'], np.ones(2) / 2
+            open_moves = ['C3', 'D3', 'E3', 'D4', 'E4', 'E5']
+    5x5:    open_moves = ['C2', 'B2']
     """
-    def __init__(self, open_moves: Optional[List], open_probs: Optional[List]):
+    def __init__(self, open_moves: Optional[List], open_probs: Optional[List] = None):
         if not open_moves:
             self.init_positions = [go.Position()]
             self.open_probs = np.ones(1)
         else:
+            if not open_probs:
+                n = len(open_moves)
+                open_probs = np.ones(n) / n
             assert len(open_moves) == len(open_probs)
             self.init_positions = [go.Position().play_move(coords.from_gtp(move)) for move in open_moves]
             self.open_probs = open_probs
@@ -51,22 +54,20 @@ def play_games(num_games=500):
     create_dir_if_needed(selfplay_dir=FLAGS.selfplay_dir, holdout_dir=FLAGS.holdout_dir,
                          sgf_dir=FLAGS.sgf_dir)
 
-    init_position_sampler = InitPositions(None, None)
+    init_position_sampler = InitPositions(['C3', 'D3', 'E3', 'D4', 'E4', 'E5'])
     for i in range(num_games):
         init_position = init_position_sampler.sample()
-        player, sgf_fname = run_game(network,
-                                     init_position=init_position,
+        game_info = GameInfo(f'{i}', init_position, myconf.FULL_BOARD_FOCUS)
+        player, sgf_fname = run_game(network, game_info,
                                      selfplay_dir=FLAGS.selfplay_dir,
                                      holdout_dir=FLAGS.holdout_dir,
                                      holdout_pct=FLAGS.holdout_pct,
                                      sgf_dir=FLAGS.sgf_dir,
-                                     game_id=str(i)
                                      )
-        # margin_est = player.black_margin_no_komi
-        moves = [coords.to_gtp(x.move) for x in player.root.position.recent]
-        history_str = format_game_summary(moves, player.result_string, sgf_fname=sgf_fname)
 
-        # ru_rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        moves = [coords.to_gtp(x.move) for x in player.root.position.recent]
+        history_str = format_game_summary(moves, player.result_string, sgf_fname=sgf_fname, first_n=6)
+
         logging.info(f'game {i}: %s', history_str)
 
     logging.info(f'Done with {num_games} games')
@@ -89,7 +90,7 @@ def play_puzzles(num_games=500):
                                      holdout_pct=FLAGS.holdout_pct,
                                      sgf_dir=FLAGS.sgf_dir,
                                      )
-        # margin_est = player.black_margin_no_komi
+
         moves = [coords.to_gtp(x.move) for x in player.root.position.recent]
         history_str = format_game_summary(moves, player.result_string, sgf_fname=sgf_fname, first_n=6)
 
@@ -111,11 +112,12 @@ def _examine_tree(root: mcts.MCTSNode, thresh: int):
 
 def main(argv):
     play_puzzles(num_games=FLAGS.num_games)
+    # play_games(num_games=FLAGS.num_games)
 
 
 def main_local(argv):
     FLAGS.load_file = '/Users/hyu/PycharmProjects/a0-jax/exp-go9/tfmodel/model-218'
-    FLAGS.load_file = f'{myconf.MODELS_DIR}/model4_4.mlpackage'
+    FLAGS.load_file = f'{myconf.MODELS_DIR}/model7_10.mlpackage'
 
     FLAGS.sgf_dir = f'{myconf.SELFPLAY_DIR}/sgf'
     FLAGS.selfplay_dir = f'{myconf.SELFPLAY_DIR}/train'
@@ -123,12 +125,13 @@ def main_local(argv):
     FLAGS.num_readouts = 200
     FLAGS.parallel_readouts = 16
     FLAGS.holdout_pct = 0
-    FLAGS.softpick_move_cutoff = 0
-    FLAGS.dirichlet_noise_weight = 0  #.25
+    FLAGS.softpick_move_cutoff = 6
+    FLAGS.dirichlet_noise_weight = 0.25
     FLAGS.resign_threshold = -1.0
     FLAGS.reduce_symmetry_before_move = 0
     FLAGS.verbose = 0
-    play_puzzles(num_games=20)
+    # play_games(num_games=2)
+    play_puzzles(10)
 
 
 if __name__ == '__main__':
