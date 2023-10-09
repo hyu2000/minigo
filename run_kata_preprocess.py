@@ -20,8 +20,6 @@ from tar_dataset import KataG170DataSet
 
 KATA_MODEL_ID = KataModels.MODEL_B6_4k
 MAX_VISITS = 50
-# randomly reject this percentage of games
-REJECTION_PCTG = 0
 
 
 def process_one_game(engine: KataEngine, reader: SGFReader) -> List:
@@ -99,9 +97,8 @@ def preprocess(init=False, samples_in_batch=1e5):
     engine.start()
 
     samples_train = []
-    for i_game, (game_id, reader) in enumerate(ds.game_iter(start=0, stop=None)):
-        if random.random() < REJECTION_PCTG:
-            continue
+    # 60th zip is probably higher than elo4k
+    for i_game, (game_id, reader) in enumerate(ds.game_iter(start=0, stop=60)):
         samples = process_one_game(engine, reader)
         samples_train.extend(samples)
         # logging.info(f'{i_game}th game: %d samples \t\t{game_id}', len(samples))
