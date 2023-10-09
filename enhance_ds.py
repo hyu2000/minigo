@@ -106,13 +106,14 @@ def main(argv: List):
 
     num_symmetries = 4
     print(f'Applying {num_symmetries} symmetries to {source_dir} -> {output_dir}')
-    for tag in ['train', 'val']:
-        source_data_dir = f'{source_dir}/{tag}'
-        if len(os.listdir(source_data_dir)) == 0:
+    for tag in ['train', 'val']:   # ['']
+        subdir_tag = f'/{tag}' if tag else ''
+        source_data_dir = f'{source_dir}{subdir_tag}'
+        if not os.path.isdir(source_data_dir) or len(os.listdir(source_data_dir)) == 0:
             print(f'empty source dir, skip: {source_data_dir}')
             continue
 
-        output_work_dir = f'{output_dir}/{tag}'
+        output_work_dir = f'{output_dir}{subdir_tag}'
         try:
             print(f'Removing {output_work_dir}')
             shutil.rmtree(output_work_dir)
@@ -120,16 +121,23 @@ def main(argv: List):
             pass
         utils.ensure_dir_exists(output_work_dir)
 
-        for dtype in ['full', 'nopi']:
+        for dtype in ['.full', '.nopi', '']:
             ds = load_selfplay_data(source_data_dir, dtype)
             if ds is None:
                 print(f'no data found for {dtype}, skipping')
                 continue
 
             for i, tf_examples in enumerate(utils.iter_chunks(10000, sample_generator(ds, num_symmetries=num_symmetries))):
-                fname = f'{output_work_dir}/chunk-{i}.tfrecord.{dtype}.zz'
+                fname = f'{output_work_dir}/chunk-{i}.tfrecord{dtype}.zz'
                 print(f'{tag} {dtype} chunk {i}: writing %d records' % len(tf_examples))
                 preprocessing.write_tf_examples(fname, tf_examples)
+
+
+def test_load_data():
+    # the trailing "/" matters, i.e. 'blah//*.zz" won't work
+    source_data_dir = f'{myconf.FEATURES_DIR}/g170'
+    ds = load_selfplay_data(source_data_dir, '')
+    assert ds is not None
 
 
 if __name__ == '__main__':
