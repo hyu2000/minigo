@@ -38,12 +38,7 @@ class WebPlayer(object):
         """
         pos = self.construct_game_state(moves_history)
         player = self.player
-        player.initialize_game(pos)
-
-        # Must run this once at the start to expand the root node.
-        first_node = player.root.select_leaf()
-        prob, val = player.network.run(first_node.position)
-        first_node.incorporate_results(prob, val, first_node)
+        player.initialize_game(pos, focus_area=myconf.FULL_BOARD_FOCUS)
 
         move = player.suggest_move(pos)
         # why is root.Q np.array for minigo model, float for converted jax model
