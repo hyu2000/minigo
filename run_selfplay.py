@@ -73,7 +73,7 @@ def play_games(num_games=500):
     logging.info(f'Done with {num_games} games')
 
 
-def play_puzzles(num_games=500):
+def play_puzzles(num_games=500, shuffle=True):
     """ """
     network = dual_net.load_net(FLAGS.load_file)
     # network = DNNStub(model_file=FLAGS.load_file)
@@ -83,7 +83,7 @@ def play_puzzles(num_games=500):
                          sgf_dir=FLAGS.sgf_dir)
 
     puzzle_set = Puzzle9DataSet1(Puzzle9DataSet1.EASY_COLLECTIONS)
-    for i, game_info in enumerate(puzzle_set.game_iter(stop=num_games, shuffle=True)):
+    for i, game_info in enumerate(puzzle_set.game_iter(stop=num_games, shuffle=shuffle)):
         player, sgf_fname = run_game(network, game_info,
                                      selfplay_dir=FLAGS.selfplay_dir,
                                      holdout_dir=FLAGS.holdout_dir,
@@ -135,7 +135,7 @@ def main_local(argv):
     FLAGS.reduce_symmetry_before_move = 0
     FLAGS.verbose = 0
     play_games(num_games=2)
-    play_puzzles(5)
+    play_puzzles(5, shuffle=False)
 
 
 if __name__ == '__main__':
