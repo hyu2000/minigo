@@ -111,13 +111,17 @@ def _examine_tree(root: mcts.MCTSNode, thresh: int):
 
 
 def main(argv):
+    logging.info(f'model={FLAGS.load_file} {FLAGS.selfplay_dir}')
+    logging.info(f'config: #readouts={FLAGS.num_readouts} softpick_move_cutoff={FLAGS.softpick_move_cutoff}'
+                 f' dir_noise={FLAGS.dirichlet_noise_weight} reduce_symmetry_before_move={FLAGS.reduce_symmetry_before_move}'
+                 f' resign_thresh={FLAGS.resign_threshold}')
     play_puzzles(num_games=FLAGS.num_games)
     # play_games(num_games=FLAGS.num_games)
 
 
 def main_local(argv):
     FLAGS.load_file = '/Users/hyu/PycharmProjects/a0-jax/exp-go9/tfmodel/model-218'
-    FLAGS.load_file = f'{myconf.MODELS_DIR}/model7_10.mlpackage'
+    FLAGS.load_file = f'{myconf.MODELS_DIR}/model9_4.mlpackage'
 
     FLAGS.sgf_dir = f'{myconf.SELFPLAY_DIR}/sgf'
     FLAGS.selfplay_dir = f'{myconf.SELFPLAY_DIR}/train'
@@ -130,8 +134,8 @@ def main_local(argv):
     FLAGS.resign_threshold = -1.0
     FLAGS.reduce_symmetry_before_move = 0
     FLAGS.verbose = 0
-    # play_games(num_games=2)
-    play_puzzles(10)
+    play_games(num_games=2)
+    play_puzzles(5)
 
 
 if __name__ == '__main__':

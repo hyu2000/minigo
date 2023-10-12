@@ -26,6 +26,7 @@ from typing import Tuple, List
 import logging
 import numpy as np
 import pandas as pd
+from natsort import natsorted
 
 import coords
 import utils
@@ -86,7 +87,7 @@ def scan_results(sgfs_dir: str, order=None) -> Tuple[RawGameCount, pd.DataFrame]
         black_wins[black_id][white_id] += result_sign == 1
 
     # construct df: sided first
-    models = sorted(models) if order is None else order
+    models = natsorted(models) if order is None else order
     df_counts_raw = pd.DataFrame(game_counts, index=models, columns=models)
     df_counts = df_counts_raw.T.fillna(0).astype(int)
     df_blackwins = pd.DataFrame(black_wins, index=models, columns=models).T.fillna(0).astype(int)
@@ -247,15 +248,17 @@ sgfs-epoch5-batch: 75/640  many due to #1, #10 readouts
 
 
 def main():
-    sgfs_dir = f'{myconf.EXP_HOME}/eval_bots-model8/model8-epochs'
+    sgfs_dir = f'{myconf.EXP_HOME}/eval9/epochs2'
     utils.ensure_dir_exists(sgfs_dir)
 
     evaluator = Evaluator(sgfs_dir, 40)
-    models = ['model8_4#200', 'model8_2#200']
+    models = ['model7_10#200', f'model9_2#200', 'model8_4#200']
     # evaluator.run_two_sided_eval(models[0], models[1])
-    # models = [f'model8_{x}#200' for x in range(1, 5)]
+    # models = ['model7_10#200'] + [f'model9_{x}#200' for x in (1,)]
+    # models = [f'model7_10#{x}' for x in (50, 100, 200, 400)]
     evaluator.run_multi_models(models[::-1], band_size=1)
-    evaluator.state_of_the_world(order=models)
+    # evaluator.state_of_the_world(order=models)
+    evaluator.state_of_the_world()
 
     run_tournament_report(f'{sgfs_dir}/*.sgf')
 

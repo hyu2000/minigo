@@ -298,20 +298,20 @@ def train_bootstrap():
     print(history.history)
 
 
-def train_local0():
-    model = compile_dual()
+def train_local():
+    # model = compile_dual()
+    model = load_model(f'{myconf.MODELS_DIR}/model7_10.h5')
     # model = load_model(f'{myconf.MODELS_DIR}/model0_0.h5')
-    data_dir = f'{myconf.FEATURES_DIR}'
-    data_dir = f'{myconf.SELFPLAY_DIR}/enhance'
+    data_dir = f'{myconf.EXP_HOME}/selfplay6p/enhance'
     ds_train = load_selfplay_data(f'{data_dir}/train', subtype='full')
     # ds_val   = load_selfplay_data(f'{data_dir}/val1')
     callbacks = [
-        keras.callbacks.ModelCheckpoint(f'{myconf.MODELS_DIR}/model1_{{epoch}}.h5'),
+        keras.callbacks.ModelCheckpoint(f'{myconf.MODELS_DIR}/model8_{{epoch}}.h5'),
         # keras.callbacks.EarlyStopping(monitor='val_loss', patience=2)
     ]
     history = model.fit(ds_train.shuffle(4000).batch(64),
                         # validation_data=ds_val.batch(64),
-                        epochs=5, callbacks=callbacks)
+                        epochs=4, callbacks=callbacks, verbose=2)
     return model
 
 
@@ -328,18 +328,31 @@ def _ds_take_every(dataset: tf.data.Dataset, n):
     return ds_train.map(lambda i, x: x)
 
 
+def convert_tf_to_coreml(tf_fpath):
+    model_dir = os.path.dirname(tf_fpath)
+    basename, _ = os.path.splitext(os.path.basename(tf_fpath))
+    mlmodel = dual_net.CoreMLNet.convert_tf2_to_coreml(tf_fpath)
+    mlmodel.save(f'{model_dir}/{basename}.mlpackage')
+
+
 def train(argv: List):
     assert len(argv) >= 4
     train_dir  = argv[1]  # can be a dir pattern, e.g. "tfrecords/enhance*/train". Needs quote.
     model_dir  = argv[2]
-    start_iter = int(argv[3])
+    start_model = argv[3]  # either start_iter "3" or with epoch "3_4"
     val_dir = argv[4] if len(argv) > 4 else None
 
-    new_iter = start_iter + 1
-    START_EPOCH = 4
-    print(f'train on {train_dir}: {start_iter}_{START_EPOCH} -> {new_iter}')
+    if '_' in start_model:
+        start_iter = int(start_model.split('_')[0])
+    else:
+        DEFAULT_START_EPOCH = 4
+        start_iter = int(start_model)
+        start_model = f'{start_iter}_{DEFAULT_START_EPOCH}'
 
-    model_file = f'{model_dir}/model{start_iter}_{START_EPOCH}.h5'
+    new_iter = start_iter + 1
+    print(f'train on {train_dir}: {start_model} -> {new_iter}')
+
+    model_file = f'{model_dir}/model{start_model}.h5'
     if start_iter == 0 and not os.path.exists(model_file):
         logging.info('Using random initialization')
         model = compile_dual()
@@ -353,6 +366,7 @@ def train(argv: List):
         keras.callbacks.ModelCheckpoint(f'{model_dir}/model{new_iter}_{{epoch}}.h5'),
         # keras.callbacks.EarlyStopping(monitor='val_loss', patience=2)
     ]
+    NUM_EPOCHS = 4
     if val_dir:
         # SYMMETRIES_USED = 8
         # if SYMMETRIES_USED < 8:
@@ -363,15 +377,19 @@ def train(argv: List):
         # history = model.fit(ds_train.shuffle(4000).batch(64),
         #                     epochs=NUM_PASSES_OVER_DATA * SYMMETRIES_USED, steps_per_epoch=batches_without_symmetry,
         #                     validation_data=ds_val.batch(64), callbacks=callbacks, verbose=2)
-        history = model.fit(ds_train.shuffle(4000).batch(64), epochs=4, steps_per_epoch=None,
+        history = model.fit(ds_train.shuffle(4000).batch(64), epochs=NUM_EPOCHS, steps_per_epoch=None,
                             validation_data=ds_val.batch(64), callbacks=callbacks, verbose=2)
     else:
-        history = model.fit(ds_train.shuffle(4000).batch(64), epochs=4, callbacks=callbacks, verbose=2)
+        history = model.fit(ds_train.shuffle(4000).batch(64), epochs=NUM_EPOCHS, callbacks=callbacks, verbose=2)
     print(history.history)
+
+    for epoch in range(1, 1+NUM_EPOCHS):
+        convert_tf_to_coreml(f'{model_dir}/model{new_iter}_{epoch}.h5')
 
 
 if __name__ == '__main__':
     train(sys.argv)
+    # train_local()
     # train_bootstrap()
     # test_save_model()
     # test_eval_model()
