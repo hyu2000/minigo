@@ -3,6 +3,7 @@
 # DRIVE_HOME=/content/drive/MyDrive/dlgo
 DRIVE_HOME=/Users/hyu/PycharmProjects/dlgo/9x9
 PYTHON=/Users/hyu/anaconda/envs/tf2/bin/python3
+# PYTHON=echo   # testing
 MINIGO=/Users/hyu/PycharmProjects/dlgo/minigo
 
 set -e  # exit the script if any command fails
@@ -13,7 +14,7 @@ MODEL_DIR="${DRIVE_HOME}/checkpoints"
 
 
 # main selfplay iterations
-for i in {10..10}
+for i in {10..11}
 do
   SELFPLAY_DIR="${DRIVE_HOME}/selfplay${i}p"
   echo "selfplay puzzles: ${SELFPLAY_DIR}"
@@ -34,7 +35,7 @@ do
       --dirichlet_noise_weight=0.25 \
       --reduce_symmetry_before_move=0 \
       --num_readouts=200 \
-      --num_games=50 \
+      --num_games=400 \
       --load_file="${MODEL_DIR}/model${i}_2.mlpackage" \
       --resign_threshold=-1 \
       2>&1 | tee "${SELFPLAY_DIR}/run_selfplay${worker}.log" &
@@ -68,6 +69,8 @@ do
       2>&1 | tee "${SELFPLAY_DIR}/run_selfplay${worker}.log" &
     done
 
+  wait
+
   if [ $? -ne 0 ]; then
       echo "run_selfplay ${i} failed"
       exit 1
@@ -86,7 +89,7 @@ do
   fi
 
   TRAIN_LOG_DIR="${DRIVE_HOME}/selfplay${i}f"
-  ${PYTHON} ${MINIGO}/run_train.py \"${DRIVE_HOME}/selfplay${i}[pf]/enhance/train\" ${MODEL_DIR} "${i}_2" 2>&1 | tee "${TRAIN_LOG_DIR}/train${i}.log"
+  ${PYTHON} ${MINIGO}/run_train.py "${DRIVE_HOME}/selfplay${i}[pf]/enhance/train" ${MODEL_DIR} "${i}_2" 2>&1 | tee "${TRAIN_LOG_DIR}/train${i}.log"
 
   if [ $? -ne 0 ]; then
       echo "run_train ${i} failed"
