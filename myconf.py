@@ -10,6 +10,15 @@ BOARD_SIZE = 9
 BOARD_SIZE_SQUARED = BOARD_SIZE * BOARD_SIZE
 # w/ pass, but no resign
 TOTAL_MOVES = BOARD_SIZE_SQUARED + 1
+
+
+def corner_focus(corner_size=BOARD_SIZE):
+    """ """
+    mat = np.zeros((BOARD_SIZE, BOARD_SIZE), dtype=np.uint8)
+    mat[:corner_size, :corner_size] = 1
+    return mat
+
+
 FULL_BOARD_FOCUS = np.ones((BOARD_SIZE, BOARD_SIZE), dtype=np.uint8)
 
 # dirs

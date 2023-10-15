@@ -377,12 +377,12 @@ def main(argv):
 def main_kata(argv):
     """ eval against kata remains serial, as it's likely not a good idea to run multiple KataEngine
     """
-    num_readouts = 400
-    sgf_dir_root = f'{myconf.EXP_HOME}/eval_gating/model12_2-vs-elo4k'
+    num_readouts = 200
+    player2model = 'model9_1'
+    sgf_dir_root = f'{myconf.EXP_HOME}/eval_gating/#{num_readouts}/{player2model}-vs-elo4k'
 
-    player1id = f'{KataModels.MODEL_B6_5k}#{num_readouts}'
-    # player1id = f'model11_2#{num_readouts}'
-    player2id = f'model12_2#{num_readouts}'
+    player1id = f'{KataModels.MODEL_B6_4k}#{num_readouts}'
+    player2id = f'{player2model}#{num_readouts}'
 
     num_games_per_side = 20
     FLAGS.softpick_move_cutoff = 8

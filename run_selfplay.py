@@ -111,12 +111,16 @@ def _examine_tree(root: mcts.MCTSNode, thresh: int):
 
 
 def main(argv):
-    logging.info(f'model={FLAGS.load_file} {FLAGS.selfplay_dir}')
+    assert len(argv) > 1
+    play_puzzle = argv[1].lower().startswith('puzzle')
+    logging.info(f'model={FLAGS.load_file} {FLAGS.selfplay_dir} play_puzzle={play_puzzle}')
     logging.info(f'config: #readouts={FLAGS.num_readouts} softpick_move_cutoff={FLAGS.softpick_move_cutoff}'
                  f' dir_noise={FLAGS.dirichlet_noise_weight} reduce_symmetry_before_move={FLAGS.reduce_symmetry_before_move}'
                  f' resign_thresh={FLAGS.resign_threshold}')
-    play_puzzles(num_games=FLAGS.num_games)
-    # play_games(num_games=FLAGS.num_games)
+    if play_puzzle:
+        play_puzzles(num_games=FLAGS.num_games)
+    else:
+        play_games(num_games=FLAGS.num_games)
 
 
 def main_local(argv):

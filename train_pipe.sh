@@ -71,10 +71,10 @@ do
 
   wait
 
-  if [ $? -ne 0 ]; then
-      echo "run_selfplay ${i} failed"
-      exit 1
-  fi
+#  if [ $? -ne 0 ]; then
+#      echo "run_selfplay ${i} failed"
+#      exit 1
+#  fi
 
   for selfplay_type in "p" "f"; do
     SELFPLAY_DIR="${DRIVE_HOME}/selfplay${i}${selfplay_type}"
@@ -83,17 +83,17 @@ do
   done
 
   # save data to drive?
-  if [ $? -ne 0 ]; then
-      echo "enhance_ds ${SELFPLAY_DIR} failed"
-      exit 1
-  fi
+#  if [ $? -ne 0 ]; then
+#      echo "enhance_ds ${SELFPLAY_DIR} failed"
+#      exit 1
+#  fi
 
   TRAIN_LOG_DIR="${DRIVE_HOME}/selfplay${i}f"
   ${PYTHON} ${MINIGO}/run_train.py "${DRIVE_HOME}/selfplay${i}[pf]/enhance/train" ${MODEL_DIR} "${i}_2" 2>&1 | tee "${TRAIN_LOG_DIR}/train${i}.log"
 
-  if [ $? -ne 0 ]; then
-      echo "run_train ${i} failed"
-      exit 1
-  fi
+#  if [ $? -ne 0 ]; then
+#      echo "run_train ${i} failed"
+#      exit 1
+#  fi
 
 done
