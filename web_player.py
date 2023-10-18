@@ -38,7 +38,7 @@ class WebPlayer(object):
         """
         pos = self.construct_game_state(moves_history)
         player = self.player
-        player.initialize_game(pos, focus_area=myconf.FULL_BOARD_FOCUS)
+        player.initialize_game(pos, focus_area=myconf.corner_focus(9))
 
         move = player.suggest_move(pos)
         # why is root.Q np.array for minigo model, float for converted jax model
@@ -46,7 +46,7 @@ class WebPlayer(object):
         child_q = player.root.child_Q[coords.to_flat(move)]
         gtp_move = coords.to_gtp(move)
         info_dict = {'winrate': root_winrate, 'move': gtp_move}
-        logging.info('root winrate=%s, mcts chose: %s, child_Q=%.2f', info_dict['winrate'], gtp_move, child_q)
+        logging.info('root winrate %s, mcts chose: %s, child_Q %.2f', info_dict['winrate'], gtp_move, child_q)
         return gtp_move, info_dict
 
     def construct_game_state(self, moves_history: List[str]):

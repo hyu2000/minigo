@@ -135,10 +135,12 @@ def play(network, game_info: GameInfo):
                     logging.warning(
                         f'Benson score {benson_score_details.score:.1f} is non-final. root.Q={player.root.Q:.1f}')
                 player.set_result(np.sign(benson_score_details.score), was_resign=False)
+                break
             if player.root.position.n >= game_info.max_moves:
                 # this is likely super-ko, should ignore game
                 logging.warning(f'game exceeds {game_info.max_moves} moves, void')
                 player.set_result(0, was_resign=False)
+                break
         else:  # puzzles, just use Tromp
             if player.root.position.is_game_over():  # pass-pass
                 score = player.root.position.score_tromp(mask=game_info.focus_area)
