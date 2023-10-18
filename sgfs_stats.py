@@ -313,6 +313,35 @@ class GameSequenceReport(StatsItf):
         print('\n'.join(self.game_summary))
 
 
+class BensonAgreementStats(StatsItf):
+    """ Benson vs Tromp
+    """
+    def __init__(self):
+        self.num_games = 0
+        self.num_benson_non_final = 0
+        self.num_disagree_with_benson = 0
+        self.num_disagree_with_tromp = 0
+        self.num_exceeds_max_moves = 0
+
+    def add_game(self, reader: SGFReader):
+        self.num_games += 1
+        result_sign = reader.result()
+        pos = reader.last_pos()
+
+        self.num_exceeds_max_moves += pos.n >= 2 * myconf.BOARD_SIZE_SQUARED - 1
+        self.num_disagree_with_tromp += result_sign != np.sign(pos.score_tromp())
+
+        benson_score = pos.score_benson()
+        if not benson_score.final:
+            self.num_benson_non_final += 1
+        self.num_disagree_with_benson += result_sign != np.sign(benson_score.score)
+
+    def report(self):
+        logging.info(f'Total {self.num_games}, of which {self.num_benson_non_final} benson non-final,'
+            f' {self.num_disagree_with_benson} differs w/ Benson, {self.num_disagree_with_tromp} differs w/ Tromp,'
+            f' {self.num_exceeds_max_moves} exceeds max game length')
+
+
 class SgfProcessor:
     """ first version
     - winner stats
@@ -339,6 +368,7 @@ class SgfProcessor:
             self._process_game(sgf_fname, reader)
             cnt += 1
         return cnt
+
 
 def run_tournament_report(sgf_pattern):
     wstats = WinnerStats()
@@ -473,3 +503,24 @@ def test_review_all_selfplay():
     - quantify the amount of natural exploration not due to new model: even this depends on the model
       bet w/ 2000 games, we are far from saturation, probably except the first n moves
     """
+
+
+def test_review_game_score():
+    """ 10/17/23 I disabled Benson scoring in selfplay. They are scored on Tromp only. See how much
+    this differs from Benson score
+
+    In exp2, I used primarily Benson scoring, which is more accurate, and stops the game much earlier.
+    exp2/selfplay6/  Total 3376, of which 264 benson non-final, 0 differs w/ Benson, 509 differs w/ Tromp, 1497 exceeds 80 moves, 3 exceeds 160
+
+         selfplay8f  Total 3000, of which 388 benson non-final, 13 differs w/ Benson, 0 differs w/ Tromp, 6 exceeds max game length'
+         selfplay9f  Total 3000, of which 286 benson non-final, 19 differs w/ Benson, 0 differs w/ Tromp, 8 exceeds max game length'
+         selfplay10f Total 3000, of which 296 benson non-final, 20 differs w/ Benson, 0 differs w/ Tromp, 2813 exceeds 80 moves, 3 exceeds 160
+         selfplay12f Total 3000, of which 416 benson non-final, 18 differs w/ Benson, 0 differs w/ Tromp, 6 exceeds max game length'
+         selfplay13f Total 3000, of which 425 benson non-final, 8 differs w/ Benson, 0 differs w/ Tromp, 4 exceeds max game length'
+    """
+    stat1 = BensonAgreementStats()
+    sgf_pattern = f'{myconf.EXP_HOME}/selfplay10f/sgf/full/*.sgf'
+    # sgf_pattern = f'{myconf.EXP_HOME}/../9x9-exp2/selfplay6/sgf/full/*.sgf'
+    processor = SgfProcessor([stat1])
+    processor.process(sgf_pattern, max_num_games=5000)
+    stat1.report()
