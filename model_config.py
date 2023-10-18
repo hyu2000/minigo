@@ -70,5 +70,5 @@ class ModelConfig:
             # backoff to .h5? probably not
             # check file exists
 
-        assert os.path.exists(model_path)
+        assert os.path.exists(model_path), f'{model_path} doesnt exist'
         return model_path, num_readouts

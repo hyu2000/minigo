@@ -57,7 +57,7 @@ def play_games(num_games=500):
     init_position_sampler = InitPositions(['C3', 'D3', 'E3', 'D4', 'E4', 'E5'])
     for i in range(num_games):
         init_position = init_position_sampler.sample()
-        game_info = GameInfo(f'{i}', init_position, myconf.FULL_BOARD_FOCUS)
+        game_info = GameInfo(f'{i}', init_position, myconf.FULL_BOARD_FOCUS, full_game=True)
         player, sgf_fname = run_game(network, game_info,
                                      selfplay_dir=FLAGS.selfplay_dir,
                                      holdout_dir=FLAGS.holdout_dir,
@@ -125,7 +125,7 @@ def main(argv):
 
 def main_local(argv):
     FLAGS.load_file = '/Users/hyu/PycharmProjects/a0-jax/exp-go9/tfmodel/model-218'
-    FLAGS.load_file = f'{myconf.MODELS_DIR}/model9_4.mlpackage'
+    FLAGS.load_file = f'{myconf.MODELS_DIR}/model10_4.mlpackage'
 
     FLAGS.sgf_dir = f'{myconf.SELFPLAY_DIR}/sgf'
     FLAGS.selfplay_dir = f'{myconf.SELFPLAY_DIR}/train'

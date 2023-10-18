@@ -125,22 +125,30 @@ def play(network, game_info: GameInfo):
         player.add_move_info(_format_move_info(move, best_move))
         orig_root.uninject_noise()
 
-        # todo benson score with mask
-        # benson_score_details = player.root.position.score_benson()
-        # if benson_score_details.final:  # end the game when score is final
-        #     player.set_result(np.sign(benson_score_details.score), was_resign=False)
-        #     break
-        if player.root.position.is_game_over():  # pass-pass
-            score = player.root.position.score_tromp(mask=game_info.focus_area)
-            player.set_result(np.sign(score), was_resign=False, score=score)
-            break
-        if player.root.position.n >= game_info.max_moves:
-            # this is likely super-ko, should ignore game
-            # player.set_result(0, was_resign=False)
-            score = player.root.position.score_tromp(mask=game_info.focus_area)
-            logging.warning(f'game exceeds {game_info.max_moves} moves, final score={score}')
-            player.set_result(np.sign(score), was_resign=False, score=score)
-            break
+        if game_info.full_game:
+            benson_score_details = player.root.position.score_benson()
+            if benson_score_details.final:  # end the game when score is final
+                player.set_result(np.sign(benson_score_details.score), was_resign=False)
+                break
+            if player.root.position.is_game_over():  # pass-pass
+                if np.sign(player.root.Q) != np.sign(benson_score_details.score):
+                    logging.warning(
+                        f'Benson score {benson_score_details.score:.1f} is non-final. root.Q={player.root.Q:.1f}')
+                player.set_result(np.sign(benson_score_details.score), was_resign=False)
+            if player.root.position.n >= game_info.max_moves:
+                # this is likely super-ko, should ignore game
+                logging.warning(f'game exceeds {game_info.max_moves} moves, void')
+                player.set_result(0, was_resign=False)
+        else:  # puzzles, just use Tromp
+            if player.root.position.is_game_over():  # pass-pass
+                score = player.root.position.score_tromp(mask=game_info.focus_area)
+                player.set_result(np.sign(score), was_resign=False, score=score)
+                break
+            if player.root.position.n >= game_info.max_moves:
+                score = player.root.position.score_tromp(mask=game_info.focus_area)
+                logging.warning(f'game exceeds {game_info.max_moves} moves, final score={score}')
+                player.set_result(np.sign(score), was_resign=False, score=score)
+                break
 
         if (FLAGS.verbose >= 2) or (FLAGS.verbose >= 1 and player.root.position.n % 10 == 7):
             dur = time.time() - start
@@ -243,7 +251,7 @@ def main9(argv):
 
     run_game(
         network,
-        GameInfo(game_id=init_sgf, init_position=init_position, focus_area=focus_area, max_moves=10, sgf_reader=reader),
+        GameInfo(game_id=init_sgf, init_position=init_position, focus_area=focus_area, full_game=False, max_moves=10, sgf_reader=reader),
         selfplay_dir=selfplay_dir,
         holdout_dir=holdout_dir,
         holdout_pct=0.0,

@@ -43,6 +43,7 @@ class GameInfo:
     game_id: str = attr.ib()  # for info purpose (e.g. to identify a puzzle). No need to be unique
     init_position: go.Position = attr.ib(default=None)
     focus_area: np.array = attr.ib(default=None)
+    full_game: bool = attr.ib(default=True)  # can be derived from focus_area.sum(), but just keep it
     init_root = attr.ib(default=None)
     max_moves: int = attr.ib(default=myconf.BOARD_SIZE_SQUARED*2)  # increase for full game
     sgf_reader: SGFReader = attr.ib(default=None)   # useful for generate sgf from a puzzle setup
@@ -106,7 +107,7 @@ class Puzzle9DataSet1:
             # num_mainline_moves = reader.last_pos().n - pos.n
             # print(f'{basename} mainline: {num_mainline_moves} contested: {max_moves / 2}')
             max_moves = min(myconf.BOARD_SIZE_SQUARED, max_moves)
-            yield GameInfo(basename, pos, contested_area,
+            yield GameInfo(basename, pos, contested_area, full_game=False,
                            init_root=None, max_moves=max_moves, sgf_reader=reader)
 
     def game_iter(self, start=0, stop=None, shuffle=False) -> Iterable[GameInfo]:

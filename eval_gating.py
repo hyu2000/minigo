@@ -399,6 +399,16 @@ def main_kata(argv):
     run_tournament_report(f'{sgf_dir_root}/*')
 
 
+def test_run_report_on_sgfs():
+    """ just read sgfs and report """
+    sgf_pattern = f'{myconf.EXP_HOME}/eval_gating/#200/model10_2-vs-elo4k/*'
+    # run_tournament_report(f'{sgf_pattern}')
+    # run_tournament_report(f'{myconf.EXP_HOME}/eval10/epochs/model10_2#200-vs-model7_10#200-*.sgf')
+    # run_tournament_report(f'{myconf.EXP_HOME}/eval10/epochs/model7_10#200-vs-model10_2#200-*.sgf')
+    run_tournament_report(f'{myconf.EXP_HOME}/../9x9-exp2/eval_gating/model12_2-vs-elo4k/*.sgf')
+    # run_tournament_report(f'{myconf.EXP_HOME}/../9x9-exp2/eval_gating/model6_2/2/*')
+
+
 def review_kata(argv):
     """ generational review of models in exp2 """
     num_readouts = 400
