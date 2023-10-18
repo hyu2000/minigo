@@ -508,19 +508,42 @@ def test_review_all_selfplay():
 def test_review_game_score():
     """ 10/17/23 I disabled Benson scoring in selfplay. They are scored on Tromp only. See how much
     this differs from Benson score
-
-    In exp2, I used primarily Benson scoring, which is more accurate, and stops the game much earlier.
-    exp2/selfplay6/  Total 3376, of which 264 benson non-final, 0 differs w/ Benson, 509 differs w/ Tromp, 1497 exceeds 80 moves, 3 exceeds 160
-
-         selfplay8f  Total 3000, of which 388 benson non-final, 13 differs w/ Benson, 0 differs w/ Tromp, 6 exceeds max game length'
-         selfplay9f  Total 3000, of which 286 benson non-final, 19 differs w/ Benson, 0 differs w/ Tromp, 8 exceeds max game length'
-         selfplay10f Total 3000, of which 296 benson non-final, 20 differs w/ Benson, 0 differs w/ Tromp, 2813 exceeds 80 moves, 3 exceeds 160
-         selfplay12f Total 3000, of which 416 benson non-final, 18 differs w/ Benson, 0 differs w/ Tromp, 6 exceeds max game length'
-         selfplay13f Total 3000, of which 425 benson non-final, 8 differs w/ Benson, 0 differs w/ Tromp, 4 exceeds max game length'
     """
-    stat1 = BensonAgreementStats()
-    sgf_pattern = f'{myconf.EXP_HOME}/selfplay10f/sgf/full/*.sgf'
-    # sgf_pattern = f'{myconf.EXP_HOME}/../9x9-exp2/selfplay6/sgf/full/*.sgf'
-    processor = SgfProcessor([stat1])
-    processor.process(sgf_pattern, max_num_games=5000)
-    stat1.report()
+
+    """
+    In exp2, I used primarily Benson scoring, which is more accurate, and stops the game much earlier.
+    exp2/selfplay3/  Total 3559, of which 1091 benson non-final, 1 differs w/ Benson, 563 differs w/ Tromp, 2 exceeds max game length'
+move         1           5            10           20
+count  6.000000  991.000000  1363.000000  1449.000000
+freq   0.001686    0.278449     0.382973     0.407137
+         selfplay5/  Total 3340, of which 358 benson non-final, 2 differs w/ Benson, 611 differs w/ Tromp, 2 exceeds max game length'
+count  6.000000  1905.000000  2379.000000  2552.000000
+freq   0.001796     0.570359     0.712275     0.764072
+    exp2/selfplay6/  Total 3376, of which 264 benson non-final, 0 differs w/ Benson, 509 differs w/ Tromp, 1497 exceeds 80 moves, 3 exceeds 160
+count  18.000000  1438.000000  2040.000000  2275.000000
+freq    0.005332     0.425948     0.604265     0.673874
+  selfplay6 switched off init_positions, which explains why move#1 increased but diversity decreased later.
+
+    exp3/selfplay7f  Total 3000, of which 713 benson non-final, 76 differs w/ Benson, 0 differs w/ Tromp, 3 exceeds max game length
+move      1        5         10           20
+count  6.000  789.000  1275.000  1912.000000
+freq   0.002    0.263     0.425     0.637333
+         selfplay8f  Total 3000, of which 388 benson non-final, 38 differs w/ Benson, 0 differs w/ Tromp, 6 exceeds max game length'
+         selfplay9f  Total 3000, of which 286 benson non-final, 40 differs w/ Benson, 0 differs w/ Tromp, 8 exceeds max game length'
+         selfplay10f Total 3000, of which 296 benson non-final, 50 differs w/ Benson, 0 differs w/ Tromp, 2813 exceeds 80 moves, 3 exceeds 160
+count  6.000  1906.000000  2302.000000  2484.000
+freq   0.002     0.635333     0.767333     0.828
+         selfplay12f Total 3000, of which 416 benson non-final, 45 differs w/ Benson, 0 differs w/ Tromp, 6 exceeds max game length'
+         selfplay13f Total 3000, of which 425 benson non-final, 32 differs w/ Benson, 0 differs w/ Tromp, 4 exceeds max game length'
+count  6.000  1538.000000  2124.000  2368.000000
+freq   0.002     0.512667     0.708     0.789333
+    """
+    for i in range(5, 6):
+        stat1 = BensonAgreementStats()
+        stat2 = DiversityStats([1, 5, 10, 20])
+        sgf_pattern = f'{myconf.EXP_HOME}/selfplay{i}f/sgf/full/*.sgf'
+        sgf_pattern = f'{myconf.EXP_HOME}/../9x9-exp2/selfplay{i}/sgf/full/*.sgf'
+        processor = SgfProcessor([stat1, stat2])
+        processor.process(sgf_pattern, max_num_games=5000)
+        stat1.report()
+        stat2.report()
