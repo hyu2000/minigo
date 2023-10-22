@@ -387,8 +387,8 @@ def main_kata(argv):
     num_games_per_side = 20
     FLAGS.softpick_move_cutoff = 8
     FLAGS.reduce_symmetry_before_move = 3
-    logging.info('softpick_move_cutoff = %d, softpick_topn_cutoff = %d, reduce_symmetry_before_move = %d',
-                 FLAGS.softpick_move_cutoff, FLAGS.softpick_topn_cutoff, FLAGS.reduce_symmetry_before_move)
+    logging.info('softpick_move_cutoff = %d, softpick_topn_cutoff = %d, reduce_symmetry_before_move = %d resign_thresh = %.1f',
+                 FLAGS.softpick_move_cutoff, FLAGS.softpick_topn_cutoff, FLAGS.reduce_symmetry_before_move, FLAGS.resign_threshold)
 
     # share KataEngine between two runs
     player1 = load_player(ModelConfig(player1id))
@@ -396,7 +396,7 @@ def main_kata(argv):
     run_one_side(player1, player2, f'{sgf_dir_root}', num_games_per_side)
     run_one_side(player2, player1, f'{sgf_dir_root}', num_games_per_side)
 
-    run_tournament_report(f'{sgf_dir_root}/*')
+    run_tournament_report(f'{sgf_dir_root}/*', include_details=True)
 
 
 def test_run_report_on_sgfs():
@@ -424,8 +424,8 @@ def review_kata(argv):
     k2models = [f'model{x}.mlpackage#{num_readouts}'
                 for x in ['1_5', '2_2', '3_3', '4_4', '5_2', '6_2', '7_4', '8_4', '9_4', '10_4', '11_3', '12_2']]
 
-    logging.info('softpick_move_cutoff = %d, softpick_topn_cutoff = %d, reduce_symmetry_before_move = %d',
-                 FLAGS.softpick_move_cutoff, FLAGS.softpick_topn_cutoff, FLAGS.reduce_symmetry_before_move)
+    logging.info('softpick_move_cutoff = %d, softpick_topn_cutoff = %d, reduce_symmetry_before_move = %d resign_thresh = %.1f',
+                 FLAGS.softpick_move_cutoff, FLAGS.softpick_topn_cutoff, FLAGS.reduce_symmetry_before_move, FLAGS.resign_threshold)
 
     for player2id in k2models[:11]:
         player2 = load_player(ModelConfig(player2id))
@@ -446,5 +446,6 @@ def review_kata(argv):
 
 
 if __name__ == '__main__':
+    FLAGS.resign_threshold = -1
     # app.run(main_kata)
     app.run(main)
