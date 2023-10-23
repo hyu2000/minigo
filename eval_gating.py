@@ -217,6 +217,20 @@ def notest_game_result():
     assert result.sgf_str() == 'W+2.5'
 
 
+class Arbiter:
+    """ singleton: only starts Kata when necessary """
+    _instance = None
+    
+    @classmethod
+    def get_arbiter(cls) -> 'ExpertReviwer':
+        if cls._instance is not None:
+            return cls._instance
+        
+        from expert_eval import ExpertReviewer
+        cls._instance = ExpertReviewer()
+        return cls._instance
+
+
 class EvaluateOneSide:
     """ run evaluation, control for randomness """
     def __init__(self, black_player: BasicPlayerInterface, white_player: BasicPlayerInterface, sgf_dir: str):
@@ -243,12 +257,16 @@ class EvaluateOneSide:
             chosen_move = top_move
         return chosen_move, top_move
 
-    def _check_benson_score(self, benson_score: float):
-        """ see if both agrees with Benson """
-        black_winrate, white_winrate = self.black_player.win_rate, self.white_player.win_rate
-        if np.sign(black_winrate - 0.5) == np.sign(white_winrate - 0.5) == np.sign(benson_score):
-            return
-        logging.warning(f'Benson score {benson_score:.1f} is non-final. Black winrate={black_winrate:.1f}, white {white_winrate:.1f}')
+    def _resolve_final_score(self, pos: go.Position, benson_score: float) -> int:
+        """ resolve game outcome if Benson score non-final """
+        reviewer = Arbiter.get_arbiter()
+        final_winrate = reviewer.calc_black_winrate(pos)
+        winner = np.sign(final_winrate - 0.5)
+        if winner != np.sign(benson_score):
+            black_winrate, white_winrate = self.black_player.win_rate, self.white_player.win_rate
+            logging.warning(f'Benson score {benson_score:.1f} is non-final -> final {winner}.'
+                            f' Black winrate={black_winrate:.1f}, white {white_winrate:.1f}')
+        return winner
 
     def _play_one_game(self, init_position: go.Position):
         """ """
@@ -285,8 +303,8 @@ class EvaluateOneSide:
                 game_result = GameResult(benson_score_details.score, was_resign=False)
                 break
             if cur_pos.is_game_over():  # pass-pass: use Benson score, same as self-play
-                self._check_benson_score(benson_score_details.score)
-                game_result = GameResult(benson_score_details.score, was_resign=False)
+                final_score = self._resolve_final_score(cur_pos, benson_score_details.score)
+                game_result = GameResult(final_score, was_resign=False)
                 break
             if cur_pos.n >= max_game_length:
                 logging.warning('ending game without a definite winner: %s', benson_score_details.score)
@@ -378,7 +396,7 @@ def main_kata(argv):
     """ eval against kata remains serial, as it's likely not a good idea to run multiple KataEngine
     """
     num_readouts = 200
-    player2model = 'model9_1'
+    player2model = 'model7_8'
     sgf_dir_root = f'{myconf.EXP_HOME}/eval_gating/#{num_readouts}/{player2model}-vs-elo4k'
 
     player1id = f'{KataModels.MODEL_B6_4k}#{num_readouts}'

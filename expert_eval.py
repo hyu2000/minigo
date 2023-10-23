@@ -62,6 +62,14 @@ class ExpertReviewer:
         jumps = np.where(np.abs(diff) > ExpertReviewer.JUMP_THRESH)
         return [ChangePoint(i, diff[i]) for i in jumps[0]]
 
+    def calc_black_winrate(self, pos: go.Position) -> float:
+        """ calc black win rate in [0, 1] """
+        arequest = ARequest.from_position(pos, max_visits=500)
+        responses = self.kata.analyze(arequest)
+        assert len(responses) == 1
+        rinfo = RootInfo.from_dict(responses[0].rootInfo)
+        return rinfo.winrate
+
     def run_expert_review(self, sgf_fname, output_sgf_dir):
         """ run kata review, write out annotated sgf file """
         reader = SGFReader.from_file_compatible(sgf_fname)
@@ -69,7 +77,7 @@ class ExpertReviewer:
         player_moves = [PlayerMove(pwc.position.to_play, pwc.next_move)
                         for pwc in reader.iter_pwcs()]
         turns_to_analyze = list(range(len(player_moves)))
-        arequest = ARequest(ARequest.format_moves(player_moves), turns_to_analyze, 500, komi=reader.komi())
+        arequest = ARequest(ARequest.format_moves(player_moves), turns_to_analyze, maxVisits=500, komi=reader.komi())
         responses = self.kata.analyze(arequest)
 
         # write out annotated game, for later review

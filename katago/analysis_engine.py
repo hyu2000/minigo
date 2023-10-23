@@ -68,7 +68,7 @@ class ARequest(object):
         """ request to ask for next move """
         moves = [[go.color_str(x.color)[0], coords.to_gtp(x.move)] for x in pos.recent]
         assert len(moves) == pos.n
-        return ARequest(moves, [pos.n], max_visits)
+        return ARequest(moves, [pos.n], max_visits, komi=pos.komi)
 
     @staticmethod
     def format_moves(player_moves: List[go.PlayerMove]) -> List[Any]:
