@@ -8,6 +8,7 @@ import os
 import torch
 from torch import nn
 import torch.nn.functional as F
+import torch.nn.init as init
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 
@@ -37,21 +38,30 @@ def residual_module(layer_in, n_filters, kernel_size=(3, 3)):
     return layer_out
 
 
-class ResidualModule(nn.Module):
-    """ GPT4 generated to migrate from residual_module """
-    def __init__(self, in_channels, n_filters, kernel_size=3):
-        super(ResidualModule, self).__init__()
+class ResBlock(nn.Module):
+    """ GPT4 generated to migrate from residual_module
 
-        self.conv1x1 = nn.Conv2d(in_channels, n_filters, kernel_size=1)
+    to convert 'channels_last' to 'channels_first' (default in Torch):
+    tensor = tensor.permute(0, 3, 1, 2)  # Convert (batch, height, width, channels) to (batch, channels, height, width)
+    """
+    def __init__(self, in_channels, n_filters, kernel_size=3):
+        super(ResBlock, self).__init__()
+
+        self.conv1x1 = self._conv2d(in_channels, n_filters, kernel_size=1)
         self.bn1x1 = nn.BatchNorm2d(n_filters)
 
-        self.conv1 = nn.Conv2d(in_channels, n_filters, kernel_size=kernel_size, padding=kernel_size // 2)
+        self.conv1 = self._conv2d(in_channels, n_filters, kernel_size=kernel_size)
         self.bn1 = nn.BatchNorm2d(n_filters)
 
-        self.conv2 = nn.Conv2d(n_filters, n_filters, kernel_size=kernel_size, padding=kernel_size // 2)
+        self.conv2 = self._conv2d(n_filters, n_filters, kernel_size=kernel_size)
         self.bn2 = nn.BatchNorm2d(n_filters)
 
         self.increase_channels = in_channels != n_filters
+
+    def _conv2d(self, in_channels, out_channels, kernel_size):
+        conv = nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, padding=kernel_size // 2)
+        init.kaiming_normal_(conv.weight, nonlinearity='relu')
+        return conv
 
     def forward(self, x):
         if self.increase_channels:
@@ -66,40 +76,59 @@ class ResidualModule(nn.Module):
         return F.relu(out)
 
 
-def conv3x3(in_planes, out_planes, stride=1, groups=1, dilation=1):
-    """3x3 convolution with padding"""
-    return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
-                     padding=dilation, groups=groups, bias=False, dilation=dilation)
+class CustomModel(nn.Module):
+    def __init__(self, input_shape):
+        super(CustomModel, self).__init__()
 
+        # Common features
+        self.pad = nn.ConstantPad2d((0, 0, 0, 0, 0, 1), 1)
 
-class ResBlock(nn.Module):
-    def __init__(self, n_filters: int, kernel_size=(3, 3)):
-        super(ResBlock, self).__init__()
+        # Value head
+        self.conv_value = self._conv2d(input_shape[2] + 1, 1, kernel_size=1)
+        self.bn_value = nn.BatchNorm2d(1)
+        self.fc_value1 = nn.Linear(input_shape[0] * input_shape[1], 64)
+        self.fc_value2 = nn.Linear(64, 1)
 
-        self.bn1 = nn.BatchNorm2d(planes, eps=1.001e-5)
-        self.bn2 = nn.BatchNorm2d(planes, eps=1.001e-5)
-        self.relu = nn.ReLU(inplace=True)
+        # Policy head
+        self.conv_policy = self._conv2d(input_shape[2] + 1, 1, kernel_size=1)
+        self.fc_policy = nn.Linear(input_shape[0] * input_shape[1] + 4, 82)
 
+    def _conv2d(self, in_channels, out_channels, kernel_size):
+        conv = nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, padding=kernel_size // 2)
+        nn.init.kaiming_normal_(conv.weight, nonlinearity='relu')
+        return conv
 
     def forward(self, x):
-        # check if the number of filters needs to be increase
+        x = self.pad(x)
 
-        identity = x
+        # todo do we need multiple ResBlock()?
+        x = residual_module(x, 32, (5, 5))
+        for i in range(5):
+            x = residual_module(x, 64, (3, 3))
 
-        out = self.conv1(x)
-        out = self.bn1(out)
-        out = self.relu(out)
+        features_common = x
 
-        out = self.conv2(out)
-        out = self.bn2(out)
+        # Value head
+        x_value = F.relu(self.bn_value(self.conv_value(features_common)))
+        x_value = x_value.view(x_value.size(0), -1)
+        x_value = F.relu(self.fc_value1(x_value))
+        output_value = torch.tanh(self.fc_value2(x_value))
 
-        out += identity
-        out = self.relu(out)
+        # Policy head
+        x_policy = self.conv_policy(features_common)
+        move_prob = x_policy.view(x_policy.size(0), -1)
+        pass_inputs = torch.stack([
+            torch.mean(move_prob, dim=1),
+            torch.max(move_prob, dim=1),
+            torch.std(move_prob, dim=1),
+            output_value.squeeze(dim=1)
+        ], dim=1)
+        pass_prob = self.fc_policy(pass_inputs)
+        x_policy = torch.cat([move_prob, pass_prob], dim=1)
+        output_policy = F.softmax(x_policy, dim=1)
 
-        return out
+        return output_policy, output_value
 
 
-
-def build_model():
-    """
-    """
+# Example usage:
+# model = CustomModel((8, 8, 3))
